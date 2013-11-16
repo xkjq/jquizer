@@ -1284,7 +1284,7 @@ function loadQuestion(n) {
         //}
     }
 
-    scrollTo(0, $("#content").scrollTop());
+    scrollTo(0, $("#content").position().top);
 
 }
 
