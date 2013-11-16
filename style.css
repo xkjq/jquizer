@@ -1,0 +1,253 @@
+#content {
+    /*min-width: 200px;*/
+    max-width: 800px;
+    /*width: 500;*/
+    /*resize: horizontal;
+    overflow: auto;
+    float: left;*/
+    clear: left;
+    }
+
+#loading {
+    display: none;
+}
+
+#loading.show {
+    display: block;
+}
+
+ol.answer-list {
+    display: inline-block;
+    }
+
+.answer-list li {
+    padding: 6px;
+    margin: 2px;
+}
+
+.answer-list.allow-hover li:hover {
+    padding: 5px;
+    border: 1px solid darkblue;
+    border-radius: 5px;
+    color: darkblue;
+    background-color: gray;
+}
+
+.correct {
+    padding: 4px;
+    border: 2px solid green;
+    border-radius: 5px;
+    color: #333;
+    font-weight: bold;
+    }
+
+
+.incorrect {
+    padding: 4px;
+    border: 2px solid red;
+    border-radius: 5px;
+    color: #333;
+    font-style: italic;
+    }
+
+li.alpha-list {
+    list-style-type: upper-alpha;
+    }
+
+.emq-answer-feedback {
+    padding: 4px;
+    font-style: normal;
+    text-align: center;
+    display: block;
+    padding: 20px;
+    margin: 10px;
+    font-weight: normal;
+    }
+
+#filters {
+    display: none;
+    float: right;
+    clear: right;
+    }
+
+#filters li {
+    list-style-type: none;
+    }
+
+#source-filters {
+    float: right;
+    }
+
+#specialty-filters {
+    float: left;
+    }
+
+#filter-toggle {
+    float: right;
+    }
+
+#about-toggle {
+    float: right;
+    }
+
+#goto-question {
+    clear: right;
+    }
+
+
+#question-details-toggle {
+    float: right;
+    clear: left;
+    }
+
+#question-details {
+    float: right;
+    display: none;
+    clear: right;
+}
+
+#score-toggle {
+    float: right;
+    clear: left;
+}
+
+#score {
+    float: right;
+    /*
+    display: none;
+    */
+    clear: right;
+}
+
+#about {
+    display: none;
+
+    width: 50%;
+    /*height: 50%;*/
+    background-color: gray;
+
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    padding: 10px;
+
+    margin: auto;
+
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+    border-radius:5px;
+    border:1px solid rgba(0,0,0,0.5);
+    
+}
+
+#version-info {
+    float: left;
+    color: LightGray;
+}
+
+#about-close {
+    float: right;
+    font-weight: bold;
+}
+
+#score-list li.correct {
+    padding: 0;
+    border: none;
+    border-radius: 0px;
+    background-color: hsl(120, 100%, 50%);
+}
+
+#score-list li.incorrect {
+    padding: 0;
+    border: none;
+    border-radius: 0px;
+    background-color: hsl(0, 100%, 50%);
+    }
+
+#score-list li {
+    text-align: center;
+    font-weight: bold;
+    font-style: normal;
+}
+    
+
+button {
+	border-radius:5px;
+	bkit-border-radius:5px;
+	-moz-box-shadow:0px 0px 2px rgba(0,0,0,0.4);
+	-webkit-box-shadow:0px 0px 2px rgba(0,0,0,0.4);
+
+	color:rgba(0,0,0,0.9);
+	text-shadow:1px 1px 0px rgba(255,255,255,0.8);
+	border:1px solid rgba(0,0,0,0.5);
+	
+	background:-webkit-gradient(linear,0% 0%,0% 100%,from(rgba(255,255,255,1)),to(rgba(185,185,185,1)));
+	background:-moz-linear-gradient(top,rgba(255,255,255,1),rgba(185,185,185,1));
+
+	padding:5px 5px 5px 5px;
+}
+
+button:hover {
+	background:rgba(240,240,240,1);
+}
+
+button:active, button:focus {
+	background:-webkit-gradient(linear,0% 100%,0% 0%,from(rgba(255,255,255,1)),to(rgba(185,185,185,1)));
+	background:-moz-linear-gradient(bottom,rgba(255,255,255,1),rgba(185,185,185,1));
+}
+
+
+
+#progress_bar {
+    margin: 10px 0;
+    padding: 3px;
+    border: 1px solid #000;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s linear;
+    -webkit-transition: opacity 1s linear;
+}
+
+#progress_bar.loading {
+    opacity: 1.0;
+}
+
+#progress_bar .percent {
+    background-color: #99ccff;
+    height: auto;
+    width: 0;
+}
+
+#sortable-list li {
+    background: none repeat scroll 0 0 #F6F6F6;
+    border: 1px solid #CCCCCC;
+    /*color: #1C94C4;*/
+    /*height: 22px;*/
+    /*list-style: none outside none;*/
+    margin: 5px;
+    padding: 5px;
+}
+
+.tf-answer-options {
+    float: right;
+    color: LightGray;
+}
+
+.allow-hover .tf-true:hover {
+    color: green;
+}
+
+.allow-hover .tf-false:hover {
+    color: red;
+}
+
+.tf-active {
+    color: blue;
+    font-weight: bold;
+}

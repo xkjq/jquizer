@@ -1,0 +1,5 @@
+img
+questions
+
+syntax: glob
+*.swp

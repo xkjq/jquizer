@@ -1,0 +1,30 @@
+body {
+    width: 96%;
+    }
+
+#score {
+    display: none;
+    }
+
+#about {
+    width: 80%;
+    }
+
+#content {
+    clear: both;
+    }
+
+ol.answer-list {
+    padding-left: 22px;
+    }
+
+#header-text {
+    margin-left: auto;
+    margin-right: auto;
+    display: inline;
+    text-align: center;
+    }
+
+#header-next-button {
+    float: right;
+    }
