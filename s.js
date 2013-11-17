@@ -84,33 +84,33 @@ $(document).ready(function() {
 
                     $("#loading").removeClass("show");
 
-                    $("#filter-toggle").fastButton(function() { 
+                    $("#filter-toggle").click(function() { 
                         $("#filters").slideToggle("slow"); 
                         });
 
-                    $("#question-details-toggle").fastButton(function() { 
+                    $("#question-details-toggle").click(function() { 
                         $("#question-details").slideToggle("slow"); 
                         });
 
-                    $("#score-toggle").fastButton(function() { 
+                    $("#score-toggle").click(function() { 
                         $("#score").slideToggle("slow"); 
                         });
 
-                    $("#about-toggle, #about-close").fastButton(function() { 
+                    $("#about-toggle, #about-close").click(function() { 
                         $("#about").slideToggle("slow"); 
                         });
 
-                    $("#goto-question-button").fastButton(function() {
+                    $("#goto-question-button").click(function() {
                         loadQuestion($("#goto-question-input").val()-1);
                         $("#goto-question-input").blur();
                         });
 
-                    $("#search-button").fastButton(function() {
+                    $("#search-button").click(function() {
                             startSearch($("#search-input").val());
                             $("#search-input").blur();
                             });
 
-                    $("#delete-answers-button").fastButton(function() {
+                    $("#delete-answers-button").click(function() {
                             resetAnswers();
                             });
 
@@ -324,7 +324,7 @@ function buildActiveScoreList() {
         }
 
         // Scores should link to their question
-        $("#score-"+i).fastButton(function(n) {
+        $("#score-"+i).click(function(n) {
                 loadQuestion(parseInt(n.currentTarget.title)-1);
                 })
 
@@ -344,9 +344,9 @@ function buildActiveScoreList() {
         list_items.slice(-trucate_score_list_at).show();
 
         $("#score-list").append(
-                $("<span>---show more--</span>").fastButton(function() {
+                $("<span>---show more--</span>").click(function() {
                     $("#score-list li").show();
-                    $(this).text("--show less--").fastButton(function () { buildActiveScoreList() } );
+                    $(this).text("--show less--").click(function () { buildActiveScoreList() } );
                     }));
     }
 
@@ -365,45 +365,45 @@ function keyPress(e) {
     switch(e.keyCode)
     {
         case 13: // Return
-            $(".next-button:last").fastButton();
+            $(".next-button:last").click();
             break;
         case 32: // Space
-            $(".next-button:last").fastButton();
+            $(".next-button:last").click();
             e.preventDefault(); // Needed to stop the default action (scroll)
             break;
 
             // Numbers 1-9 select the corresponding answer (if it exists)
             // TODO: fix for multi question questions
         case 49: // 1
-            $("#question-1-answers li:eq(0)").fastButton();
+            $("#question-1-answers li:eq(0)").click();
             break;
         case 50: // 2
-            $("#question-1-answers li:eq(1)").fastButton();
+            $("#question-1-answers li:eq(1)").click();
             break;
         case 51: // 3
-            $("#question-1-answers li:eq(2)").fastButton();
+            $("#question-1-answers li:eq(2)").click();
             break;
         case 52: // 4
-            $("#question-1-answers li:eq(3)").fastButton();
+            $("#question-1-answers li:eq(3)").click();
             break;
         case 53:  // 5
-            $("#question-1-answers li:eq(4)").fastButton();
+            $("#question-1-answers li:eq(4)").click();
             break;
         case 54:  // 6
-            $("#question-1-answers li:eq(5)").fastButton();
+            $("#question-1-answers li:eq(5)").click();
             break;
         case 55:  // 7
-            $("#question-1-answers li:eq(6)").fastButton();
+            $("#question-1-answers li:eq(6)").click();
             break;
         case 56:  // 8
-            $("#question-1-answers li:eq(7)").fastButton();
+            $("#question-1-answers li:eq(7)").click();
             break;
         case 57:  // 9
-            $("#question-1-answers li:eq(8)").fastButton();
+            $("#question-1-answers li:eq(8)").click();
             break;
 
         case 102: // f
-            $("#filter-toggle").fastButton();
+            $("#filter-toggle").click();
             break;
         case 103: // g
             $("#filters").slideDown("slow");
@@ -425,7 +425,7 @@ function startSearch(str) {
     $("#clear-search-button").remove();
     if (str.length > 0) {
         search_string = str;
-        $("#search-form").append($(document.createElement("button")).attr({ id: "clear-search-button" }).text("X").fastButton(startSearch));
+        $("#search-form").append($(document.createElement("button")).attr({ id: "clear-search-button" }).text("X").click(startSearch));
     } else {
         search_string = false;
     }
@@ -476,7 +476,7 @@ function setUpFilters() {
 
     if ($("[name='filter-specialty-checkbox']").length > 1) { 
         $("#specialty-filters").append(
-                $(document.createElement("li")).attr({"class" : "select-all"}).text("Select All").fastButton(function() { 
+                $(document.createElement("li")).attr({"class" : "select-all"}).text("Select All").click(function() { 
                     checkBoxes = $("[name='filter-specialty-checkbox']")
                     checkBoxes.prop("checked", !checkBoxes.prop("checked")); 
 
@@ -500,7 +500,7 @@ function setUpFilters() {
     }
 
     if ($("[name='filter-source-checkbox']").length > 1) { 
-        $("#source-filters").append($(document.createElement("li")).attr({"class" : "select-all"}).text("Select All").fastButton(function() { 
+        $("#source-filters").append($(document.createElement("li")).attr({"class" : "select-all"}).text("Select All").click(function() { 
                     checkBoxes = $("[name='filter-source-checkbox']")
                     checkBoxes.prop("checked", !checkBoxes.prop("checked")); 
 
@@ -530,7 +530,7 @@ function setUpFilters() {
             loadFilters();
             });
 
-    $("#show-answered-questions-button").fastButton(function () {
+    $("#show-answered-questions-button").click(function () {
             show_answered_questions = !($("#show-answered-questions-button").is(":checked"));
             loadFilters();
             });
@@ -1116,7 +1116,7 @@ function loadQuestion(n) {
                         //'type': 'button',
                         'class': 'check-button',
                         'value': "Check Answers",
-                        }).text("Check Answers").fastButton(checkAnswer)
+                        }).text("Check Answers").click(checkAnswer)
                     );
 
             break;
@@ -1165,7 +1165,7 @@ function loadQuestion(n) {
                             //'type': 'button',
                             'class': 'check-button',
                             'value': "Check Answers"
-                            }).text("Check Answers").fastButton(checkAnswer)
+                            }).text("Check Answers").click(checkAnswer)
                         );
 
                 break;
@@ -1213,7 +1213,7 @@ function loadQuestion(n) {
                                 'id': "q" + question_number + "a" + i,
                                 'class': c,
                                 'data-question-number': question_number
-                                }).append(a).append(tf).fastButton(function(e) {
+                                }).append(a).append(tf).click(function(e) {
                                     console.log("clicked");
                                     console.log("2");
                                     if ($(e.currentTarget).find(".tf-active").length > 0) {
@@ -1227,7 +1227,7 @@ function loadQuestion(n) {
                     i = i + 1;
                 }
 
-                $(".tf-true, .tf-false").off().fastButton(function(e) {
+                $(".tf-true, .tf-false").off().click(function(e) {
                         console.log(e);
                         $(e.currentTarget.parentNode).children().removeClass("tf-active");
                         $(e.currentTarget).addClass("tf-active");
@@ -1241,7 +1241,7 @@ function loadQuestion(n) {
                             //'type': 'button',
                             'class': 'check-button',
                             'value': "Check Answers"
-                            }).text("Check Answers").fastButton(checkAnswer)
+                            }).text("Check Answers").click(checkAnswer)
                         );
 
                 break;
@@ -1266,12 +1266,12 @@ function loadQuestion(n) {
 
     $(".previous-button").off();
     $(".previous-button").each(function(index, e) {
-            $(e).fastButton(previousQuestion)
+            $(e).click(previousQuestion)
             });
 
     $(".next-button").off();
     $(".next-button").each(function(index, e) {
-            $(e).fastButton(nextQuestion)
+            $(e).click(nextQuestion)
             });
 
 
@@ -1345,7 +1345,7 @@ function appendAnswers(answers, question_number) {
                     'id': "q" + question_number + "a" + i,
                     'class': c,
                     'data-question-number': question_number
-                    }).append(a).fastButton(checkAnswer));
+                    }).append(a).click(checkAnswer));
         i = i + 1;
     }
 
