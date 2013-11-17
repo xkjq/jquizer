@@ -114,10 +114,24 @@ $(document).ready(function() {
                             resetAnswers();
                             });
 
+                    $("#save-answers-button").click(function() {
+                            saveAnswersAsFile();
+                            });
+
                     $(document).keypress(keyPress);
             });
 
         loadAnswersFromStorage();
+
+$("#content").swipe({
+  swipeLeft:function(event, direction, distance, duration, fingerCount) {
+    nextQuestion(event);
+  },
+  swipeRight:function(event, direction, distance, duration, fingerCount) {
+    previousQuestion(event);
+  },
+  fallbackToMouseEvents:false
+});
 
 });
 
@@ -959,6 +973,8 @@ function checkAnswer(e, load) {
                 saveAnswersToStorage();
             }
 
+            $(".check-button").remove();
+
             console.log(e);
             console.log(load);
             break
@@ -1390,4 +1406,33 @@ function searchObject(o, search_str) {
         }
     }
     return false;
+}
+
+
+function saveAnswersAsFile()
+{
+	var textToWrite = JSON.stringify(hash_answer_map);
+	var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+	var fileNameToSaveAs = "answers";
+
+	var downloadLink = document.createElement("a");
+	downloadLink.download = fileNameToSaveAs;
+	downloadLink.innerHTML = "Download File";
+	if (window.webkitURL != null)
+	{
+		// Chrome allows the link to be clicked
+		// without actually adding it to the DOM.
+		downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+	}
+	else
+	{
+		// Firefox requires the link to be added to the DOM
+		// before it can be clicked.
+		downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+		downloadLink.onclick = destroyClickedElement;
+		downloadLink.style.display = "none";
+		document.body.appendChild(downloadLink);
+	}
+
+	downloadLink.click();
 }
