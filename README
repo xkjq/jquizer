@@ -1,7 +1,14 @@
-A javascript based quiz system written for
-
-        www.medicalsociety.org.uk
-
+####### jQuizer ##########
+#
+# A javascript based quiz system
+#
+# Has support for multiple question types
+#   * Single Best Answer (SBA)
+#   * Extended matching questions (EMQ)
+#   * True/False (TF)
+#   * Rank based
+#
+#
 #######################################################################
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
