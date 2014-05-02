@@ -6,12 +6,13 @@
 <link media="only screen and (max-width:400px)" href="mobile.css" rel="stylesheet">
 
 <script type="text/javascript" src="lib/jquery-2.0.2.min.js"></script>
+<script type="text/javascript" src="lib/lawnchair-0.6.1.min.js"></script>
 <script type="text/javascript" src="lib/toastr.min.js"></script>
 <script type="text/javascript" src="lib/jquery.sortable.js"></script>
 <script type="text/javascript" src="lib/jquery.touchSwipe.min.js"></script>
 <script type="text/javascript" src="lib/fastbutton.js"></script>
-<script type="text/javascript" src="s.js"></script>
 <script type="text/javascript" src="fileload.js"></script>
+<script type="text/javascript" src="s.js"></script>
 
 </head>
 <body class"use-fastclick">
@@ -32,14 +33,22 @@
 <input type="text" id="goto-question-input" /> 
 <button type="submit" id="goto-question-button">Goto question</button>
 </form>
+<input type="checkbox" id="show-answered-questions-button">Hide previously answered questions</input>
+<hr />
 <button type="submit" id="delete-answers-button">Delete Answers</button>
 <button type="submit" id="save-answers-button">Save Answers (locally)</button>
 <br />
-<input type="checkbox" id="show-answered-questions-button">Hide previously answered questions</input>
+<h4>Load (local) answers:</h4>
+<input type="file" id="answers-file" name="file" />
+<button onclick="abortRead();">Cancel read</button>
+<br />
+<b>Note: this will overwrite all your current answers</b>
+<br />
 </div>
+<hr />
 <div id="fileloader">
-<h4>Load file:</h4>
-<input type="file" id="files" name="file" />
+<h4>Load (local) questions:</h4>
+<input type="file" id="questions-file" name="file" />
 <button onclick="abortRead();">Cancel read</button>
 <div id="progress_bar"><div class="percent">0%</div></div>
 </div>

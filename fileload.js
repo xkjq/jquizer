@@ -8,15 +8,15 @@ function abortRead() {
 function errorHandler(evt) {
     switch(evt.target.error.code) {
         case evt.target.error.NOT_FOUND_ERR:
-            alert('File not found!');
+            toastr.warning('File not found!');
             break;
         case evt.target.error.NOT_READABLE_ERR:
-            alert('Unable to read file');
+            toastr.warning('Unable to read file');
             break;
         case evt.target.error.ABORT_ERR:
             break;
         default:
-            alert('An error occurred reading this file.');
+            toastr.warning('An error occurred reading this file.');
     };
 }
 
@@ -32,7 +32,7 @@ function updateProgress(evt) {
     }
 }
 
-function handleFileSelect(evt) {
+function handleQuestionsFileSelect(evt) {
     // Reset progress indicator on new file selection.
     progress.style.width = '0%';
     progress.textContent = '0%';
@@ -41,7 +41,7 @@ function handleFileSelect(evt) {
     reader.onerror = errorHandler;
     reader.onprogress = updateProgress;
     reader.onabort = function(e) {
-        alert('File read cancelled');
+        toastr.warning('File read cancelled');
     };
     reader.onloadstart = function(e) {
         document.getElementById('progress_bar').className = 'loading';
@@ -55,8 +55,9 @@ function handleFileSelect(evt) {
         try {
             data = JSON.parse(e.target.result)
                 loadData(data);
+                $("#filters").slideToggle("slow"); 
         } catch(SyntaxError) {
-            alert("Unable to load file.");
+            toastr.warning("Unable to load file.");
         }
 
     }
@@ -65,9 +66,43 @@ function handleFileSelect(evt) {
 
 }
 
-$(document).ready(function () {
-        document.getElementById('files').addEventListener('change', 
-                handleFileSelect, false);
-        progress = document.querySelector('.percent');
-        });
+function handleAnswersFileSelect(evt) {
+    // Reset progress indicator on new file selection.
+    progress.style.width = '0%';
+    progress.textContent = '0%';
+
+    reader = new FileReader();
+    reader.onerror = errorHandler;
+    reader.onprogress = updateProgress;
+    reader.onabort = function(e) {
+        toastr.warning('File read cancelled');
+    };
+    reader.onloadstart = function(e) {
+        document.getElementById('progress_bar').className = 'loading';
+    };
+    reader.onload = function(e) {
+        // Ensure that the progress bar displays 100% at the end.
+        progress.style.width = '100%';
+        progress.textContent = '100%';
+        setTimeout("document.getElementById('progress_bar').className='';", 2000);
+
+        try {
+            answers = e.target.result;
+            loadAnswers(answers);
+            $("#filters").slideToggle("slow"); 
+        } catch(SyntaxError) {
+            toastr.warning("Unable to load file.");
+        }
+
+    }
+
+    reader.readAsText(evt.target.files[0]);
+
+}
+
+//$(document).ready(function () {
+//        document.getElementById('files').addEventListener('change', 
+//                handleFileSelect, false);
+//        progress = document.querySelector('.percent');
+//        });
 
