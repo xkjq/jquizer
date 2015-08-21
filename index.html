@@ -19,7 +19,7 @@
 <div id="about-toggle">/<a href="#"><button>?</button></a></div>
 <div id="score-toggle">/<a href="#"><button>(score)</button></a></div>
 <div id="question-details-toggle">/<a href="#"><button>(question)</button></a></div>
-<div id="filter-toggle"><a href="#"><button>+/- (options)</button></a></div>
+<div id="filter-toggle"><button type="button">+/- (options)</button></div>
 <div id="filters">
 <h4>Filter options:</h4>
 <div id="source-filters">Source</div>
@@ -31,12 +31,12 @@
 </form>
 <form>
 <input type="text" id="goto-question-input" /> 
-<button type="submit" id="goto-question-button">Goto question</button>
+<button id="goto-question-button" type="button">Goto question</button>
 </form>
 <input type="checkbox" id="show-answered-questions-button">Hide previously answered questions</input>
 <hr />
-<button type="submit" id="delete-answers-button">Delete Answers</button>
-<button type="submit" id="save-answers-button">Save Answers (locally)</button>
+<button type="button" id="delete-answers-button">Delete Answers</button>
+<button type="button" id="save-answers-button">Save Answers (locally)</button>
 <br />
 <h4>Load (local) answers:</h4>
 <input type="file" id="answers-file" name="file" />
@@ -80,10 +80,9 @@ Attempting to load shit...<br />
 </div>
 <div id="header"> </div>
 <div id="main">
-Welcome to the UCLU MedSoc Quiz System
+Welcome to the Quiz System
 
 <br /><br />
-As of yet we don't have any questions for you. If you want to help (either with writing questions or developing the quiz platform itself) get in touch.<br /><br />
 
 Questions are JSON encoded objects, currenty SBAs and EMQs are supported.<br /><br />
 
