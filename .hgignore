@@ -1,5 +1,7 @@
 img
 questions
+imagehelp
 
 syntax: glob
 *.swp
+*.swo

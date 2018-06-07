@@ -1,0 +1,10 @@
+html  {
+    background-color: white;
+    color: black;
+}
+ 
+li.alpha-list a {
+    color: black;
+    text-decoration: none;
+
+}

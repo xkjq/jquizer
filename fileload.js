@@ -57,6 +57,7 @@ function handleQuestionsFileSelect(evt) {
                 loadData(data);
                 $("#filters").slideToggle("slow"); 
         } catch(SyntaxError) {
+            console.log(SyntaxError)
             toastr.warning("Unable to load file.");
         }
 
@@ -86,12 +87,13 @@ function handleAnswersFileSelect(evt) {
         progress.textContent = '100%';
         setTimeout("document.getElementById('progress_bar').className='';", 2000);
 
+        console.log("LODA ANSWERS");
         try {
-            answers = e.target.result;
-            loadAnswers(answers);
+            loadAnswersAndFeedback(JSON.parse(e.target.result))
             $("#filters").slideToggle("slow"); 
         } catch(SyntaxError) {
             toastr.warning("Unable to load file.");
+            console.log(SyntaxError);
         }
 
     }

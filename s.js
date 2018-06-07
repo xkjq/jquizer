@@ -18,6 +18,9 @@
 //Versions
 var quiz_version = "0.1";
 
+var fix_broken_question_formatting = true;
+
+var default_question_set = "questions/default";
 
 // Settings
 var auto_load_previous_answers = true;
@@ -40,25 +43,84 @@ var hash_n_map = {};
 // Object to store all the answers given to a particualar question
 var hash_answer_map = {};
 
+var flagged_questions = new Set();
+
 // uid of the currently loaded question
 var current_question_uid = 0;
 
 var search_string = false;
 
 var show_answered_questions = true;
-
-var mba_answers = {};
+var show_only_flagged_questions = false;
 
 
 var questions_answered = 0;
 var questions_correct = 0;
 
+var last_answered_question = false;
+
+var min_colour_diff = 0.6;
+
 var store = false;
 
 
+var remote_store = false;
+var remote_store_synced = false;
+var remote_data = {};
+
+var help_image_map = {};
+
+// Settings regarding labelling questions
+var similarity_limit = 0.8;
+
+var use_dwv_as_image_viewer = true;
+
+dwv.gui.getElement = dwv.gui.base.getElement;
+dwv.gui.displayProgress = function (percent) {};
+
+function loadExtraQuestionsCallback(i) {
+    return function(e) {
+        loadExtraQuestions(i);
+        saveLoadedQuestionSet(i);
+        $("#filters").slideToggle("slow"); 
+        };
+    }
+
+
+function buildQuestionList(data, textStatus) {
+    list = data["questions"];
+    list.sort()
+    for (key in list) {
+        var f = list[key];
+        $input = $('<input type="button" class="question-load-button" value="'+f.replace(/_/g, " ")+'" />');
+        $input.click(loadExtraQuestionsCallback("questions/"+f));
+        $input.appendTo($("#extra-questions"));
+        }
+
+}
+
+function loadExtraQuestions(q) {
+    $.getJSON(q, loadData).fail(function(jqxhr, textStatus, error) { 
+
+        toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
+
+    }).success(function () {
+
+        toastr.info(Object.size(questions) + " questions loaded");
+
+
+    });
+
+}
+
+function loadHelpImageMap(data, textStatus) {
+    $.extend(help_image_map, data);
+
+}
+
 function loadData(data, textStatus) {
 
-    questions = data;
+    $.extend(questions, data);
     //filtered_questions = data;
     setUpFilters();
 
@@ -66,10 +128,9 @@ function loadData(data, textStatus) {
 
 
 $(document).ready(function() {
-
     // Load lawnchair store
-    store = new Lawnchair({adapter: "dom", name:"jquiz"}, function(store) { })
-    
+    // ereader
+    store = new Lawnchair({adapter: "dom", name:"jquiz"}, function(store) { });
 
     //Populate version info
     $("#version-info").text("version: " + quiz_version);
@@ -78,7 +139,29 @@ $(document).ready(function() {
 
     $("#loading").addClass("show");
 
-    $.getJSON("questions", loadData).fail(function(jqxhr, textStatus, error) { 
+    $.getJSON("questions/question_list", buildQuestionList).fail(function(jqxhr, textStatus, error) { 
+
+        toastr.warning("Unable to load questions list<br/><br/>Perhaps you wish to try loading them manually?");
+
+    }).success(function () {
+
+    });
+
+    // Load previous question set
+    store.exists("current_question_set", function(exists) {
+        console.log("load question set")
+        if (exists) {
+            store.get("current_question_set", function(obj) {
+                n = obj["value"];
+                questions_to_load = n;
+            });
+        } else {
+            questions_to_load = default_question_set;
+        }
+    });
+
+    //$.getJSON("../sbas/question/json/all", loadData).fail(function(jqxhr, textStatus, error) { 
+    $.getJSON(questions_to_load, loadData).fail(function(jqxhr, textStatus, error) { 
 
         toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
 
@@ -91,12 +174,16 @@ $(document).ready(function() {
 
         $("#loading").removeClass("show");
 
-        $("#filter-toggle").click(function() { 
+        $("#filter-toggle, #hide-options-button").click(function() { 
             $("#filters").slideToggle("slow"); 
         });
 
         $("#question-details-toggle").click(function() { 
             $("#question-details").slideToggle("slow"); 
+        });
+
+        $("#load-remote-server-button").click(function() { 
+            loadRemoteServer();
         });
 
         $("#score-toggle").click(function() { 
@@ -108,8 +195,26 @@ $(document).ready(function() {
         });
 
         $("#goto-question-button").click(function() {
-            loadQuestion($("#goto-question-input").val()-1);
+            val = $("#goto-question-input").val();
+            if (val && !isNaN(val)) {
+                loadQuestion(parseInt($("#goto-question-input").val())-1);
+                $("#goto-question-input").blur();
+            } else {
+                toastr.warning("Invalid question.");
+            }
+        });
+
+        $("#goto-question-hide-button").click(function() {
+            //duplicate stuff....
+            val = $("#goto-question-input").val();
+            if (val && !isNaN(val)) {
+                loadQuestion(parseInt($("#goto-question-input").val())-1);
+                $("#goto-question-input").blur();
+            } else {
+                toastr.warning("Invalid question.");
+            }
             $("#goto-question-input").blur();
+            $("#filters").slideToggle("slow"); 
         });
 
         $("#search-button").click(function() {
@@ -125,6 +230,20 @@ $(document).ready(function() {
             saveAnswersAsFile();
         });
 
+        $("#unload-questions-button").click(function() {
+            // Reset all variables
+            questions = {}; 
+            filtered_questions = [];
+            hash_n_map = {};
+            current_question_uid = 0;
+            setUpFilters();
+        });
+
+        $("#toggle-css").click(function() {
+            $("#dark-css").prop('disabled', function(i, v) { return !v; });
+            $("#light-css").prop('disabled', function(i, v) { return !v; });
+        });
+
         $("#answers-file").on('change', 
         handleAnswersFileSelect);
 
@@ -138,6 +257,8 @@ $(document).ready(function() {
 
     loadAnswersFromStorage();
 
+    loadFlaggedQuestionsFromStorage();
+
     $("#content").swipe({
         swipeLeft:function(event, direction, distance, duration, fingerCount) {
             nextQuestion(event);
@@ -147,6 +268,27 @@ $(document).ready(function() {
         },
         fallbackToMouseEvents:false
     });
+
+    window.addEventListener("beforeunload", function (e) {
+        if ((remote_store == true) && (remote_store_synced == false)) {
+            var confirmationMessage = "Questions have not been saved remotely. Continue?";
+
+            (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+            return confirmationMessage;                            //Webkit, Safari, Chrome
+        }
+    });
+
+    $.getJSON("imagehelp/map", loadHelpImageMap).fail(function(jqxhr, textStatus, error) { 
+
+        toastr.warning("Unable to help image map");
+
+    }).success(function () {
+
+        toastr.info(Object.size(help_image_map) + " help images loaded");
+
+
+    });
+    
 
 });
 
@@ -165,6 +307,7 @@ Object.size = function(obj) {
 function saveAnswersToStorage() {
     // Yes - it is (probably) bad practice to try / catch every access to localStorage
     // TODO: switch to lawnchair
+    //ereader
     store.save({key: "answers", value: JSON.stringify(hash_answer_map)});
 //    try {
 //        localStorage.setItem('answers', JSON.stringify(hash_answer_map));
@@ -176,6 +319,7 @@ function saveAnswersToStorage() {
 
 function saveCheckboxState(id) {
     // There should be a better way to do this
+    //ereader
     store.save({key: 'checkbox-'+id, value: 1});
 //    try {
 //        localStorage.setItem('checkbox-'+id, 1);
@@ -186,22 +330,41 @@ function saveCheckboxState(id) {
 }
 
 function saveOpenQuestion(n) {
+    // This will fail if filters are changed
+    // (may be better ot use hashes instead)
     store.save({key: "current_question", value: n});
 }
 
+function saveFlaggedQuestions() {
+    // JSON.stringify doesn't suport sets...
+    store.save({key: "flagged_questions", value: JSON.stringify([...flagged_questions])});
+}
+
+function saveLoadedQuestionSet(n) {
+    // This will fail if filters are changed
+    // (may be better ot use hashes instead)
+    console.log("Save", n);
+    store.save({key: "current_question_set", value: n});
+}
+
+
 function loadPreviousQuestion(n) {
+    //ereader
     store.exists("current_question", function(exists) {
         if (exists) {
             store.get("current_question", function(obj) {
                 n = obj["value"];
                 loadQuestion(n);
             });
+        } else {
+            loadQuestion(0);
         }
     });
 }
 
 // Check all keys in the localStorage. If it starts with checkbox- remove it.
 function clearSavedCheckboxStates() {
+        //ereader
         //Object.keys(localStorage).forEach(function(key) {
         store.keys("store_keys = keys")
         for (i in store_keys) {
@@ -219,27 +382,91 @@ function resetAnswers() {
     if (confirm(msg)) {
         hash_answer_map = {};
         //localStorage.setItem('answers', {});
+        //ereader
         store.save({key: "answers", value: {}});
         loadFilters();
     }
 }
 
+function loadAnswersAndFeedback(data) {
+            console.log("LAF");
+            d = data;
+            console.log(d);
+            answers = d["answers"]
+            flagged_questions = d["flagged_questions"]
+            loadAnswers(answers);
+            loadFlaggedQuestions(flagged_questions);
+            saveAnswersToStorage();
+            saveFlaggedQuestions();
+}
+
 function loadAnswers(answers) {
-    hash_answer_map = JSON.parse(answers);
-    toastr.info(Object.size(hash_answer_map) + " answers loaded.");
+    // Rather than simply replacing the answers we merge them.
+    console.log(answers);
+    console.log(answers.length);
+    if (Object.keys(answers).length > 0) {
+        if (Object.keys(hash_answer_map).length < 1) {
+            console.log("DIRECT LOAD");
+            hash_answer_map = answers;
+        } else {
+            for (q in answers) {
+                if (hash_answer_map.hasOwnProperty(q)) {
+                    ans = hash_answer_map[q].concat(answers[q]);
+                    ans = ans.filter((ans, index, self) =>
+                        index === self.findIndex((t) => (
+                            t.date === ans.date
+                            ))
+                            );
+                    ans.sort(dynamicSort("date"));
+                    hash_answer_map[q] = ans;
+
+                } else {
+                    hash_answer_map[q] = answers[q];
+                }
+                    
+
+            }
+        console.log(hash_answer_map);
+        }
+        toastr.info(answers.length + " answers loaded.");
+    }
 }
 
 // Attempt to load answers from localStorage
 function loadAnswersFromStorage() {
+    //ereader
     store.exists("answers", function(exists) {
         if (exists) {
             store.get("answers", function(obj) {
-                loaded_answers = obj["value"];
+                loaded_answers = JSON.parse(obj["value"]);
                 loadAnswers(loaded_answers);
 
             });
         }
     });
+}
+
+function loadFlaggedQuestions(flagged) {
+    // JSON returns set as an array
+    if (flagged.length > 0) {
+        flagged_questions = new Set([...flagged_questions, ...flagged]);
+        toastr.info("Flagged question data loaded.");
+    }
+}
+
+// Attempt to load answers from localStorage
+function loadFlaggedQuestionsFromStorage() {
+    //ereader
+    store.exists("flagged_questions", function(exists) {
+        if (exists) {
+            store.get("flagged_questions", function(obj) {
+                fq = JSON.parse(obj["value"]);
+                loadFlaggedQuestions(fq);
+
+            });
+        }
+    });
+}
 
 //    if (localStorage) {
 //        try {
@@ -262,7 +489,6 @@ function loadAnswersFromStorage() {
 //
 //        toastr.warning("It appears your browser does not support localStorage. Your answers will not be saved.");
 //    }
-}
 
 // Generates the score section
 function buildActiveScoreList() {
@@ -308,7 +534,7 @@ function buildActiveScoreList() {
 
         i = filtered_answers[ans];
 
-        answer = hash_answer_map[filtered_questions[i]];
+        answer = hash_answer_map[filtered_questions[i]].slice(-1)[0];
 
         type = answer['type'];
 
@@ -316,6 +542,33 @@ function buildActiveScoreList() {
 
         switch (type)
         {
+            case "rapid":
+
+                list.append($(document.createElement("li")).attr({
+                    'id': 'score-' + i,
+                    'class': answer["correct"],
+                    'title': n
+                }).text(n));
+
+                if (answer["correct"]) {
+                    questions_correct++;
+                }
+                questions_answered++;
+                break;
+            case "image_answer":
+
+                list.append($(document.createElement("li")).attr({
+                    'id': 'score-' + i,
+                    'class': answer["correct"],
+                    'title': n
+                }).text(n));
+
+                if (answer["correct"]) {
+                    questions_correct++;
+                }
+                questions_answered++;
+                break;
+
             case "sba":
 
                 list.append($(document.createElement("li")).attr({
@@ -449,12 +702,20 @@ function keyPress(e) {
 
     // Ignore our custom keybindings if we are currently in a field that
     // accepts some kind of input
-    if ( $("*:focus").is("textarea, input") ) return;
+    if ( $("*:focus:not(disabled)").is("textarea, input") ) return;
 
-    switch(e.keyCode)
+
+    var charCode = (typeof e.which == "number") ? e.which : e.keyCode
+    console.log(charCode);
+
+    switch(charCode)
     {
         case 13: // Return
-            $(".next-button:last").click();
+            if (e.shiftKey ? true : false) {
+                $(".next-button:last").click();
+            } else {
+                $(".check-button:last").click();
+            }
             break;
         case 32: // Space
             if (e.shiftKey ? true : false) {
@@ -463,6 +724,9 @@ function keyPress(e) {
                 $(".next-button:last").click();
             }
             e.preventDefault(); // Needed to stop the default action (scroll)
+            break;
+        case 46: // .
+            toggleFlagged();
             break;
 
             // Numbers 1-9 select the corresponding answer (if it exists)
@@ -525,6 +789,7 @@ function startSearch(str) {
     if (str.length > 0) {
         search_string = str;
         $("#search-form").append($(document.createElement("button")).attr({ 'id': "clear-search-button" }).text("X").click(startSearch));
+        $("#clear-search-button").wrap("<a href='#'></a>");
     } else {
         search_string = false;
     }
@@ -534,6 +799,8 @@ function startSearch(str) {
 function setUpFilters() {
     specialty_filters = {};
     source_filters = {};
+    $("#specialty-filters").empty();
+    $("#source-filters").empty();
     for (q in questions) {
 
         for (s in questions[q]['specialty']) {
@@ -611,6 +878,7 @@ function setUpFilters() {
 
 
     // Restore previously selected filters (before we attach the events)
+    // ereader
     store.keys("store_keys = keys")
     for (i in store_keys) {
         if (/^(checkbox-)/.test(store_keys[i])) {
@@ -640,6 +908,15 @@ function setUpFilters() {
     $("#show-answered-questions-button").click(function () {
         show_answered_questions = !($("#show-answered-questions-button").is(":checked"));
         loadFilters();
+    });
+
+    $("#show-only-flagged-questions-button").click(function () {
+        show_only_flagged_questions = ($("#show-only-flagged-questions-button").is(":checked"));
+        loadFilters();
+    });
+
+    $("#auto-load-previous-answers-button").click(function () {
+        auto_load_previous_answers = ($("#auto-load-previous-answers-button").is(":checked"));
     });
 
     loadFilters();
@@ -681,11 +958,20 @@ function loadFilters() {
             for (n in questions) {
                 q = questions[n];
 
+                // Filter questions that have an answer saved
                 if (!show_answered_questions) {
                     if (hash_answer_map.hasOwnProperty(n)) {
                         continue;
                     }
                 }
+
+                // Filter questions that have not been flagged
+                if (show_only_flagged_questions) {
+                    if (!flagged_questions.has(n)) {
+                        continue;
+                    }
+                }
+
 
                 if (filter_specialty) {
                     var specialty_exists = false;
@@ -722,740 +1008,19 @@ function loadFilters() {
             }
 
 
-
             //loadQuestion(0);
+            //ereader
             loadPreviousQuestion();
 
             search_string = false;
 
 }
 
-function checkBestAnswer(e, load) {
 
-    if (load == true) { 
-        target_id = e['target_id']; 
-        save_answer = false;
-        question_number = e['question_number'];
-    } else { 
-        save_answer = true;
-        target_id = e.currentTarget.getAttribute('id');
-        question_number = e.currentTarget.getAttribute('data-question-number');
-    }
 
 
-    // Add the "correct" class to all answers that are correct
-    $("#question-"+question_number+"-answers > .1").addClass("correct");
 
 
-    // Check if the selected answer is correct
-    if ($("#"+target_id).hasClass("1")) { 
-        answer = "correct";
-
-    } else {
-        // If not we mark it as incorrect
-        $("#"+target_id).addClass("incorrect");
-        answer = "incorrect";
-
-    }
-
-    // Remove the click events from the answered question
-    $("#question-"+question_number+"-answers").removeClass("allow-hover").children().each(function(index, e) {
-        $(e).off();
-    });
-
-    return { 
-        t: target_id, 
-        q: question_number, 
-        a: answer,
-        s: save_answer
-    }
-
-}
-
-
-function checkAnswer(e, load) {
-    //load = "undefined";
-    //load = typeof load !== 'undefined' ? load : false;
-
-
-    data = questions[current_question_uid];
-
-    //current_question_uid_hash = hash_n_map[current_question_uid];
-
-    question_type = data['type'];
-
-    $("#feedback").empty();
-
-    switch (question_type) {
-        case "sba":
-
-            return_value = checkBestAnswer(e, load);
-
-            if (return_value.s) {
-                hash_answer_map[current_question_uid] = { 
-                    "type" : "sba",
-                    "target_id" : return_value.t,
-                    "question_number" : return_value.q,
-                    "date" : Date(),
-                    "answer" : return_value.a
-                }
-                saveAnswersToStorage();
-
-            }
-            break;
-
-        case "emq":
-            if (load == true) {
-
-                i = 0;
-                $(".emq-select-box").each(function(index, option) {
-                    $(option).val(e["answer"][i]);
-                    i = i+1;
-                });
-
-
-            }
-
-            var answers = [];
-            var correct = [];
-            var n_correct = 0;
-            $(".emq-question").each(
-                function(index, option) {
-
-                    select = $(option).children("select");
-
-                    selected_option = select.val();
-                    correct_option = option.getAttribute("data-answer");
-                    feedback = option.getAttribute("data-feedback");
-
-                    // Don't display feedback if none has been defined
-                    if (feedback == null) {
-                        feedback = "";
-                    }
-
-                    select.remove();
-
-                    answers.push(selected_option);
-
-                    if (correct_option == selected_option) {
-                        $(option).append("<br/><span class='emq-answer-feedback correct'>Yeah mate! <b>" + correct_option + "</b> is the right answer<br/>-----------<br/>" + feedback + "</span>");
-                        correct.push("correct")
-                        n_correct = n_correct + 1;
-                    } else {
-                        //$(option).addClass("incorrect");
-                        $(option).append("<br/><span class='emq-answer-feedback incorrect'>Are you joking? <b>" + correct_option + "</b> is the right answer (you said <i>"+selected_option+"</i>)<br/>-----------<br/>" + feedback + "</span>");
-                        correct.push("incorrect")
-                    }
-                }
-            );
-
-            $(".check-button").remove();
-
-
-            // Save answer
-            hash_answer_map[current_question_uid] = { 
-                "type" : "emq",
-                "date" : Date(),
-                "answer" : answers,
-                "correct" : correct,
-                "n_correct" : n_correct
-            }
-            saveAnswersToStorage();
-
-
-            break;
-        case "mba":
-
-            if (load == true) {
-
-                for (i in e['answers']) {
-                    p = e['answers'][i];
-                    checkBestAnswer(p, load);
-                }
-
-            } else {
-
-                var save_answer = false;
-
-                return_value = checkBestAnswer(e, load);
-
-                if (return_value.s) {
-                    mba_answers[return_value.q] = {
-                        "target_id" : return_value.t,
-                        "answer" : return_value.a,
-                        "question_number" : return_value.q
-                    }
-
-                }
-
-                n = $(".answer-list").length;
-
-                if (n == Object.size(mba_answers)) { 
-
-                    hash_answer_map[current_question_uid] = { 
-                        "type" : "mba",
-                        "answers" : mba_answers,
-                        "date" : Date(),
-                    }
-
-                    saveAnswersToStorage();
-
-                } else {
-                    // Don't show feedback until all the questions have been
-                    // attempted
-                    return;
-                }
-            }
-
-            break;
-        case "rank":
-            if (load == true) {
-
-                // If we are loading an answer we clear our answer list
-                // and rebuild it from the saved answer.
-                $("#sortable-list").empty();
-                buildRankList(e['order'], data['answers']);
-            }
-
-            order = [];
-
-            correct_order = data['answer_order'].split("");
-
-            map = {}
-
-            for (i in correct_order) {
-                map[correct_order[i]] = i;
-
-            }
-
-            number_options = correct_order.length;
-
-            var i = 0;
-
-            var neg_marks = 0;
-
-            // Max score is based upon the vumber of options
-            var max_score = 0;
-            for (var x = 1; x < number_options; x++) {
-                max_score = max_score + x;
-            }
-            max_score = max_score + Math.floor(number_options / 2);
-
-            $("#sortable-list li").each(function(index, option) {
-                aid = option.getAttribute("data-option")
-                order.push(aid);
-
-                diff = Math.abs(i - map[aid])
-
-
-                hue = ((number_options - 1) - diff) / (number_options - 1) * 120;
-
-                $(option).css({"background-color": "hsl("+hue+", 100%, 50%)"});
-
-                neg_marks = neg_marks + diff;
-
-                i++;
-
-            });
-
-            score = max_score - neg_marks;
-
-            hue = score / max_score * 120;
-
-            $("#feedback").append("<span style='color: gray'>The current colour scheme probably gives to much of a positive impression (you have to really mess up your order to see red shades) and should therefore probably be given a more negative skew. Any advice or suggestions would be appreciated.</span>");
-            $("#feedback").append("<br />");
-            $("#feedback").append($("<p>Your score: "+score+"/"+max_score+"</p>").css({"background-color": "hsl("+hue+", 100%, 50%)"}));
-            $("#feedback").append("<br />");
-            $("#feedback").append("The correct order is "+correct_order);
-
-            $("#feedback").append(
-                $(document.createElement("ol")).attr({
-                    'id': 'correct-list',
-                    //'class': 'answer-list allow-hover',
-                    'data-answered' : 0
-                })
-            );
-
-            for (item in correct_order) {
-
-                option = correct_order[item];
-
-
-                $("#correct-list").append($(document.createElement("li")).attr({
-                    'id': "correct-answer-"+option,
-                    'data-option': option,
-                    //'class': c,
-                    //'data-question-number': question_number
-                }).text(option + " - " + data['answers'][option]));
-            }
-
-            // Disable the sortable (it may be good to allow multiple attempts)
-            $("#sortable-list").sortable("disable");
-
-            $("#feedback").append("<br />");
-
-            $(".check-button").remove();
-
-            // Save answer
-            hash_answer_map[current_question_uid] = { 
-                "type" : "rank",
-                "date" : Date(),
-                "order" : order,
-                "correct_order" : correct_order,
-                "score" : score,
-                "max_score" : max_score
-            }
-            saveAnswersToStorage();
-
-            break;
-        case "tf":
-            var save_answer = true;
-
-            if (load == true) {
-
-                var save_answer = false;
-
-                $(".tf-answer-block li").each(function (index, option) {
-                    if (e.answer[index] == 1) {
-                        $(option).find(".tf-true").addClass("tf-active");
-                    }
-
-                });
-
-
-            }
-
-            var answers = [];
-            var correct = [];
-            var n_correct = 0;
-            // True / False answers default to false if not selected
-
-            $(".tf-answer-block li").each(function (index, option) {
-
-                a = $(option).find(".tf-active");
-
-                if (a.length > 0 && a[0].textContent == "True") {
-                    answer = 1;
-                    answers.push(1);
-                } else {
-                    $(option).find(".tf-false").addClass("tf-active");
-                    answer = 0;
-                    answers.push(0);
-                }
-
-                if ($(option).hasClass(answer)) {
-                    $(option).addClass("correct");
-                    correct.push("correct");
-                    n_correct = n_correct + 1;
-                } else {
-                    $(option).addClass("incorrect");
-                    correct.push("incorrect");
-                }
-
-
-            });
-
-            $(".tf-answer-block").removeClass("allow-hover").find("*").each(function(index, e) {
-                $(e).off()
-            });
-
-            if (save_answer == true) {
-                hash_answer_map[current_question_uid] = { 
-                    "type" : "tf",
-                    "date" : Date(),
-                    "answer" : answers,
-                    "correct" : correct,
-                    "n_correct" : n_correct
-                }
-                saveAnswersToStorage();
-            }
-
-            $(".check-button").remove();
-
-            break
-    }
-
-
-
-
-    $("#feedback").append("<br />");
-    $("#feedback").append(data['feedback']);
-
-    if (data['external'] !== undefined) {
-        $("#feedback").append("<br />");
-        $("#feedback").append("<p>"+data['external']+"</p>");
-    } 
-
-    if (rebuild_score_list_on_answer) {
-        buildActiveScoreList();
-    }
-}
-
-
-
-function loadQuestion(n) {
-    saveOpenQuestion(n);
-    //question_number = Object.size(filtered_questions);
-    question_number = filtered_questions.length;
-
-    $("#header").empty()
-    $("#main").empty()
-    $("#feedback").empty();
-    $("#question-details").empty();
-
-
-    if (question_number == 0) { 
-        $("#header").append("No questions to show. Refine your filter(s)/search.");
-        return;
-    }
-
-    // Stop trying to load negative questions
-    n = Math.max(0, n);
-    n = Math.min(question_number-1, n);
-
-
-    // convert n to the hash
-    //qid = n_hash_map[n];
-    qid = filtered_questions[n];
-
-
-    data = questions[qid];
-
-
-    question_type = data['type'];
-
-
-    current_question_uid = qid
-
-    m = n+1;
-
-
-    $("#header").append($(document.createElement("button")).attr({
-        //'type': 'button',
-        'class': 'previous-button',
-        'value': "Previous"
-    }).text("Previous"));
-
-    $("#header").append($(document.createElement("span")).attr({
-        'id': 'header-text'
-    }).text("Question "+m+" of "+(question_number)));
-
-    $("#header").append($(document.createElement("button")).attr({
-        //'type': 'button',
-        'class': 'next-button',
-        'id': 'header-next-button',
-        'value': "Next"
-    }).text("Next"));
-
-    // Set up the question details block
-    $("#question-details").append("Question details...<br />");
-    $("#question-details").append("-------------------<br />");
-    $("#question-details").append("ID: " + qid +"<br />");
-    $("#question-details").append("Type: " + data['type'] +"<br />");
-    $("#question-details").append("Source: " + data['source'] +"<br />");
-    $("#question-details").append("Specialties: " + data['specialty'] +"<br />");
-    $("#question-details").append("Meta: " + data['meta'] +"<br />");
-    $("#question-details").append("Date: " + data['date'] +"<br />");
-
-
-    switch (question_type) {
-        case "sba":
-
-            $("#main").append("<br>").append(data['question']).append("<br>");
-
-
-            appendAnswers(data['answers'], 1);
-
-            break;
-
-        case "emq":
-            $("#main").append($(document.createElement("ol")).attr({
-                'id': 'emq-options',
-            }));
-
-            answer_options = data['emq_options']
-
-            for (n in answer_options) {
-                $("#emq-options").append($(document.createElement("li")).attr({
-                    'class': "emq-option",
-                }).append(answer_options[n]));
-            }
-
-            $("#main").append(data['question']);
-
-
-            $("#main").append($(document.createElement("ol")).attr({
-                'id': 'emq-questions',
-            }));
-
-            answers = data['answers'];
-
-            for (a in answers) {
-
-                selector = $(document.createElement("select")).attr({
-                    "class" : "emq-select-box"
-                });
-
-                // I can't decide if we should allow this flexibility
-                if (answers[a] instanceof Array) {
-                    actual_answer = answers[a][0];
-                    feedback = answers[a][1];
-                } else {
-                    feeback = "";
-                    actual_answer = answers[a];
-                }
-
-
-                $("#emq-questions").append($(document.createElement("li")).attr({
-                    'class': "emq-question",
-                    "data-answer": actual_answer,
-                    "data-feedback": feedback,
-                }).append(a).append(selector));
-
-                selector.append(
-                    $(document.createElement("option")).attr('value', "null").text("--Select--")
-                );
-
-                $(answer_options).each(function (index, op) { selector.append(
-                    $(document.createElement("option")).attr('value', op).append(op)) }
-                );
-
-            }
-
-            $("#main").append(
-                $(document.createElement("button")).attr({
-                    //'type': 'button',
-                    'class': 'check-button',
-                    'value': "Check Answers",
-                }).text("Check Answers").click(checkAnswer)
-            );
-
-            break;
-
-        case "mba":
-
-            mba_answers = {};
-
-            $("#main").append("<br>").append(data['background']).append("<br>");
-
-
-            for (i in data['question']) {
-                $("#main").append("<br>").append(data['question'][i]).append("<br>");
-
-                appendAnswers(data['answers'][i], i);
-            }
-
-
-            break
-
-        case "rank":
-            $("#main").append("<br>").append(data['question']).append("<br>");
-
-            answers = data['answers'];
-            $("#main").append(
-                $(document.createElement("ol")).attr({
-                    'id': 'sortable-list',
-                    //'class': 'answer-list allow-hover',
-                    'data-answered' : 0
-                })
-            );
-
-
-            var options = Object.keys(answers);
-
-            options.sort();
-
-            buildRankList(options, answers);
-
-            $("#sortable-list").sortable();
-
-            $("#main").append("<br />");
-
-            $("#main").append(
-                $(document.createElement("button")).attr({
-                    //'type': 'button',
-                    'class': 'check-button',
-                    'value': "Check Answers"
-                }).text("Check Answers").click(checkAnswer)
-            );
-
-            break;
-
-        case "tf":
-            $("#main").append("<br>").append(data['question']).append("<br>");
-
-            answers = data['answers'];
-
-            $("#main").append(
-                $(document.createElement("ol")).attr({
-                    'id': 'question-'+question_number+'-answers',
-                    'class': 'tf-answer-block answer-list allow-hover',
-                    'data-answered' : 0
-                })
-            );
-
-
-            var options = Object.keys(answers);
-
-            var ordered = false;
-
-            tf = "<span class='tf-answer-options'><span class='tf-true'>True</span> / <span class='tf-false'>False</span></span>";
-
-            // Test if it is an ordered list
-            if (options[0].substring(0, 2).match(/[A-Z]\./i)) {
-                options.sort();
-                // If it is we must maintain the order. Otherwise
-                // we can randomise it. (NOT YET IMPLEMENTED)
-                ordered = true;
-            }
-
-            i = 0;
-            for (n in options) {
-                a = options[n];
-
-                c = answers[a];
-                if (ordered) { 
-                    c = c + " alpha-list"; 
-                    a = options[n].substring(2);
-
-                }
-
-                $("#question-"+question_number+"-answers").append($(document.createElement("li")).attr({
-                    'id': "q" + question_number + "a" + i,
-                    'class': c,
-                    'data-question-number': question_number
-                }).append(a).append(tf).click(function(e) {
-                    if ($(e.currentTarget).find(".tf-active").length > 0) {
-                        $(e.currentTarget).find(".tf-true, .tf-false").toggleClass("tf-active");
-
-                    } else { 
-                        $(e.currentTarget).find(".tf-true").addClass("tf-active");
-                    }
-                }));
-                i = i + 1;
-            }
-
-            $(".tf-true, .tf-false").off().click(function(e) {
-                $(e.currentTarget.parentNode).children().removeClass("tf-active");
-                $(e.currentTarget).addClass("tf-active");
-                e.stopPropagation();
-            });
-
-            $("#main").append("<br />");
-
-            $("#main").append(
-                $(document.createElement("button")).attr({
-                    //'type': 'button',
-                    'class': 'check-button',
-                    'value': "Check Answers"
-                }).text("Check Answers").click(checkAnswer)
-            );
-
-            break;
-
-
-        default:
-
-            $("#main").append("QUESTION TYPE NOT IMPLEMENTED YET!<br/><br/>"+question_type);
-
-            break;
-    }
-
-
-    $("#main").append(
-        $(document.createElement("button")).attr({
-            //'type': 'button',
-            'class': 'next-button',
-            'label': "Next",
-            'value': "Next",
-        }).text("Next")
-    );
-
-    $(".previous-button").off();
-    $(".previous-button").each(function(index, e) {
-        $(e).click(previousQuestion)
-    });
-
-    $(".next-button").off();
-    $(".next-button").each(function(index, e) {
-        $(e).click(nextQuestion)
-    });
-
-
-    if (hash_answer_map.hasOwnProperty(qid) && auto_load_previous_answers) {
-        checkAnswer(hash_answer_map[qid], true);
-        //switch(question_type) {
-            //    case "sba":
-                //        checkAnswer(hash_answer_map[qid], true);
-                //        break
-                //}
-    }
-
-    scrollTo(0, $("#content").position().top);
-
-}
-
-function buildRankList(options, answers) {
-
-    for (var i = 0; i < options.length; i++) {
-        option = options[i];
-
-        //c = answers[n];
-
-        $("#sortable-list").append($(document.createElement("li")).attr({
-            'id': "answer-"+option,
-            'data-option': option,
-            //'class': c,
-            //'data-question-number': question_number
-        }).text(option + " - " + answers[option]));
-    }
-}
-
-function appendAnswers(answers, question_number) {
-    //$("#main").append("<ol id='question-1-answers' class='answer-list'>");
-    $("#main").append(
-        $(document.createElement("ol")).attr({
-            'id': 'question-'+question_number+'-answers',
-            'class': 'answer-list allow-hover',
-            'data-answered' : 0
-        })
-    );
-
-
-    var options = Object.keys(answers);
-
-    var ordered = false;
-
-    // Test if it is an ordered list
-    if (options[0].substring(0, 2).match(/[A-Z]\./i)) {
-        options.sort();
-        // If it is we must maintain the order. Otherwise
-        // we can randomise it. (NOT YET IMPLEMENTED)
-        ordered = true;
-    }
-
-    i = 0;
-    for (n in options) {
-        a = options[n];
-
-        c = answers[a];
-        if (ordered) { 
-            c = c + " alpha-list"; 
-            a = options[n].substring(2);
-
-        }
-
-        $("#question-"+question_number+"-answers").append($(document.createElement("li")).attr({
-            'id': "q" + question_number + "a" + i,
-            'class': c,
-            'data-question-number': question_number
-        }).append("<div>"+a+"</div>").click(checkAnswer));
-        i = i + 1;
-    }
-
-    $("#main").append("<br />");
-
-}
 
 function previousQuestion(e) {
     if (e && e.shiftKey) {
@@ -1498,7 +1063,7 @@ function searchObject(o, search_str) {
 
 function saveAnswersAsFile()
 {
-    var textToWrite = JSON.stringify(hash_answer_map);
+    var textToWrite = JSON.stringify({"answers":hash_answer_map, "flagged_questions":[...flagged_questions]});
     var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
     var fileNameToSaveAs = "answers";
 
@@ -1523,3 +1088,99 @@ function saveAnswersAsFile()
 
     downloadLink.click();
 }
+
+function similarity(s1, s2, toLower=true, stripWhitespace=true) {
+
+if (toLower == true) {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+}
+
+if (stripWhitespace) {
+    s1 = s1.replace(/ /g, "");
+    s2 = s2.replace(/ /g, "");
+
+}
+  var longer = s1;
+  var shorter = s2;
+  if (s1.length < s2.length) {
+    longer = s2;
+    shorter = s1;
+  }
+  var longerLength = longer.length;
+  if (longerLength == 0) {
+    return 1.0;
+  }
+  return (longerLength - editDistance(longer, shorter)) / parseFloat(longerLength);
+}
+
+function editDistance(s1, s2) {
+  s1 = s1.toLowerCase();
+  s2 = s2.toLowerCase();
+
+  var costs = new Array();
+  for (var i = 0; i <= s1.length; i++) {
+    var lastValue = i;
+    for (var j = 0; j <= s2.length; j++) {
+      if (i == 0)
+        costs[j] = j;
+      else {
+        if (j > 0) {
+          var newValue = costs[j - 1];
+          if (s1.charAt(i - 1) != s2.charAt(j - 1))
+            newValue = Math.min(Math.min(newValue, lastValue),
+              costs[j]) + 1;
+          costs[j - 1] = lastValue;
+          lastValue = newValue;
+        }
+      }
+    }
+    if (i > 0)
+      costs[s2.length] = lastValue;
+  }
+  return costs[s2.length];
+}
+
+function dynamicSort(property) {
+    var sortOrder = 1;
+    if(property[0] === "-") {
+        sortOrder = -1;
+        property = property.substr(1);
+    }
+    return function (a,b) {
+        var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+        return result * sortOrder;
+    }
+}
+
+function createRemoteStoreButtonIfRequired() {
+console.log("START")
+    if (($("#save-remote-data-button").length == 0) && (remote_store) && (remote_store_synced == false)) {
+console.log("GO")
+        $("#header-next-button").after($(document.createElement("button")).attr({ 'id': "save-remote-data-button" }).text("Save answers to Google").click(function () { document.getElementById("remote-frame").contentWindow.saveRemoteAnswers();}))
+    }
+
+}
+
+function loadRemoteServer() {
+$("body").append('<iframe id="remote-frame" src="gapp.html">');
+$("#load-remote-server-button").remove();
+}
+
+function toggleFlagged() {
+    console.log("TEST, fl");
+
+    if (flagged_questions.has(current_question_uid)) {
+        $("#flagged-button").text("NOT FLAGGED");
+        flagged_questions.delete(current_question_uid);
+        toastr.info("Question unflagged.")
+    } else {
+        $("#flagged-button").text("FLAGGED");
+        console.log("add", current_question_uid)
+        flagged_questions.add(current_question_uid);
+        toastr.info("Question flagged.")
+    }
+    saveFlaggedQuestions();
+    remote_store_synced = false;
+}
+

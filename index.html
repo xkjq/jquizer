@@ -3,41 +3,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link href="lib/toastr.min.css" rel="stylesheet">
 <link href="style.css" rel="stylesheet">
+<link href="dark.css" id="dark-css" rel="stylesheet">
+<link href="light.css" id="light-css" rel="stylesheet" disabled=true>
 <link media="only screen and (max-width:400px)" href="mobile.css" rel="stylesheet">
 
+<script type="text/javascript" src="lib/dwv/i18next.min.js"></script>
 <script type="text/javascript" src="lib/jquery-2.0.2.min.js"></script>
 <script type="text/javascript" src="lib/lawnchair-0.6.1.min.js"></script>
 <script type="text/javascript" src="lib/toastr.min.js"></script>
 <script type="text/javascript" src="lib/jquery.sortable.js"></script>
 <script type="text/javascript" src="lib/jquery.touchSwipe.min.js"></script>
+<script type="text/javascript" src="lib/dwv/dwv.min.js"></script>
+<script type="text/javascript" src="lib/dwv/appgui.js"></script>
 <script type="text/javascript" src="lib/fastbutton.js"></script>
+<script type="text/javascript" src="lib/diff.js"></script>
 <script type="text/javascript" src="fileload.js"></script>
+<script type="text/javascript" src="distinct_words.js"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX", "output/HTML-CSS"],
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+<script type="text/javascript"
+   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js">
+</script>
 <script type="text/javascript" src="s.js"></script>
+<script type="text/javascript" src="loadQuestion.js"></script>
+<script type="text/javascript" src="checkAnswer.js"></script>
 
 </head>
 <body class"use-fastclick">
 <div id="about-toggle">/<a href="#"><button>?</button></a></div>
 <div id="score-toggle">/<a href="#"><button>(score)</button></a></div>
 <div id="question-details-toggle">/<a href="#"><button>(question)</button></a></div>
+<div id="load-remote-server-button">/<button type="button">Use Gapps</button></div>
 <div id="filter-toggle"><button type="button">+/- (options)</button></div>
 <div id="filters">
+<button id="toggle-css" type="button">Toggle light / dark colourscheme</button>
 <h4>Filter options:</h4>
 <div id="source-filters">Source</div>
 <div id="specialty-filters">Specialty</div>
 <div id="goto-question">
 <form id="search-form">
 <input type="text" id="search-input" /> 
-<button type="submit" id="search-button" title="Search questions. Note this search uses regexs">Search</button>
+<a href="#"><button type="button" id="search-button" title="Search questions. Note this search uses regexs">Search</button></a>
 </form>
 <form>
 <input type="text" id="goto-question-input" /> 
 <button id="goto-question-button" type="button">Goto question</button>
+<button id="goto-question-hide-button" type="button">+ hide</button>
 </form>
 <input type="checkbox" id="show-answered-questions-button">Hide previously answered questions</input>
+<input type="checkbox" id="show-only-flagged-questions-button">Hide questions that have not been flagged</input>
+<input type="checkbox" id="auto-load-previous-answers-button" checked>Automatically load previous answers</input>
 <hr />
 <button type="button" id="delete-answers-button">Delete Answers</button>
 <button type="button" id="save-answers-button">Save Answers (locally)</button>
 <br />
+<hr />
 <h4>Load (local) answers:</h4>
 <input type="file" id="answers-file" name="file" />
 <button onclick="abortRead();">Cancel read</button>
@@ -52,6 +83,13 @@
 <button onclick="abortRead();">Cancel read</button>
 <div id="progress_bar"><div class="percent">0%</div></div>
 </div>
+<hr />
+<button type="submit" id="unload-questions-button" title="Unload all questions">Unload Questions</button>
+<hr />
+<div id="extra-questions">
+</div>
+<hr />
+<button type="submit" id="hide-options-button" title="Hide options">Hide Options</button>
 </div>
 <div id="question-details">
 Details about the current question...
@@ -157,5 +195,7 @@ Source code will be going on bitbucket/github at some point in the future. In th
 </div>
 <div id="feedback"> </div>
 </div>
+
+<!--<iframe id="remote-frame" src="test.html"></iframe>-->
 </body>
 </html>
