@@ -226,6 +226,10 @@ $(document).ready(function() {
             resetAnswers();
         });
 
+        $("#use-dwv-button").click(function() {
+            use_dwv_as_image_viewer = false;
+        });
+
         $("#save-answers-button").click(function() {
             saveAnswersAsFile();
         });
@@ -1184,3 +1188,9 @@ function toggleFlagged() {
     remote_store_synced = false;
 }
 
+function stopAnswersAutoloading() {
+    for (qid in hash_answer_map) {
+        console.log(qid);
+        hash_answer_map[qid].slice(-1)[0]["autoload"] = false;
+    }
+}

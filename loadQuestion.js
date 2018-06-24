@@ -8,7 +8,6 @@ function loadQuestion(n) {
     $("#feedback").empty();
     $("#question-details").empty();
 
-
     if (question_number == 0) { 
         $("#header").append("No questions to show. Refine your filter(s)/search or load more questions.");
         return;
@@ -266,11 +265,27 @@ $("#main").append("<div class='dwv-container'></div>");
 //                });
 //            }
 //
-$("#main").append("<div class='dwv-container'></div>");
-        loadDWV(data["images"]);
-            $(".dwv-container").append("<span class='float-image-text'>")
-            $(".float-image-text").append(data['question'])
+//$("#main").append("<div class='dwv-container'></div>");
+//        loadDWV(data["images"]);
+//            $(".dwv-container").append("<span class='float-image-text'>")
+//            $(".float-image-text").append(data['question'])
         
+            if (use_dwv_as_image_viewer) {
+                $("#main").append("<div class='dwv-container'></div>");
+                loadDWV(data["images"]);
+                $(".dwv-container").append("<span class='float-image-text'>")
+                $(".float-image-text").append(data['question'])
+            } else {
+                $("#main").append("<br>").append(data['question']).append("<br>");
+
+                if (data['images'] != undefined) {
+                    data['images'].forEach(function(img) {
+                        $("#main").append($(document.createElement("img")).attr({
+                            "src": img,
+                        }));
+                    });
+                }
+            }
 
             answers = data['answers'];
 
@@ -507,7 +522,10 @@ $("#main").append("<div class='dwv-container'></div>");
 
 
     if (hash_answer_map.hasOwnProperty(qid) && auto_load_previous_answers) {
-        checkAnswer(hash_answer_map[qid].slice(-1)[0], true);
+        ans = hash_answer_map[qid].slice(-1)[0];
+        if ((!ans.hasOwnProperty("autoload")) || (ans["autoload"] == true)) {
+            checkAnswer(ans, true);
+        }
         //switch(question_type) {
             //    case "sba":
                 //        checkAnswer(hash_answer_map[qid], true);

@@ -308,7 +308,7 @@ $("#answer input").val(e["answer"])
                         best_sim = -1
                     }
 
-                    if (((best_answer.toLowerCase().indexOf(value) != -1) && (a.toLowerCase().indexOf(key) != -1)) && (best_answer.toLowerCase().indexOf(value) == -1)) {
+                    if (((best_answer.toLowerCase().indexOf(value) != -1) && (a.toLowerCase().indexOf(key) != -1)) && (best_answer.toLowerCase().indexOf(key) == -1)) {
                         best_sim = -1
                     }
 
@@ -325,25 +325,26 @@ $("#answer input").val(e["answer"])
 
                 });
             }
-                    // Display a colour diff for similar answers
-                    if (best_sim < 1 && best_sim > min_colour_diff) {
-                        diff = JsDiff.diffChars(a.toLowerCase(), best_answer.toLowerCase());
-                        fragment = document.createDocumentFragment();
-                        span = null;
-                        diff.forEach(function(part){
-                            // green for additions, red for deletions
-                            // grey for common parts
-                            color = part.added ? 'green' :
-                              part.removed ? 'red' : 'grey';
-                            span = document.createElement('span');
-                            span.style.color = color;
-                            span.appendChild(document
-                                .createTextNode(part.value));
-                            fragment.appendChild(span);
-                        });
-                        $("#answer").append(fragment);
 
-                    }
+            // Display a colour diff for similar answers
+            if (best_sim < 1 && best_sim > min_colour_diff) {
+                diff = JsDiff.diffChars(a.toLowerCase(), best_answer.toLowerCase());
+                fragment = document.createDocumentFragment();
+                span = null;
+                diff.forEach(function(part){
+                    // green for additions, red for deletions
+                    // grey for common parts
+                    color = part.added ? 'green' :
+                      part.removed ? 'red' : 'grey';
+                    span = document.createElement('span');
+                    span.style.color = color;
+                    span.appendChild(document
+                        .createTextNode(part.value));
+                    fragment.appendChild(span);
+                });
+                $("#answer").append(fragment);
+
+            }
 
             replaced_lower_case_answer = best_answer.toLowerCase().replace("left", "").replace("right", "")
             $("#main").append($(document.createElement("span")).attr({
@@ -690,8 +691,8 @@ $("#answer input").val(e["answer"])
 
 
 
+    $("#feedback").prepend(data['feedback']);
     $("#feedback").append("<br />");
-    $("#feedback").append(data['feedback']);
 
     if (data['external'] !== undefined) {
         $("#feedback").append("<br />");
@@ -782,7 +783,7 @@ function loadHelpImages(correct_answers) {
     // It works...
     correct_answers.forEach(function(option) {
 
-        ans = $.trim(option.toLowerCase().replace("left", "").replace("right", "").replace("the", "").replace("  ", ""));
+        ans = $.trim(option.toLowerCase().replace("tendon", "").replace("muscle", "").replace("left", "").replace("right", "").replace("the", "").replace("  ", ""));
         if (help_image_map.hasOwnProperty(ans)) {
             help_image_map[ans].forEach(function(i) {
                 help_image_set.add(i)

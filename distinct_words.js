@@ -13,6 +13,7 @@ var wordlist = {
     "metatarsal": "metacarpal",
     "internus": "externus",
     "superior": "inferior",
+    "longus": "brevis",
     "c1": "c2",
     "c2": "c3",
     "c3": "c4",
