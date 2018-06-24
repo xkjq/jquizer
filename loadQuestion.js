@@ -20,10 +20,9 @@ function loadQuestion(n) {
 
     // convert n to the hash
     //qid = n_hash_map[n];
-    qid = filtered_questions[n];
+    data = getQuestionDataByNumber(n);
 
 
-    data = questions[qid];
 
 
     question_type = data['type'];
@@ -543,6 +542,27 @@ $("#main").append("<div class='dwv-container'></div>");
     }
     MathJax.Hub.Queue(["Typeset",MathJax.Hub,"MathExample"]);
     createRemoteStoreButtonIfRequired();
+
+
+    // Preload images for the next N questions
+    // (N = preload_images value)
+    x = 1
+    while(x <= preload_images) {
+        data = getQuestionDataByNumber(n + x);
+
+        if (data.hasOwnProperty("images")) {
+            data['images'].forEach(function(img) {
+                setTimeout(function() {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', img);
+                    xhr.send('');
+                }, 1000);
+            });
+
+        }
+
+        x = x + 1;
+    }
 
 }
 

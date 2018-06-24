@@ -75,6 +75,8 @@ var similarity_limit = 0.8;
 
 var use_dwv_as_image_viewer = true;
 
+var preload_images = 5;
+
 dwv.gui.getElement = dwv.gui.base.getElement;
 dwv.gui.displayProgress = function (percent) {};
 
@@ -1020,10 +1022,10 @@ function loadFilters() {
 
 }
 
-
-
-
-
+function getQuestionDataByNumber(n) {
+    qid = filtered_questions[n];
+    return questions[qid];
+}
 
 
 function previousQuestion(e) {
