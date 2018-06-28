@@ -1,3 +1,4 @@
+var dwvapp = [];
 function loadQuestion(n) {
     saveOpenQuestion(n);
     //question_number = Object.size(filtered_questions);
@@ -568,13 +569,15 @@ $("#main").append("<div class='dwv-container'></div>");
 
 function loadDWV(images) {
             if (images != undefined) {
-$(".dwv-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div class="toolbar"></div> <!-- Layer Container --> <div class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> </div><!-- /layerContainer --> </div><!-- /dwv -->'));
+$(".dwv-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div class="toolbar"></div> <!-- Layer Container --> <div class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'));
 
             //setTimeout(function (){
             console.log("T")
             var app = new dwv.App();
+            dwvapp = app;
             //DEBUG
-var listener = function (event) { console.log("event: "+event.type); };
+var listener = function (event) { console.log("event: "+event.type);
+console.log(event)};
 app.addEventListener("wl-width-change", listener);
 app.addEventListener("wl-center-change", listener);
             app.init({
@@ -582,8 +585,10 @@ app.addEventListener("wl-center-change", listener);
                 "fitToWindow": true,
                 "isMobile": true,
                 "gui": ["tool"],
-                "tools" : ["WindowLevel", "ZoomAndPan"], // or try "ZoomAndPan"
+                "filters": ["Threshold", "Sharpen", "Sobel"],
+                "tools" : ["Scroll", "WindowLevel", "ZoomAndPan"], // or try "ZoomAndPan"
             });
+
 
                 
                 app.loadURLs(images);
