@@ -126,6 +126,8 @@ function loadData(data, textStatus) {
     //filtered_questions = data;
     setUpFilters();
 
+    buildActiveScoreList();
+
 }
 
 
