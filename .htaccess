@@ -1,8 +1,0 @@
-Order deny,allow
-Deny from all
-AuthType Basic
-AuthName "quiz"
-AuthUserFile "/volume1/web/passwd"
-require valid-user
-Allow from 82.69.88.125 217.155.198.96
-Satisfy Any
