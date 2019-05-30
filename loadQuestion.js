@@ -197,7 +197,7 @@ function loadQuestion(n) {
             //}
 $("#main").append("<div class='dwv-container'></div>");
         loadDWV(data["images"]);
-            $(".dwv-container").append("<br>").append(data['question']).append("<br>");
+            $(".dwv-container").append("").append(data['question']).append("");
 
 
             answers = data['answers'];
@@ -209,8 +209,12 @@ $("#main").append("<div class='dwv-container'></div>");
 
             options.sort();
 
+            $("#main").append($(document.createElement("div")).attr({
+                'id': 'answer-block',
+            }));
+
             //buildRankList(options, answers);
-            $("#main").append($(document.createElement("span")).attr({
+            $("#answer-block").append($(document.createElement("span")).attr({
                 'id': "answer",
                 //'data-option': option,
                 'data-answer': answers,
@@ -224,7 +228,7 @@ $("#main").append("<div class='dwv-container'></div>");
 
             //$("#sortable-list").sortable();
 
-            $("#main").append("<br />");
+            $("#answer-block").append("<br />");
 
 
             function submitNormal() {
@@ -232,7 +236,7 @@ $("#main").append("<div class='dwv-container'></div>");
                 checkAnswer();
             }
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'id': 'normal-button',
@@ -240,7 +244,7 @@ $("#main").append("<div class='dwv-container'></div>");
                 }).text("Normal").click(submitNormal)
             );
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'class': 'check-button',
@@ -295,8 +299,12 @@ $("#main").append("<div class='dwv-container'></div>");
 
             options.sort();
 
+            $("#main").append($(document.createElement("div")).attr({
+                'id': 'answer-block',
+            }));
+
             //buildRankList(options, answers);
-            $("#main").append($(document.createElement("span")).attr({
+            $("#answer-block").append($(document.createElement("span")).attr({
                 'id': "answer",
                 //'data-option': option,
                 'data-answer': answers,
@@ -309,9 +317,9 @@ $("#main").append("<div class='dwv-container'></div>");
 
             //$("#sortable-list").sortable();
 
-            $("#main").append("<br />");
+            //$("#answer-block").append("<br />");
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'class': 'check-button',
@@ -319,7 +327,7 @@ $("#main").append("<div class='dwv-container'></div>");
                 }).text("Check Answer").click(checkAnswer)
             );
 
-            $("#main input").focus().on("keyup", function(e) {
+            $("#answer-block").focus().on("keyup", function(e) {
                 if (e.keyCode == 13) {
                     $(".check-button").click()
                     }});
@@ -376,7 +384,7 @@ $("#main").append("<div class='dwv-container'></div>");
 
             //$("#sortable-list").sortable();
 
-            $("#main").append("<br />");
+            $("#answer-block").append("<br />");
 
             $("#main").append(
                 $(document.createElement("button")).attr({
@@ -491,8 +499,7 @@ $("#main").append("<div class='dwv-container'></div>");
             break;
     }
 
-
-    $("#main").append(
+    $("#answer-block").append(
         $(document.createElement("button")).attr({
             //'type': 'button',
             'id': 'lower-next-button',
@@ -512,7 +519,8 @@ $("#main").append("<div class='dwv-container'></div>");
         $(e).click(nextQuestion)
     });
 
-    $("#lower-next-button").after($("<button id='flagged-button'>").click(function(qid) { toggleFlagged(); }));
+    $("#answer-block").after($("<button id='flagged-button'>").click(function(qid) { toggleFlagged(); }));
+
     if (flagged_questions.has(current_question_uid)) {
         $("#flagged-button").text("FLAGGED");
         } else {
@@ -568,38 +576,65 @@ $("#main").append("<div class='dwv-container'></div>");
 }
 
 function loadDWV(images) {
-            if (images != undefined) {
-$(".dwv-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div class="toolbar"></div> <!-- Layer Container --> <div class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'));
+    if (images != undefined) {
+        $(".dwv-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div id="dwv-toolbar-container"><div id="dwv-toolbar" class="toolbar"></div> <input type="range" id="sliceRange" value="0"></div><!-- Layer Container --> <div id="dwv-layerContainer" class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'));
 
-            //setTimeout(function (){
-            console.log("T")
-            var app = new dwv.App();
-            dwvapp = app;
-            //DEBUG
-var listener = function (event) { console.log("event: "+event.type);
-console.log(event)};
-app.addEventListener("wl-width-change", listener);
-app.addEventListener("wl-center-change", listener);
-            app.init({
-                "containerDivId": "dwv",
-                "fitToWindow": true,
-                "isMobile": true,
-                "gui": ["tool"],
-                "filters": ["Threshold", "Sharpen", "Sobel"],
-                "tools" : ["Scroll", "WindowLevel", "ZoomAndPan"], // or try "ZoomAndPan"
-            });
+        var app = new dwv.App();
+        dwvapp = app;
+        //DEBUG
+        var listenerWL = function (event) { 
+            console.log("event: "+event.type);
+            console.log(event);
+            $(".infotc").text(event.wc);
+        };
+        app.addEventListener("wl-width-change", listenerWL);
+        //app.addEventListener("wl-center-change", listener);
+        app.init({
+
+            "containerDivId": "dwv",
+            "fitToWindow": true,
+            "isMobile": true,
+            "gui": ["tool"],
+            "filters": ["Threshold", "Sharpen", "Sobel"],
+            "tools" : ["Scroll", "WindowLevel", "ZoomAndPan"], // or try "ZoomAndPan"
+        });
 
 
-                
-                app.loadURLs(images);
-            dwv.gui.appendResetHtml(app);
 
+
+        var range = document.getElementById("sliceRange");
+        range.min = 0;
+        app.addEventListener("load-end", function () {
+            range.max = app.getImage().getGeometry().getSize().getNumberOfSlices() - 1;
+
+            if (range.max == 0) {
+                $(range).hide();
+            }
+        });
+        app.addEventListener("slice-change", function () {
+            range.value = app.getViewController().getCurrentPosition().k;
+        });
+        range.oninput = function () {
+            var pos = app.getViewController().getCurrentPosition();
+            pos.k = this.value;
+            app.getViewController().setCurrentPosition(pos);
+        }
+
+        try {
+        app.abortLoad();
+        app.reset();
+        app.loadURLs(images);
+        } catch (error) {
+        toastr.error(error.message);
+
+        }
+        dwv.gui.appendResetHtml(app);
     //}, 0);
     //$(".layerContainer").height(size.height - 150);
     //$(".imageLayer").height(size.height - 100);
     //$(".layerContainer").width(size.width);
-            }
-            }
+    }
+}
  
 function appendAnswers(answers, question_number) {
     //$("#main").append("<ol id='question-1-answers' class='answer-list'>");

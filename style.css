@@ -1,7 +1,11 @@
+#header {
+    /*float: right;*/
+}
+
 
 #content {
     /*min-width: 200px;*/
-    max-width: 800px;
+    /*max-width: 800px;*/
     /*width: 500;*/
     /*resize: horizontal;
     overflow: auto;
@@ -17,13 +21,39 @@
     display: block;
 }
 
+#dwv-toolbar-container {
+}
+
+.dwv-container {
+    float: left;
+    display: inline-block;
+}
+
+#answer-block {
+    display: inline-block;
+    max-width: 800px;
+}
+
+#feedback {
+    display: inline-block;
+    max-width: 800px;
+}
+
 ol.answer-list {
     display: inline-block;
     }
 
+#lower-buttons {
+    clear: both
+}
+
 .answer-list li {
     padding: 6px;
     margin: 2px;
+}
+
+#flagged-button {
+    display: block;
 }
 
 .answer-list.allow-hover li:hover {
@@ -123,6 +153,12 @@ li.alpha-list {
     display: none;
     */
     clear: right;
+    width: 80px;
+}
+
+#score-list {
+    padding-inline-start: 1px;
+    display: inline;
 }
 
 #about {

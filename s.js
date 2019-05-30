@@ -544,7 +544,7 @@ function buildActiveScoreList() {
 
         type = answer['type'];
 
-        var n = i+1; // The question number is starts from 1
+        var n = i+1; // The question number starts from 1
 
         switch (type)
         {

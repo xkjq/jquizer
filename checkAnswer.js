@@ -163,15 +163,20 @@ $("#answer input").val(e["answer"])
 
             $("#answer input").attr("disabled", "disabled");
 
+            $("#answer-block").append($(document.createElement("br")));
+
+            correct = false;
+
             if (is_normal == "true") {
                     // Correct normal
                     if (a.toLowerCase() == "normal" || a == "") {
                     $("#answer").addClass("correct");
+                    correct = true;
                         
                     } else {
                     // Overcall
                     $("#answer").addClass("incorrect");
-                $("#main").append($(document.createElement("span")).attr({
+                $("#answer-block").append($(document.createElement("span")).attr({
                     "class": "answer-overcall",
                     }).text("It's normal!"));
                     } 
@@ -181,7 +186,7 @@ $("#answer input").val(e["answer"])
 
                     if (a.toLowerCase() == "normal" || a == "") {
             $("#answer").addClass("incorrect");
-                $("#main").append($(document.createElement("span")).attr({
+                $("#answer-block").append($(document.createElement("span")).attr({
                     "class": "answer-undercall",
                     }).text("Incorrect - "+correct_answers[0]));
 
@@ -201,7 +206,7 @@ $("#answer input").val(e["answer"])
 
             replaced_lower_case_answer = best_answer.toLowerCase().replace("left", "").replace("right", "")
 
-            $("#main").append($(document.createElement("span")).attr({
+            $("#answer-block").append($(document.createElement("span")).attr({
                     "class": "label-correct-answer-text",
                     }).text(best_answer).append($(document.createElement("span")).attr({
                     "class": "label-similarity",
@@ -217,7 +222,6 @@ $("#answer input").val(e["answer"])
 
 
 
-            correct = false;
             if (best_sim >= similarity_limit) {
                 $("#answer").addClass("correct");
                 $("#answer").addClass("similarity-correct");
@@ -225,10 +229,10 @@ $("#answer input").val(e["answer"])
                 correct = true;
             } else {
 
-            $("#answer").addClass("incorrect");
+                $("#answer").addClass("incorrect");
             }
             }
-            $("#main").append($(document.createElement("p")).attr({
+            $("#answer-block").append($(document.createElement("p")).attr({
                     "id" : "acceptable-answers",
                     }).text("Acceptable answers: "));
             correct_answers.forEach(function(option) {
@@ -347,7 +351,7 @@ $("#answer input").val(e["answer"])
             }
 
             replaced_lower_case_answer = best_answer.toLowerCase().replace("left", "").replace("right", "")
-            $("#main").append($(document.createElement("span")).attr({
+            $("#answer-block").append($(document.createElement("span")).attr({
                     "class": "label-correct-answer-text",
                     }).text(best_answer).append($(document.createElement("span")).attr({
                     "class": "label-similarity",
@@ -361,7 +365,7 @@ $("#answer input").val(e["answer"])
                     "class": "imaios-answer",
                     }).text("I")));
 
-            $("#main").append($(document.createElement("p")).attr({
+            $("#answer-block").append($(document.createElement("p")).attr({
                     "id" : "acceptable-answers",
                     }).text("Acceptable answers: "));
             correct_answers.forEach(function(option) {
