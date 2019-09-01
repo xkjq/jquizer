@@ -436,7 +436,7 @@ function loadAnswers(answers) {
             }
         console.log(hash_answer_map);
         }
-        toastr.info(answers.length + " answers loaded.");
+        toastr.info(Qbject.keys(myArray).length + " answers loaded.");
     }
 }
 
@@ -533,6 +533,12 @@ function buildActiveScoreList() {
 
         }
     }
+
+    // If no answered questions loaded break;
+    if (filtered_answers.length < 1) {
+        $("#score-percent").empty().append("No questions answered.");
+        return
+        }
 
 
     filtered_answers.sort(function(a,b) { return a-b });
@@ -668,6 +674,7 @@ function buildActiveScoreList() {
 
 
     }
+
 
     // Calculate users overall score
     percent = questions_correct/questions_answered*100;

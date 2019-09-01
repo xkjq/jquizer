@@ -159,7 +159,7 @@ $("#answer input").val(e["answer"])
 
 
 
-            a = $("#answer input").val();
+            a = $("#answer input").val().trim();
 
             $("#answer input").attr("disabled", "disabled");
 
