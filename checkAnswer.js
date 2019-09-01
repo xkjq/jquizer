@@ -159,7 +159,7 @@ $("#answer input").val(e["answer"])
 
 
 
-            a = $("#answer input").val().trim();
+			            a = $("#answer input").val().trim();
 
             $("#answer input").attr("disabled", "disabled");
 
@@ -756,6 +756,20 @@ function checkBestAnswer(e, load) {
     $("#question-"+question_number+"-answers").removeClass("allow-hover").children().each(function(index, e) {
         $(e).off();
     });
+
+    // Add search links to answers
+    $(".answer-list li").each(function(ind) {
+                    text = $(this).text();
+                    $(this).append($(document.createElement("a")).attr({
+                        "href": "https://www.google.com/search?q="+text,
+                        "target": "newtab",
+                        "class": "google-answer answer-link",
+                    }).text("G")).append($(document.createElement("a")).attr({
+                        "href": "https://radiopaedia.org/search?q="+text,
+                        "target": "newtab",
+                        "class": "imaios-answer answer-link",
+                    }).text("R"))});
+
 
     return { 
         t: target_id, 

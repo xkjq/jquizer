@@ -413,3 +413,12 @@ input {
     text-shadow: 0 1px 0 #000; }
 .infobr { position: absolute; bottom: 0; right: 0; text-align: right;
     text-shadow: 0 1px 0 #000; }
+
+.answer-link {
+    opacity: 0;
+}
+
+.answer-list li:hover .answer-link {
+    opacity: 1;
+    color: blue;
+}
