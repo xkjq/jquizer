@@ -759,16 +759,35 @@ function checkBestAnswer(e, load) {
 
     // Add search links to answers
     $(".answer-list li").each(function(ind) {
-                    text = $(this).text();
-                    $(this).append($(document.createElement("a")).attr({
-                        "href": "https://www.google.com/search?q="+text,
-                        "target": "newtab",
-                        "class": "google-answer answer-link",
-                    }).text("G")).append($(document.createElement("a")).attr({
-                        "href": "https://radiopaedia.org/search?q="+text,
-                        "target": "newtab",
-                        "class": "imaios-answer answer-link",
-                    }).text("R"))});
+        text = $(this).text();
+
+        // Build forms for statdx searches as it uses POST requests
+        $("#main").append($(`
+            <form method="post" action="https://app.statdx.com/search"
+            target="_blank" name="form`+text+`" style="display:none">
+            <input type="hidden" name="startIndex" value="0">
+            <input type="hidden" name="category" value="All">
+            <input type="hidden" name="searchType" value="documents">
+            <input type="hidden" name="documentTypeFilters" value='["all"]'>
+            <input type="hidden" name="searchTerm" value="`+text+`">
+            <input type="submit" value="Open results in a new window"> 
+            </form>
+        `));
+
+        $(this).append($(document.createElement("a")).attr({
+            "href": "https://www.google.com/search?q="+text,
+            "target": "newtab",
+            "class": "google-answer answer-link",
+        }).text("G")).append($(document.createElement("a")).attr({
+            "href": "https://radiopaedia.org/search?q="+text,
+            "target": "newtab",
+            "class": "imaios-answer answer-link",
+        }).text("R")).append($(document.createElement("a")).attr({
+            "href": "https://radiopaedia.org/search?q="+text,
+            "target": "newtab",
+            "class": "imaios-answer answer-link",
+            "onClick": "document.forms['form"+text+"'].submit(); return false;",
+        }).text("S"))});
 
 
     return { 
