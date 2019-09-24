@@ -558,8 +558,9 @@ $("#main").append("<div class='dwv-container'></div>");
     x = 1
     while(x <= preload_images) {
         data = getQuestionDataByNumber(n + x);
+        console.log(data);
 
-        if (data.hasOwnProperty("images")) {
+        if (typeof data !== 'undefined' && data.hasOwnProperty("images")) {
             data['images'].forEach(function(img) {
                 setTimeout(function() {
                     var xhr = new XMLHttpRequest();
