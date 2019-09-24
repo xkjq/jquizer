@@ -436,7 +436,7 @@ function loadAnswers(answers) {
             }
         console.log(hash_answer_map);
         }
-        toastr.info(Object.keys(myArray).length + " answers loaded.");
+        toastr.info(Object.keys(answers).length + " answers loaded.");
     }
 }
 
