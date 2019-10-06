@@ -9,6 +9,10 @@ function loadQuestion(n) {
     $("#feedback").empty();
     $("#question-details").empty();
 
+	// Hide any open search popups
+	$("span.popup-tag").css("display","none");
+
+
     if (question_number == 0) { 
         $("#header").append("No questions to show. Refine your filter(s)/search or load more questions.");
         return;
