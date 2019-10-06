@@ -1250,6 +1250,10 @@ $(document).ready(function() {
             </form>
         `));
 
+		$(".popup-tag").append($(document.createElement("div")).attr({
+            "class": "search-text",
+        }).text(text))
+
         $(".popup-tag").append($(document.createElement("a")).attr({
             "href": "https://www.google.com/search?q="+text,
             "target": "newtab",

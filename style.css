@@ -432,9 +432,9 @@ input {
 	padding:10px;
 	font-size:20px;
 	font-weight:bold;
-	text-decoration:underline;
 	cursor:pointer;
-	-webkit-filter: drop-shadow(0 1px 10px rgba(113,158,206,0.8));
+	opacity:0.9;
+	-webkit-filter: drop-shadow(0 1px 10px darkblue);
 }
 
 .popup-tag a {
