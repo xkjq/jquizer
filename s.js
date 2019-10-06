@@ -1205,3 +1205,69 @@ function stopAnswersAutoloading() {
         hash_answer_map[qid].slice(-1)[0]["autoload"] = false;
     }
 }
+
+
+// Popup search option for selected text
+function getSelected() {
+	if(window.getSelection) { return window.getSelection(); }
+	else if(document.getSelection) { return document.getSelection(); }
+	else {
+		var selection = document.selection && document.selection.createRange();
+		if(selection.text) { return selection.text; }
+		return false;
+	}
+	return false;
+}
+
+// TODO: merge with rest of document.ready
+/* create sniffer */
+$(document).ready(function() {
+		$('#main').mouseup(function(event) {
+				var selection = getSelected();
+				console.log(selection);
+				selection = $.trim(selection);
+				if(selection != ''){
+
+				$("span.popup-tag").empty();
+				$("span.popup-tag").css("display","block");
+				$("span.popup-tag").css("top",event.clientY);
+				$("span.popup-tag").css("left",event.clientX);
+				//$("span.popup-tag").text(selection);
+
+        text = selection;
+
+		// TODO: remove dulpication (also in checkAnswer.js
+        // Build forms for statdx searches as it uses POST requests
+        $(".popup-tag").append($(`
+            <form method="post" action="https://app.statdx.com/search"
+            target="_blank" name="form`+text+`" style="display:none">
+            <input type="hidden" name="startIndex" value="0">
+            <input type="hidden" name="category" value="All">
+            <input type="hidden" name="searchType" value="documents">
+            <input type="hidden" name="documentTypeFilters" value='["all"]'>
+            <input type="hidden" name="searchTerm" value="`+text+`">
+            <input type="submit" value="Open results in a new window"> 
+            </form>
+        `));
+
+        $(".popup-tag").append($(document.createElement("a")).attr({
+            "href": "https://www.google.com/search?q="+text,
+            "target": "newtab",
+            "class": "google-answer answer-link",
+        }).text("G")).append($(document.createElement("a")).attr({
+            "href": "https://radiopaedia.org/search?q="+text,
+            "target": "newtab",
+            "class": "radiopaedia-answer answer-link",
+        }).text("R")).append($(document.createElement("a")).attr({
+            "href": "STATDX search",
+            "target": "newtab",
+            "class": "statdx-answer answer-link",
+            "onClick": "document.forms['form"+text+"'].submit(); return false;",
+        }).text("S"));
+
+				}else{
+				$("span.popup-tag").css("display","none");
+				}
+				});
+		});
+

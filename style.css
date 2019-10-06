@@ -416,9 +416,29 @@ input {
 
 .answer-link {
     opacity: 0;
+	float: right;
 }
 
 .answer-list li:hover .answer-link {
     opacity: 1;
     color: blue;
 }
+
+.popup-tag{
+	position:absolute;
+	display:none;
+	background-color:darkblue;
+	color:white;
+	padding:10px;
+	font-size:20px;
+	font-weight:bold;
+	text-decoration:underline;
+	cursor:pointer;
+	-webkit-filter: drop-shadow(0 1px 10px rgba(113,158,206,0.8));
+}
+
+.popup-tag a {
+	color: gray;
+	display: block;
+	opacity: 100;
+	}
