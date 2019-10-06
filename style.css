@@ -360,7 +360,7 @@ input {
     display: block;
 }
 
-.google-answer, .imaios-answer {
+.google-answer, .imaios-answer, .radiopaedia-answer, .statdx-answer {
     margin-left: 10px
 }
 

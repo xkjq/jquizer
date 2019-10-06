@@ -1222,7 +1222,7 @@ function getSelected() {
 // TODO: merge with rest of document.ready
 /* create sniffer */
 $(document).ready(function() {
-		$('#main').mouseup(function(event) {
+		$('#main, #feedback').mouseup(function(event) {
 				var selection = getSelected();
 				console.log(selection);
 				selection = $.trim(selection);
@@ -1259,7 +1259,7 @@ $(document).ready(function() {
             "target": "newtab",
             "class": "radiopaedia-answer answer-link",
         }).text("R")).append($(document.createElement("a")).attr({
-            "href": "STATDX search",
+            "href": "STATDX",
             "target": "newtab",
             "class": "statdx-answer answer-link",
             "onClick": "document.forms['form"+text+"'].submit(); return false;",
