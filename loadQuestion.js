@@ -464,7 +464,7 @@ $("#main").append("<div class='dwv-container'></div>");
                     'data-question-number': question_number,
                     'data-feedback': feedback
                 //}).append(a).append(tf).click(function(e) {
-                }).append("<a href='#/'>"+a+"</a>").append(tf).click(function(e) {
+                }).append("<a href='#/' class='answer-option-link'>"+a+"</a>").append(tf).click(function(e) {
                     $(e.currentTarget).toggleClass("tf_answer_true");
                     //if ($(e.currentTarget).find(".tf-active").length > 0) {
                     //    $(e.currentTarget).find(".tf-true, .tf-false").toggleClass("tf-active");
@@ -679,7 +679,7 @@ function appendAnswers(answers, question_number) {
             'id': "q" + question_number + "a" + i,
             'class': c,
             'data-question-number': question_number
-        }).append("<a href='#/'>"+a+"</a>").on("click", checkAnswer));
+        }).append("<a href='#/' class='answer-option-link'>"+a+"</a>").on("click", checkAnswer));
         i = i + 1;
     }
 

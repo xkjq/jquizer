@@ -692,6 +692,8 @@ $("#answer input").val(e["answer"])
             break
     }
 
+	// Remove unnecesary link tags
+	$(".answer-option-link").contents().unwrap()
 
 
 
