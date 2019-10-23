@@ -2,6 +2,12 @@
     /*float: right;*/
 }
 
+#main { 
+	resize: horizontal; 
+	overflow: auto; 
+} 
+
+
 
 #content {
     /*min-width: 200px;*/
