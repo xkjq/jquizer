@@ -74,7 +74,7 @@ ol.answer-list {
     padding: 4px;
     border: 2px solid green;
     border-radius: 5px;
-    color: green;
+    /*color: green;*/
     font-weight: bold;
     }
 
@@ -448,3 +448,18 @@ input {
 	display: block;
 	opacity: 100;
 	}
+
+.search-close {
+	float:left;
+	display:inline-block;
+	padding:2px 5px;
+	color:gray;
+}
+
+.search-close:hover {
+	float:left;
+	display:inline-block;
+	padding:2px 5px;
+	color:#fff;
+}
+

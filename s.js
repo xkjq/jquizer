@@ -1250,9 +1250,18 @@ $(document).ready(function() {
             </form>
         `));
 
+
 		$(".popup-tag").append($(document.createElement("div")).attr({
             "class": "search-text",
-        }).text(text))
+        }).text(text));
+
+		$(".popup-tag").append($(document.createElement("span")).attr({
+            "class": "search-close",
+		}).text("<close>").click(function(){
+			$(this).closest(".popup-tag").css("display","none");
+			return false;
+			}));
+
 
         $(".popup-tag").append($(document.createElement("a")).attr({
             "href": "https://www.google.com/search?q="+text,
