@@ -781,7 +781,7 @@ function checkBestAnswer(e, load) {
             "target": "newtab",
             "class": "google-answer answer-link",
         }).text("G")).append($(document.createElement("a")).attr({
-            "href": "https://radiopaedia.org/search?q="+text.replace(/[^a-zA-Z0-9-_]/g, ''),
+            "href": "https://radiopaedia.org/search?q="+text.replace(/[^a-zA-Z0-9-_ ]/g, ''),
             "target": "newtab",
             "class": "imaios-answer answer-link",
         }).text("R")).append($(document.createElement("a")).attr({
