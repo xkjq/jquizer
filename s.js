@@ -1222,6 +1222,13 @@ function getSelected() {
 // TODO: merge with rest of document.ready
 /* create sniffer */
 $(document).ready(function() {
+		$('body').mouseup(function(event) {
+				var selection = getSelected();
+				if(selection == ''){
+				$("span.popup-tag").css("display","none");
+				}
+				});
+
 		$('#main, #feedback').mouseup(function(event) {
 				var selection = getSelected();
 				console.log(selection);
@@ -1268,7 +1275,7 @@ $(document).ready(function() {
             "target": "newtab",
             "class": "google-answer answer-link",
         }).text("G")).append($(document.createElement("a")).attr({
-            "href": "https://radiopaedia.org/search?q="+text,
+            "href": "https://radiopaedia.org/search?q="+text.replace(/[^a-zA-Z0-9-_]/g, ''),
             "target": "newtab",
             "class": "radiopaedia-answer answer-link",
         }).text("R")).append($(document.createElement("a")).attr({
@@ -1279,7 +1286,8 @@ $(document).ready(function() {
         }).text("S"));
 
 				}else{
-				$("span.popup-tag").css("display","none");
+				// Handle in body mouseup
+				//$("span.popup-tag").css("display","none");
 				}
 				});
 		});
