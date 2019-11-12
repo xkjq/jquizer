@@ -160,6 +160,8 @@ li.alpha-list {
     */
     clear: right;
     width: 80px;
+	height: 80%;
+	overflow: overlay;
 }
 
 #score-list {
