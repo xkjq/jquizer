@@ -55,6 +55,14 @@ function loadQuestion(n) {
         'value': "Next"
     }).text("Next"));
 
+    $("#header").append($("<button id='flagged-button'>").click(function(qid) { toggleFlagged(); }));
+
+    if (flagged_questions.has(current_question_uid)) {
+        $("#flagged-button").text("FLAGGED");
+        } else {
+        $("#flagged-button").text("NOT FLAGGED");
+        }
+
     // Set up the question details block
     $("#question-details").append("Question details...<br />");
     $("#question-details").append("-------------------<br />");
@@ -65,11 +73,19 @@ function loadQuestion(n) {
     $("#question-details").append("Meta: " + data['meta'] +"<br />");
     $("#question-details").append("Date: " + data['date'] +"<br />");
 
+	$("#main").append($(document.createElement("div")).attr({
+		'id': 'question-block',
+	}));
+
+	$("#main").append($(document.createElement("div")).attr({
+		'id': 'answer-block',
+	}));
+
 
     switch (question_type) {
         case "sba":
 
-            $("#main").append("<br>").append(data['question']).append("<br>");
+            $("#question-block").append("<br>").append(data['question']).append("<br>");
 
 
             appendAnswers(data['answers'], 1);
@@ -77,7 +93,7 @@ function loadQuestion(n) {
             break;
 
         case "emq":
-            $("#main").append($(document.createElement("ol")).attr({
+            $("#question-block").append($(document.createElement("ol")).attr({
                 'id': 'emq-options',
             }));
 
@@ -89,10 +105,10 @@ function loadQuestion(n) {
                 }).append(answer_options[n]));
             }
 
-            $("#main").append(data['question']);
+            $("#question-block").append(data['question']);
 
 
-            $("#main").append($(document.createElement("ol")).attr({
+            $("#answer-block").append($(document.createElement("ol")).attr({
                 'id': 'emq-questions',
             }));
 
@@ -131,7 +147,7 @@ function loadQuestion(n) {
 
             }
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'class': 'check-button',
@@ -145,11 +161,11 @@ function loadQuestion(n) {
 
             mba_answers = {};
 
-            $("#main").append("<br>").append(data['background']).append("<br>");
+            $("#question-block").append("<br>").append(data['background']).append("<br>");
 
 
             for (i in data['question']) {
-                $("#main").append("<br>").append(data['question'][i]).append("<br>");
+                $("#answer-block").append("<br>").append(data['question'][i]).append("<br>");
 
                 appendAnswers(data['answers'][i], i);
             }
@@ -158,10 +174,10 @@ function loadQuestion(n) {
             break
 
         case "rank":
-            $("#main").append("<br>").append(data['question']).append("<br>");
+            $("#question-block").append("<br>").append(data['question']).append("<br>");
 
             answers = data['answers'];
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("ol")).attr({
                     'id': 'sortable-list',
                     //'class': 'answer-list allow-hover',
@@ -178,9 +194,9 @@ function loadQuestion(n) {
 
             $("#sortable-list").sortable();
 
-            $("#main").append("<br />");
+            $("#question-block").append("<br />");
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'class': 'check-button',
@@ -199,7 +215,7 @@ function loadQuestion(n) {
             //        }));
             //    });
             //}
-$("#main").append("<div class='dwv-container'></div>");
+$("#main").prepend("<div class='dwv-container'></div>");
         loadDWV(data["images"]);
             $(".dwv-container").append("").append(data['question']).append("");
 
@@ -213,9 +229,9 @@ $("#main").append("<div class='dwv-container'></div>");
 
             options.sort();
 
-            $("#main").append($(document.createElement("div")).attr({
-                'id': 'answer-block',
-            }));
+            //$("#main").append($(document.createElement("div")).attr({
+            //    'id': 'answer-block',
+            //}));
 
             //buildRankList(options, answers);
             $("#answer-block").append($(document.createElement("span")).attr({
@@ -303,9 +319,9 @@ $("#main").append("<div class='dwv-container'></div>");
 
             options.sort();
 
-            $("#main").append($(document.createElement("div")).attr({
-                'id': 'answer-block',
-            }));
+            //$("#main").append($(document.createElement("div")).attr({
+            //    'id': 'answer-block',
+            //}));
 
             //buildRankList(options, answers);
             $("#answer-block").append($(document.createElement("span")).attr({
@@ -408,11 +424,11 @@ $("#main").append("<div class='dwv-container'></div>");
             break;
 
         case "tf":
-            $("#main").append("<br>").append(data['question']).append("<br>");
+            $("#question-block").append("<br>").append(data['question']).append("<br>");
 
             answers = data['answers'];
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("ol")).attr({
                     'id': 'question-'+question_number+'-answers',
                     'class': 'tf-answer-block answer-list allow-hover',
@@ -483,9 +499,9 @@ $("#main").append("<div class='dwv-container'></div>");
                 e.stopPropagation();
             });
 
-            $("#main").append("<br />");
+            $("#answer-block").append("<br />");
 
-            $("#main").append(
+            $("#answer-block").append(
                 $(document.createElement("button")).attr({
                     //'type': 'button',
                     'class': 'check-button',
@@ -498,20 +514,22 @@ $("#main").append("<div class='dwv-container'></div>");
 
         default:
 
-            $("#main").append("QUESTION TYPE NOT IMPLEMENTED YET!<br/><br/>"+question_type);
+            $("#question-block").append("QUESTION TYPE NOT IMPLEMENTED YET!<br/><br/>"+question_type);
 
             break;
     }
 
-    $("#answer-block").append(
-        $(document.createElement("button")).attr({
-            //'type': 'button',
-            'id': 'lower-next-button',
-            'class': 'next-button',
-            'label': "Next",
-            'value': "Next",
-        }).text("Next")
-    );
+    //$("#main").append("<div id='bottom-nav-buttons'></div>");
+
+    //$("#bottom-nav-buttons").append(
+    //    $(document.createElement("button")).attr({
+    //        //'type': 'button',
+    //        'id': 'lower-next-button',
+    //        'class': 'next-button',
+    //        'label': "Next",
+    //        'value': "Next",
+    //    }).text("Next")
+    //);
 
     $(".previous-button").off();
     $(".previous-button").each(function(index, e) {
@@ -523,13 +541,6 @@ $("#main").append("<div class='dwv-container'></div>");
         $(e).click(nextQuestion)
     });
 
-    $("#answer-block").after($("<button id='flagged-button'>").click(function(qid) { toggleFlagged(); }));
-
-    if (flagged_questions.has(current_question_uid)) {
-        $("#flagged-button").text("FLAGGED");
-        } else {
-        $("#flagged-button").text("NOT FLAGGED");
-        }
 
 
 
@@ -643,7 +654,7 @@ function loadDWV(images) {
  
 function appendAnswers(answers, question_number) {
     //$("#main").append("<ol id='question-1-answers' class='answer-list'>");
-    $("#main").append(
+    $("#answer-block").append(
         $(document.createElement("ol")).attr({
             'id': 'question-'+question_number+'-answers',
             'class': 'answer-list allow-hover',
