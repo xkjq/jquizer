@@ -206,19 +206,7 @@ function loadQuestion(n) {
 
             break;
         case "rapid":
-
-            //if (data['images'] != undefined) {
-            //    data['images'].forEach(function(img) {
-            //        $("#main").append($(document.createElement("img")).attr({
-            //            "src": img,
-            //            "class": "main-image",
-            //        }));
-            //    });
-            //}
-$("#main").prepend("<div class='dwv-container'></div>");
-        loadDWV(data["images"]);
-            $(".dwv-container").append("").append(data['question']).append("");
-
+            loadImage(data);
 
             answers = data['answers'];
             is_normal = data['normal'];
@@ -279,37 +267,7 @@ $("#main").prepend("<div class='dwv-container'></div>");
 
             break;
         case "image_answer":
-
-//            if (data['images'] != undefined) {
-//                data['images'].forEach(function(img) {
-//                    $("#main").append($(document.createElement("img")).attr({
-//                        "src": img,
-//                        "class": "main-image",
-//                    }));
-//                });
-//            }
-//
-//$("#main").append("<div class='dwv-container'></div>");
-//        loadDWV(data["images"]);
-//            $(".dwv-container").append("<span class='float-image-text'>")
-//            $(".float-image-text").append(data['question'])
-        
-            if (use_dwv_as_image_viewer) {
-                $("#main").append("<div class='dwv-container'></div>");
-                loadDWV(data["images"]);
-                $(".dwv-container").append("<span class='float-image-text'>")
-                $(".float-image-text").append(data['question'])
-            } else {
-                $("#main").append("<br>").append(data['question']).append("<br>");
-
-                if (data['images'] != undefined) {
-                    data['images'].forEach(function(img) {
-                        $("#main").append($(document.createElement("img")).attr({
-                            "src": img,
-                        }));
-                    });
-                }
-            }
+            loadImage(data);
 
             answers = data['answers'];
 
@@ -354,23 +312,7 @@ $("#main").prepend("<div class='dwv-container'></div>");
 
             break;
         case "label":
-            if (use_dwv_as_image_viewer) {
-                $("#main").append("<div class='dwv-container'></div>");
-                loadDWV(data["images"]);
-                $(".dwv-container").append("<span class='float-image-text'>")
-                $(".float-image-text").append(data['question'])
-            } else {
-                $("#main").append("<br>").append(data['question']).append("<br>");
-
-                if (data['images'] != undefined) {
-                    data['images'].forEach(function(img) {
-                        $("#main").append($(document.createElement("img")).attr({
-                            "src": img,
-                        }));
-                    });
-                }
-            }
-
+            loadImage(data);
 
             answers = data['answers'];
             $("#main").append(
@@ -591,9 +533,28 @@ $("#main").prepend("<div class='dwv-container'></div>");
 
 }
 
+function loadImage(data) {
+    if (use_dwv_as_image_viewer) {
+        loadDWV(data["images"]);
+        $(".image-container").append("<span class='float-image-text'>")
+        $(".float-image-text").append(data['question'])
+    } else {
+        $("#main").append("<br>").append(data['question']).append("<br>");
+
+        if (data['images'] != undefined) {
+            data['images'].forEach(function(img) {
+                $("#main").append($(document.createElement("img")).attr({
+                    "src": img,
+                }));
+            });
+        }
+    }
+}
+
 function loadDWV(images) {
+    $("#main").append("<div class='image-container'></div>");
     if (images != undefined) {
-        $(".dwv-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div id="dwv-toolbar-container"><div id="dwv-toolbar" class="toolbar"></div> <input type="range" id="sliceRange" value="0"></div><!-- Layer Container --> <div id="dwv-layerContainer" class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'));
+        $(".image-container").append($('<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div id="dwv-toolbar-container"><div id="dwv-toolbar" class="toolbar"></div> <input type="range" id="sliceRange" value="0"></div><!-- Layer Container --> <div id="dwv-layerContainer" class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'));
 
         var app = new dwv.App();
         dwvapp = app;
