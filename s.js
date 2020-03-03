@@ -66,8 +66,6 @@ var remote_store = false;
 var remote_store_synced = false;
 var remote_data = {};
 
-var help_image_map = {};
-
 // Settings regarding labelling questions
 var similarity_limit = 0.8;
 
@@ -112,10 +110,6 @@ function loadExtraQuestions(q) {
     .success(function() {
       toastr.info(Object.size(questions) + " questions loaded");
     });
-}
-
-function loadHelpImageMap(data, textStatus) {
-  $.extend(help_image_map, data);
 }
 
 function loadData(data, textStatus) {
@@ -283,13 +277,6 @@ $(document).ready(function() {
     }
   });
 
-  $.getJSON("imagehelp/map", loadHelpImageMap)
-    .fail(function(jqxhr, textStatus, error) {
-      toastr.warning("Unable to help image map");
-    })
-    .success(function() {
-      toastr.info(Object.size(help_image_map) + " help images loaded");
-    });
 });
 
 function escaper(expression) {

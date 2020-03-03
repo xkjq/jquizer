@@ -429,8 +429,6 @@ function checkAnswer(e, load) {
 
       $("#feedback").append("<br />");
 
-      loadHelpImages(correct_answers);
-
       $(".check-button").remove();
 
       // Save answer
@@ -546,8 +544,6 @@ function checkAnswer(e, load) {
 
         answers[aid] = a;
       });
-
-      loadHelpImages(correct_answers);
 
       $("#feedback").append("<br />");
 
@@ -891,29 +887,3 @@ function saveAnswerToHashMap(qid, ans) {
   remote_store_synced = false;
 }
 
-function loadHelpImages(correct_answers) {
-  help_image_set = new Set();
-
-  // It works...
-  correct_answers.forEach(function(option) {
-    ans = $.trim(
-      option
-        .toLowerCase()
-        .replace("tendon", "")
-        .replace("muscle", "")
-        .replace("left", "")
-        .replace("right", "")
-        .replace("the", "")
-        .replace("  ", "")
-    );
-    if (help_image_map.hasOwnProperty(ans)) {
-      help_image_map[ans].forEach(function(i) {
-        help_image_set.add(i);
-      });
-    }
-  });
-
-  help_image_set.forEach(function(i) {
-    $("#feedback").append("<img src='imagehelp/" + i + "'>");
-  });
-}
