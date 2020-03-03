@@ -6,7 +6,6 @@ cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
 
 cornerstoneTools.init();
 
-
 function loadQuestion(n) {
   saveOpenQuestion(n);
   //question_number = Object.size(filtered_questions);
@@ -586,7 +585,7 @@ function loadQuestion(n) {
     //}
   }
 
-  scrollTo(0, $("#content").position().top);
+  //scrollTo(0, $("#content").position().top);
 
   if (fix_broken_question_formatting) {
     $(".btn-link").remove();
@@ -623,7 +622,6 @@ function loadImage(data) {
     $(".float-image-text").append(data["question"]);
   } else if (image_viewer == "cornerstone") {
     loadCornerstone(data["images"]);
-
   } else {
     $("#main")
       .append("<br>")
@@ -640,54 +638,122 @@ function loadImage(data) {
       });
     }
   }
+  $("#answer-block").addClass("answer-block-floating");
 }
 function loadCornerstone(images) {
   $("#main").append("<div class='canvas-panel'></div>");
-    $(".canvas-panel").append(
-      $("<div id='dicom-image'></div>")
-    );
+  $(".canvas-panel").append($("<div id='dicom-image'></div>"));
 
-      // Make sure we have an array
-      if (!Array.isArray(images)) {
-        images = [images];
+  $("#dicom-image").append(
+    $(
+      "<div id='dicom-overlay'>wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+    )
+  );
+
+  // Make sure we have an array
+  if (!Array.isArray(images)) {
+    images = [images];
+  }
+
+  load(images);
+
+  async function load(images) {
+    imageIds = [];
+    for (i = 0; i < images.length; i++) {
+      data_url = images[i];
+      // check stack type
+      if (data_url.startsWith("data:image")) {
+        imageId = "base64://" + data_url.split(",")[1];
+
+        imageIds.push(imageId);
+      } else if (data_url.startsWith("data:application/dicom")) {
+        //stack = stack.split(";")[1];
+
+        dfile = await urltoFile(data_url, "dicom", "application/dicom");
+
+        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
+          dfile
+        );
+        imageIds.push(imageId);
+        //cornerstone.loadImage(imageId).then(function(image) {
+        //    tempFunction(image);
+        //});
       }
+    }
+    const stack = {
+      currentImageIdIndex: 0,
+      imageIds
+    };
+    //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+    console.log(imageIds);
+    cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+      loadCornerstoneMainImage(image, stack);
+    });
+  }
 
-      load(images);
+  if (images.length > 1) {
+    $(".canvas-panel").append("<div id='image-thumbs'></div>");
+    for (let id = 0; id < images.length; id++) {
+      console.log("load thumb", id);
+      thumb = $(
+        "<div class='thumb' id='thumb-" +
+          id +
+          "' data-id=" +
+          id +
+          ">" +
+          id +
+          "</div>"
+      );
+      $("#image-thumbs").append(thumb);
+      $("#thumb-" + id).click(selectThumb);
 
-      async function load(images) {
-        imageIds = [];
-        for (i = 0; i < images.length; i++) {
-          data_url = images[i];
-          // check stack type
-          if (data_url.startsWith("data:image")) {
-            imageId = "base64://" + data_url.split(",")[1];
+      image_url = images[id];
 
-            imageIds.push(imageId);
-          } else if (data_url.startsWith("data:application/dicom")) {
-            //stack = stack.split(";")[1];
+      // based (image) data url, just load the image directly
+      if (image_url.startsWith("data:image/")) {
+        img = $("<img />", {
+          src: image_url,
+          id: "thumb-image-" + id,
+          class: "thumbnail",
+          title: "Click on the thumbnail to view and manipulate the image.",
+          draggable: "false",
+          style: "height: 100px;"
+        });
 
-            dfile = await urltoFile(data_url, "dicom", "application/dicom");
+        $("#thumb-" + id).append(img);
 
-            const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
-              dfile
-            );
-            imageIds.push(imageId);
-            //cornerstone.loadImage(imageId).then(function(image) {
-            //    tempFunction(image);
-            //});
-          }
-        }
-        const stack = {
-          currentImageIdIndex: 0,
-          imageIds
-        };
-        //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-        cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-          loadMainImage(image, stack);
+        // otherwise try to load it as a dicom
+      } else {
+        // convert the data url to a file
+        urltoFile(image_url, "dicom", "application/dicom").then(function(
+          dfile
+        ) {
+          // load the file using cornerstoneWADO file loader
+          const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
+            dfile
+          );
+          cornerstone.loadAndCacheImage(imageId).then(function(image) {
+            img = $("<div></div>").get(0);
+            img.id = "thumb-image-" + id;
+            img.class = "thumbnail";
+            img.title =
+              "Click on the thumbnail to view and manipulate the image.";
+            img.draggable = "false";
+            img.style = "height: 100px; width: 100px";
+            $("#thumb-" + id).append(img);
+
+            const element = document.getElementById("thumb-image-" + id);
+            cornerstone.enable(element);
+            cornerstone.displayImage(element, image);
+            cornerstone.resize(element);
+          }); //.catch( function(error) {
         });
       }
     }
+  }
+}
 
+// This will stay for the moment, but is unlikely to be updated.
 function loadDWV(images) {
   $("#main").append("<div class='canvas-panel'></div>");
   if (images != undefined) {
@@ -823,7 +889,6 @@ function buildRankList(options, answers) {
   }
 }
 
-
 function urltoFile(url, filename, mimeType) {
   return fetch(url)
     .then(function(res) {
@@ -834,60 +899,113 @@ function urltoFile(url, filename, mimeType) {
     });
 }
 
-function loadMainImage(image, stack) {
-  //const PanTool = cornerstoneTools.PanTool;
-  //const ZoomTool = cornerstoneTools.ZoomTool;
-  //const WwwcTool = cornerstoneTools.WwwcTool;
-  //const RotateTool = cornerstoneTools.RotateTool;
-  //const StackScrollTool = cornerstoneTools.StackScrollTool;
+function loadCornerstoneMainImage(image, stack) {
+  const PanTool = cornerstoneTools.PanTool;
+  const ZoomTool = cornerstoneTools.ZoomTool;
+  const ZoomMouseWheelTool = cornerstoneTools.ZoomMouseWheelTool;
+  const WwwcTool = cornerstoneTools.WwwcTool;
+  const RotateTool = cornerstoneTools.RotateTool;
+  const StackScrollTool = cornerstoneTools.StackScrollTool;
 
   const element = document.getElementById("dicom-image");
   cornerstone.enable(element);
-
 
   cornerstone.displayImage(element, image);
 
   cornerstoneTools.addStackStateManager(element, ["stack"]);
   cornerstoneTools.addToolState(element, "stack", stack);
 
-  //cornerstoneTools.addTool(PanTool);
-  //cornerstoneTools.addTool(ZoomTool);
-  //cornerstoneTools.addTool(WwwcTool);
-  //cornerstoneTools.addTool(RotateTool);
-  //cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+  cornerstoneTools.addTool(ZoomMouseWheelTool);
+  cornerstoneTools.addTool(WwwcTool);
+  cornerstoneTools.addTool(RotateTool);
+  cornerstoneTools.addTool(StackScrollTool);
 
   cornerstoneTools.setToolActive("Pan", { mouseButtonMask: 1 });
+  cornerstoneTools.setToolActive("ZoomMouseWheel", { mouseButtonMask: 2 });
+  cornerstoneTools.setToolActive("Zoom", { mouseButtonMask: 4 });
+  cornerstoneTools.setToolActive("Wwwc", { mouseButtonMask: 2 });
 
   element.addEventListener("cornerstoneimagerendered", onImageRendered);
 
-  setDicomCanvasNonFullscreen(element);
+  //setDicomCanvasNonFullscreen(element);
   cornerstone.reset(element);
-  element.scrollIntoView(false);
+  //element.scrollIntoView(false);
   //element.scrollTo(0);
 
   $(element).dblclick(function() {
-    if ($(".canvas-panel").length == 0) {
-      // already fullscreen (disable it)
-      disableFullscreen(this);
-    } else {
-      $(".content-panel").append($(".canvas-panel"));
-      $(".canvas-panel").toggleClass("canvas-panel canvas-panel-fullscreen");
-      $("#dicom-image").attr("height", "100%");
-      $("#dicom-image").height("100%");
-      //$(".cornerstone-canvas").attr("height", "100%");
-      //$(".cornerstone-canvas").height("100%");
-      cornerstone.resize(this, true);
-    }
+    cornerstone.reset(this);
   });
 
   element.removeEventListener("wheel", element.wheelEventHandler);
 
   // Add tool selector
-  $(".canvas-panel").append(
-    '<select class="control-overlay"><option value="pan">pan [p]</option><option value="zoom">zoom [z]</option><option value="rotate">rotate [r]</option><option value="scroll" hidden="" disabled="">scroll (1/1)</option><option value="window">window ()</option><option value="abdomen" hidden="" disabled="">window = abdomen [a]</option><option value="pulmonary" hidden="" disabled="">window = pulmonary [u]</option><option value="brain" hidden="" disabled="">window = brain [b]</option><option value="bone" hidden="" disabled="">window = bone [o]</option><option value="reset">reset [e]</option><option value="close">close [c]</option><option disabled="true" value="notes">[modality = CR][size = 9.8]</option></select>'
-  );
+  //$(".canvas-panel").append(
+  //  '<select class="control-overlay"><option value="pan">pan</option><option value="zoom">zoom</option><option value="rotate">rotate</option><option value="scroll" hidden="" disabled="">scroll (1/1)</option><option value="window">window ()</option><option value="abdomen" hidden="" disabled="">window = abdomen</option><option value="pulmonary" hidden="" disabled="">window = pulmonary</option><option value="brain" hidden="" disabled="">window = brain</option><option value="bone" hidden="" disabled="">window = bone</option><option value="reset">reset</option></select>'
+  //);
 
-  $(".control-overlay")
-    .get(0)
-    .addEventListener("change", changeControlSelection);
+  //$(".control-overlay")
+  //  .get(0)
+  //  .addEventListener("change", changeControlSelection);
+
+  //$("#dicom-image").attr("height", "1000px");
+  h = window.innerHeight - $("#header").height() - 16;
+  $("#dicom-image").height(h);
+  cornerstone.resize(element, true);
+
+  function resizeHandler() {
+    var element = document.getElementById("dicom-image");
+    cornerstone.resize(element, true);
+  }
+
+  window.addEventListener("resize", resizeHandler);
+  element.addEventListener(
+    "contextmenu",
+    function(e) {
+      // do something here...
+      e.preventDefault();
+    },
+    false
+  );
+}
+
+function onImageRendered(e) {
+  const eventData = e.detail;
+
+  // Update ww/wl
+  $("#wc").text(Math.round(eventData.viewport.voi.windowCenter));
+  $("#ww").text(Math.round(eventData.viewport.voi.windowWidth));
+
+  // update stack data
+  //stack = eventData.enabledElement.toolStateManager.toolState.stack.data[0];
+  //if (stack.imageIds.length > 1) {
+  //  $("option[value=scroll").prop("disabled", false);
+  //  $("option[value=scroll").prop("hidden", false);
+  //  $("option[value=scroll").text(
+  //    "scroll (" +
+  //      (stack.currentImageIdIndex + 1) +
+  //      "/" +
+  //      stack.imageIds.length +
+  //      ")"
+  //  );
+}
+
+function selectThumb(evt) {
+  console.log("select thumb", evt);
+  new_index = evt.target.dataset.id;
+  console.log("select thumb", new_index);
+  // There must be a better way to do this...
+  dicom_element = document.getElementById("dicom-image");
+  c = cornerstone.getEnabledElement(dicom_element);
+
+  current_index =
+    c.toolStateManager.toolState.stack.data[0].currentImageIdIndex;
+
+  c.toolStateManager.toolState.stack.data[0].currentImageIdIndex = new_index;
+  id = c.toolStateManager.toolState.stack.data[0].imageIds[new_index];
+  cornerstone.loadImage(id).then(b => {
+    cornerstone.displayImage(dicom_element, b);
+  });
+  //c = cornerstone.getEnabledElement(dicom_element)
 }
