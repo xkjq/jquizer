@@ -81,7 +81,7 @@ function loadExtraQuestionsCallback(i) {
   return function(e) {
     loadExtraQuestions(i);
     saveLoadedQuestionSet(i);
-    $("#filters").slideToggle("slow");
+    $("#options").slideToggle("slow");
   };
 }
 
@@ -167,7 +167,7 @@ $(document).ready(function() {
       $("#loading").removeClass("show");
 
       $("#filter-toggle, #hide-options-button").click(function() {
-        $("#filters").slideToggle("slow");
+        $("#options").slideToggle("slow");
       });
 
       $("#question-details-toggle").click(function() {
@@ -206,7 +206,7 @@ $(document).ready(function() {
           toastr.warning("Invalid question.");
         }
         $("#goto-question-input").blur();
-        $("#filters").slideToggle("slow");
+        $("#options").slideToggle("slow");
       });
 
       $("#search-button").click(function() {
@@ -250,7 +250,8 @@ $(document).ready(function() {
 
       progress = document.querySelector(".percent");
 
-      $(document).keypress(keyPress);
+      //$(document).keypress(keyPress);
+      $(document).keydown(keyPress);
     });
 
   loadAnswersFromStorage();
@@ -740,10 +741,28 @@ function buildActiveScoreList() {
 function keyPress(e) {
   // Ignore our custom keybindings if we are currently in a field that
   // accepts some kind of input
-  if ($("*:focus:not(disabled)").is("textarea, input")) return;
+  if ($("*:focus:not(disabled)").is("textarea, input")) {
+  
+  // unless a modifier key is pressed
+      if (e.shiftKey ? true : false || e.altKey ? true : false || e.ctrlKey ? true : false) {
+
+      } else {
+  return
+  }
+  
+  };
 
   var charCode = typeof e.which == "number" ? e.which : e.keyCode;
   console.log(charCode);
+
+  function numberKeyPressed(e, x) {
+      if (e.altKey ? true : false) {
+        selectThumb(x);
+        e.preventDefault();
+      } else {
+        $(".answer-list li:eq("+x+")").click();
+      }
+  }
 
   switch (charCode) {
     case 13: // Return
@@ -768,31 +787,31 @@ function keyPress(e) {
     // Numbers 1-9 select the corresponding answer (if it exists)
     // TODO: fix for multi question questions
     case 49: // 1
-      $(".answer-list li:eq(0)").click();
+      numberKeyPressed(e, 0);
       break;
     case 50: // 2
-      $(".answer-list li:eq(1)").click();
+      numberKeyPressed(e, 1);
       break;
     case 51: // 3
-      $(".answer-list li:eq(2)").click();
+      numberKeyPressed(e, 2);
       break;
     case 52: // 4
-      $(".answer-list li:eq(3)").click();
+      numberKeyPressed(e, 3);
       break;
     case 53: // 5
-      $(".answer-list li:eq(4)").click();
+      numberKeyPressed(e, 4);
       break;
     case 54: // 6
-      $(".answer-list li:eq(5)").click();
+      numberKeyPressed(e, 5);
       break;
     case 55: // 7
-      $(".answer-list li:eq(6)").click();
+      numberKeyPressed(e, 6);
       break;
     case 56: // 8
-      $(".answer-list li:eq(7)").click();
+      numberKeyPressed(e, 7);
       break;
     case 57: // 9
-      $(".answer-list li:eq(8)").click();
+      numberKeyPressed(e, 8);
       break;
     case 72: // H
       previousQuestion();
@@ -805,7 +824,7 @@ function keyPress(e) {
       $("#filter-toggle").click();
       break;
     case 103: // g
-      $("#filters").slideDown("slow");
+      $("#options").slideDown("slow");
       $("#goto-question-input").focus();
       e.preventDefault();
       break;

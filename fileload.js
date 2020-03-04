@@ -55,7 +55,7 @@ function handleQuestionsFileSelect(evt) {
     try {
       data = JSON.parse(e.target.result);
       loadData(data);
-      $("#filters").slideToggle("slow");
+      $("#options").slideToggle("slow");
     } catch (SyntaxError) {
       console.log(SyntaxError);
       toastr.warning("Unable to load file.");
@@ -88,7 +88,7 @@ function handleAnswersFileSelect(evt) {
     console.log("LODA ANSWERS");
     try {
       loadAnswersAndFeedback(JSON.parse(e.target.result));
-      $("#filters").slideToggle("slow");
+      $("#options").slideToggle("slow");
     } catch (SyntaxError) {
       toastr.warning("Unable to load file.");
       console.log(SyntaxError);

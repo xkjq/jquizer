@@ -316,12 +316,22 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#main input")
+      $("#answer-block input")
         .focus()
         .on("keyup", function(e) {
           if (e.keyCode == 13) {
             $(".check-button").click();
           }
+        });
+
+        // Force focus to the input element (does this break anything?)
+        $('#answer-block input').on('blur',function () { 
+            // unless the options menu is open
+            if($('#options').is(':visible')){ return }
+            var blurEl = $(this); 
+            setTimeout(function() {
+                blurEl.focus()
+            }, 10);
         });
 
       break;
@@ -694,18 +704,19 @@ function loadCornerstone(images) {
   if (images.length > 1) {
     $(".canvas-panel").append("<div id='image-thumbs'></div>");
     for (let id = 0; id < images.length; id++) {
+        n = id + 1;
       console.log("load thumb", id);
       thumb = $(
         "<div class='thumb' id='thumb-" +
           id +
           "' data-id=" +
           id +
-          ">" +
-          id +
-          "</div>"
+          "><span>" +
+          n +
+          "</span></div>"
       );
       $("#image-thumbs").append(thumb);
-      $("#thumb-" + id).click(selectThumb);
+      $("#thumb-" + id).click(selectThumbClick);
 
       image_url = images[id];
 
@@ -991,12 +1002,18 @@ function onImageRendered(e) {
   //  );
 }
 
-function selectThumb(evt) {
-  console.log("select thumb", evt);
+function selectThumbClick(evt) {
   new_index = evt.target.dataset.id;
-  console.log("select thumb", new_index);
+  selectThumb(new_index)
+}
+
+function selectThumb(new_index) {
+  
   // There must be a better way to do this...
   dicom_element = document.getElementById("dicom-image");
+
+  if (dicom_element == null) { return }
+
   c = cornerstone.getEnabledElement(dicom_element);
 
   current_index =

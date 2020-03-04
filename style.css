@@ -36,6 +36,7 @@
 #answer-block {
   display: inline-block;
   max-width: 800px;
+  z-index: 1;
 }
 
 .answer-block-floating {
@@ -119,12 +120,12 @@ li.alpha-list {
   font-weight: normal;
 }
 
-#filters {
+#options {
   display: none;
   clear: right;
 }
 
-#filters li {
+#options li {
   list-style-type: none;
 }
 
@@ -207,6 +208,7 @@ li.alpha-list {
 
   border-radius: 5px;
   border: 1px solid rgba(0, 0, 0, 0.5);
+  z-index: 99;
 }
 
 #version-info {
@@ -555,6 +557,7 @@ input {
 
 .canvas-panel {
   /*height: 100%;*/
+    position: relative;
 }
 
 #dicom-overlay {
@@ -568,8 +571,23 @@ input {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
+    overflow-y: auto;
+    max-height: 100%;
 }
 
 .thumbnail {
   pointer-events: none;
+  display: block;
+  margin: auto;
+}
+
+.thumb {
+    position: relative;
+    border: 1px dotted blue;
+}
+
+.thumb span {
+    position: absolute;
+    right: 0;
+    color: lightblue;
 }
