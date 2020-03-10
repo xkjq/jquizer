@@ -62,9 +62,38 @@ var min_colour_diff = 0.6;
 
 var store = false;
 
+var db = new Dexie("user_interface");
+db.version(1).stores({
+  mouse_bindings: "button,mode,tool",
+  element_position: "[type+element],x,y"
+});
+
+var element_positions = {
+  //rapid: { "answer-block": { x: 0, y: 0 } }
+};
+
+// Load saved UI element positions into local memory
+db.element_position.each(data => {
+  if (data == undefined) {
+    return;
+  }
+
+  // Create object / dict as required
+  if (!element_positions.hasOwnProperty(data.type)) {
+    element_positions[data.type] = {};
+  }
+  if (!element_positions[data.type].hasOwnProperty(data.element)) {
+    element_positions[data.type][data.element] = {};
+  }
+
+  window.element_positions[data.type][data.element] = { x: data.x, y: data.y };
+});
+
 var remote_store = false;
 var remote_store_synced = false;
 var remote_data = {};
+
+var control_pressed = false;
 
 // Settings regarding labelling questions
 var similarity_limit = 0.8;
@@ -107,7 +136,7 @@ function loadExtraQuestions(q) {
         "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
       );
     })
-    .success(function() {
+    .done(function() {
       toastr.info(Object.size(questions) + " questions loaded");
     });
 }
@@ -121,6 +150,7 @@ function loadData(data, textStatus) {
 }
 
 $(document).ready(function() {
+  // TODO: conside switching the following all to indexdb
   // Load lawnchair store
   // ereader
   store = new Lawnchair({ adapter: "dom", name: "jquiz" }, function(store) {});
@@ -138,7 +168,7 @@ $(document).ready(function() {
         "Unable to load questions list<br/><br/>Perhaps you wish to try loading them manually?"
       );
     })
-    .success(function() {});
+    .done(function() {});
 
   // Load previous question set
   store.exists("current_question_set", function(exists) {
@@ -160,7 +190,7 @@ $(document).ready(function() {
         "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
       );
     })
-    .success(function() {
+    .done(function() {
       toastr.info(Object.size(questions) + " questions loaded");
     })
     .always(function() {
@@ -244,6 +274,21 @@ $(document).ready(function() {
         });
       });
 
+      $("#reset-ui-btn").click(e => {
+        window.element_positions = {};
+        db.element_position
+          .clear()
+          .then(() => {
+            console.log("Table cleared successfully");
+          })
+          .catch(err => {
+            console.error("Could not clear the table:", err);
+          })
+          .finally(() => {
+            // Do what should be done next...
+          });
+      });
+
       $("#answers-file").on("change", handleAnswersFileSelect);
 
       $("#questions-file").on("change", handleQuestionsFileSelect);
@@ -251,7 +296,8 @@ $(document).ready(function() {
       progress = document.querySelector(".percent");
 
       //$(document).keypress(keyPress);
-      $(document).keydown(keyPress);
+      $(document).keydown(keyDownHandler);
+      $(document).keyup(keyUpHandler);
     });
 
   loadAnswersFromStorage();
@@ -277,7 +323,6 @@ $(document).ready(function() {
       return confirmationMessage; //Webkit, Safari, Chrome
     }
   });
-
 });
 
 function escaper(expression) {
@@ -738,30 +783,41 @@ function buildActiveScoreList() {
 }
 
 // Key bindings
-function keyPress(e) {
+function keyUpHandler(e) {
+  if (e.key == "Control") {
+    registerPrimaryDicomInterface(e);
+    control_pressed = false;
+  }
+}
+
+function keyDownHandler(e) {
   // Ignore our custom keybindings if we are currently in a field that
   // accepts some kind of input
   if ($("*:focus:not(disabled)").is("textarea, input")) {
-  
-  // unless a modifier key is pressed
-      if (e.shiftKey ? true : false || e.altKey ? true : false || e.ctrlKey ? true : false) {
-
-      } else {
-  return
+    // unless a modifier key is pressed (not shift)
+    if (e.altKey ? true : false || e.ctrlKey ? true : false) {
+    } else {
+      return;
+    }
   }
-  
-  };
+
+  if (e.key == "Control") {
+    if (control_pressed == false) {
+      control_pressed = true;
+      registerAltDicomInterface(e);
+    }
+  }
 
   var charCode = typeof e.which == "number" ? e.which : e.keyCode;
-  console.log(charCode);
+  console.log(e, charCode);
 
   function numberKeyPressed(e, x) {
-      if (e.altKey ? true : false) {
-        selectThumb(x);
-        e.preventDefault();
-      } else {
-        $(".answer-list li:eq("+x+")").click();
-      }
+    if (e.altKey ? true : false) {
+      selectThumb(x);
+      e.preventDefault();
+    } else {
+      $(".answer-list li:eq(" + x + ")").click();
+    }
   }
 
   switch (charCode) {
@@ -1296,6 +1352,9 @@ $(document).ready(function() {
   });
 
   $("#main, #feedback").mouseup(function(event) {
+    // Fix bug in cornerstone tools magnfiy??
+    $(".magnifyTool").hide();
+
     var selection = getSelected();
     console.log(selection);
     selection = $.trim(selection);

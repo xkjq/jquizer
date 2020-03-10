@@ -97,11 +97,34 @@ function loadQuestion(n) {
     })
   );
 
+  answer_block_x = 0;
+  answer_block_y = 0;
+  if (
+    element_positions.hasOwnProperty(question_type) &&
+    element_positions[question_type].hasOwnProperty("answer-block")
+  ) {
+    answer_block_x = element_positions[question_type]["answer-block"].x;
+    answer_block_y = element_positions[question_type]["answer-block"].y;
+  }
+
   $("#main").append(
-    $(document.createElement("div")).attr({
-      id: "answer-block"
-    })
+    $(document.createElement("div"))
+      .attr({
+        id: "answer-block",
+        style:
+          "transform:translate(" +
+          answer_block_x +
+          "px, " +
+          answer_block_y +
+          "px);"
+
+        // update the posiion attributes
+      })
+      .data("x", answer_block_x)
+      .data("y", answer_block_y)
   );
+
+  // Reposition element if saved in db
 
   switch (question_type) {
     case "sba":
@@ -324,15 +347,17 @@ function loadQuestion(n) {
           }
         });
 
-        // Force focus to the input element (does this break anything?)
-        $('#answer-block input').on('blur',function () { 
-            // unless the options menu is open
-            if($('#options').is(':visible')){ return }
-            var blurEl = $(this); 
-            setTimeout(function() {
-                blurEl.focus()
-            }, 10);
-        });
+      // Force focus to the input element (does this break anything?)
+      $("#answer-block input").on("blur", function() {
+        // unless the options menu is open
+        if ($("#options, #dicom-settings-panel").is(":visible")) {
+          return;
+        }
+        var blurEl = $(this);
+        setTimeout(function() {
+          blurEl.focus();
+        }, 10);
+      });
 
       break;
     case "image_answer":
@@ -388,12 +413,25 @@ function loadQuestion(n) {
           }
         });
 
+      // Force focus to the input element (does this break anything?)
+      $("#answer-block input").on("blur", function() {
+        // unless the options menu is open
+        if ($("#options").is(":visible")) {
+          return;
+        }
+        var blurEl = $(this);
+        setTimeout(function() {
+          blurEl.focus();
+        }, 10);
+      });
+
       break;
     case "label":
       loadImage(data);
 
       answers = data["answers"];
-      $("#main").append(
+      $("#answer-block").append(
+        // In display terms a table would probably work better than a list
         $(document.createElement("ul")).attr({
           id: "answer-list"
           //'class': 'answer-list allow-hover',
@@ -430,7 +468,7 @@ function loadQuestion(n) {
 
       $("#answer-block").append("<br />");
 
-      $("#main").append(
+      $("#answer-block").append(
         $(document.createElement("button"))
           .attr({
             //'type': 'button',
@@ -601,7 +639,7 @@ function loadQuestion(n) {
     $(".btn-link").remove();
     $(".btn-xs").remove();
   }
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub, "MathExample"]);
+  //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "MathExample"]);
   createRemoteStoreButtonIfRequired();
 
   // Preload images for the next N questions
@@ -623,6 +661,81 @@ function loadQuestion(n) {
 
     x = x + 1;
   }
+
+  interact("#answer-block").draggable({
+    // enable inertial throwing
+    inertia: true,
+    // keep the element within the area of it's parent
+    modifiers: [
+      interact.modifiers.restrictRect({
+        restriction: "parent",
+        endOnly: true
+      })
+    ],
+    // enable autoScroll
+    autoScroll: true,
+    allowFrom: ".drag-handle",
+
+    listeners: {
+      // call this function on every dragmove event
+      move: dragMoveListener,
+
+      // call this function on every dragend event
+      end(event) {
+        var textEl = event.target.querySelector("p");
+
+        textEl &&
+          (textEl.textContent =
+            "moved a distance of " +
+            Math.sqrt(
+              (Math.pow(event.pageX - event.x0, 2) +
+                Math.pow(event.pageY - event.y0, 2)) |
+                0
+            ).toFixed(2) +
+            "px");
+      }
+    }
+  });
+
+  function dragMoveListener(event) {
+    var target = event.target;
+    // keep the dragged position in the data-x/data-y attributes
+    var x = (parseFloat(target.getAttribute("data-x")) || 0) + event.dx;
+    var y = (parseFloat(target.getAttribute("data-y")) || 0) + event.dy;
+
+    moveElement(target, x, y);
+  }
+}
+
+function moveElement(element, x, y) {
+  // translate the element
+  element.style.webkitTransform = element.style.transform =
+    "translate(" + x + "px, " + y + "px)";
+
+  // update the posiion attributes
+  element.setAttribute("data-x", x);
+  element.setAttribute("data-y", y);
+
+  db.element_position.put({
+    type: questions[current_question_uid].type,
+    element: element.id,
+    x: x,
+    y: y
+  });
+
+  question_type = questions[current_question_uid].type;
+
+  if (!element_positions.hasOwnProperty(question_type)) {
+    element_positions[question_type] = {};
+  }
+  if (!element_positions[question_type].hasOwnProperty(element.id)) {
+    element_positions[question_type][element.id] = {};
+  }
+
+  window.element_positions[question_type][element.id] = {
+    x: x,
+    y: y
+  };
 }
 
 function loadImage(data) {
@@ -649,16 +762,89 @@ function loadImage(data) {
     }
   }
   $("#answer-block").addClass("answer-block-floating");
+  $("#answer-block").append($("<span class='drag-handle'>+</span>;"));
 }
 function loadCornerstone(images) {
   $("#main").append("<div class='canvas-panel'></div>");
   $(".canvas-panel").append($("<div id='dicom-image'></div>"));
 
-  $("#dicom-image").append(
-    $(
-      "<div id='dicom-overlay'>wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+  $("#dicom-image")
+    .append(
+      $(
+        "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+      )
     )
-  );
+    .append($("<span id='dicom-settings-button'>&#9881;</span>"))
+    .append(
+      $(`<div id='dicom-settings-panel'>
+    <span id="dicom-settings-close" class="close-button"><a href="#">close</a></span>
+  <h3>Image viewer settings:</h3>
+
+    Primary
+    <div id="primary-mouse-binding">
+      <label for="left-mouse-dicom">Left mouse button:</label>
+      <select
+        id="left-mouse-dicom"
+        class="mouse-binding-select"
+        data-button="1"
+        data-mode="0"
+      >
+      </select>
+      <label for="middle-mouse-dicom">Middle mouse button:</label>
+      <select
+        id="middle-mouse-dicom"
+        class="mouse-binding-select"
+        data-button="4"
+        data-mode="0"
+      >
+      </select>
+      <label for="right-mouse-dicom">Right mouse button:</label>
+      <select
+        id="right-mouse-dicom"
+        class="mouse-binding-select"
+        data-button="2"
+        data-mode="0"
+      >
+      </select>
+    </div>
+    <br />
+    Secondary (Ctrl)
+    <div id="secondary-mouse-binding">
+      <label for="left-mouse-dicom-secondary">Left mouse button:</label>
+      <select
+        id="left-mouse-dicom-secondary"
+        class="mouse-binding-select"
+        data-button="1"
+        data-mode="1"
+      >
+      </select>
+      <label for="middle-mouse-dicom-secondary">Middle mouse button:</label>
+      <select
+        id="middle-mouse-dicom-secondary"
+        class="mouse-binding-select"
+        data-button="4"
+        data-mode="1"
+      >
+      </select>
+      <label for="right-mouse-dicom-secondary">Right mouse button:</label>
+      <select
+        id="right-mouse-dicom-secondary"
+        class="mouse-binding-select"
+        data-button="2"
+        data-mode="1"
+      >
+      </select>
+    </div>
+  
+  </div>`)
+    );
+
+  $("#dicom-settings-close").click(e => {
+    $("#dicom-settings-panel").hide();
+  });
+  $("#dicom-settings-button").click(e => {
+    $("#dicom-settings-panel").toggle();
+  });
 
   // Make sure we have an array
   if (!Array.isArray(images)) {
@@ -704,7 +890,7 @@ function loadCornerstone(images) {
   if (images.length > 1) {
     $(".canvas-panel").append("<div id='image-thumbs'></div>");
     for (let id = 0; id < images.length; id++) {
-        n = id + 1;
+      n = id + 1;
       console.log("load thumb", id);
       thumb = $(
         "<div class='thumb' id='thumb-" +
@@ -878,7 +1064,7 @@ function appendAnswers(answers, question_number) {
 
   $("#main").append("<br />");
 
-  MathJax.Hub.Queue(["Typeset", MathJax.Hub, "body"]);
+  //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "body"]);
 }
 
 function buildRankList(options, answers) {
@@ -911,12 +1097,15 @@ function urltoFile(url, filename, mimeType) {
 }
 
 function loadCornerstoneMainImage(image, stack) {
+  // It is probably silly to do this each time we load a question
   const PanTool = cornerstoneTools.PanTool;
   const ZoomTool = cornerstoneTools.ZoomTool;
   const ZoomMouseWheelTool = cornerstoneTools.ZoomMouseWheelTool;
   const WwwcTool = cornerstoneTools.WwwcTool;
+  const WwwcRegionTool = cornerstoneTools.WwwcRegionTool;
   const RotateTool = cornerstoneTools.RotateTool;
   const StackScrollTool = cornerstoneTools.StackScrollTool;
+  const MagnifyTool = cornerstoneTools.MagnifyTool;
 
   const element = document.getElementById("dicom-image");
   cornerstone.enable(element);
@@ -930,13 +1119,53 @@ function loadCornerstoneMainImage(image, stack) {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(ZoomMouseWheelTool);
   cornerstoneTools.addTool(WwwcTool);
+  cornerstoneTools.addTool(WwwcRegionTool);
   cornerstoneTools.addTool(RotateTool);
   cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(MagnifyTool);
 
-  cornerstoneTools.setToolActive("Pan", { mouseButtonMask: 1 });
-  cornerstoneTools.setToolActive("ZoomMouseWheel", { mouseButtonMask: 2 });
-  cornerstoneTools.setToolActive("Zoom", { mouseButtonMask: 4 });
-  cornerstoneTools.setToolActive("Wwwc", { mouseButtonMask: 2 });
+  available_tools = [
+    "Pan",
+    "Zoom",
+    "Wwwc",
+    "WwwcRegion",
+    "Rotate",
+    "StackScroll",
+    "Magnify"
+  ];
+  $(".mouse-binding-select option").remove();
+
+  available_tools.forEach(function(tool) {
+    option = "<option value=" + tool + ">" + tool + "</option>";
+    $(".mouse-binding-select").append(option);
+    //$("#left-mouse-dicom").append(option);
+    //$("#middle-mouse-dicom").append(option);
+    //$("#right-mouse-dicom").append(option);
+  });
+  $(".mouse-binding-select").on("change", function(e) {
+    changeMouseBinding(e);
+  });
+
+  // Set default tools
+  $("#primary-mouse-binding .mouse-binding-select[data-button=1]").val("Pan");
+  $("#primary-mouse-binding .mouse-binding-select[data-button=2]").val("Wwwc");
+  $("#primary-mouse-binding .mouse-binding-select[data-button=4]").val("Zoom");
+  //cornerstoneTools.setToolActive("Pan", { mouseButtonMask: 1 });
+  cornerstoneTools.setToolActive("ZoomMouseWheel", { mouseButtonMask: 3 });
+  //cornerstoneTools.setToolActive("Zoom", { mouseButtonMask: 4 });
+  //cornerstoneTools.setToolActive("Wwwc", { mouseButtonMask: 2 });
+  $("#secondary-mouse-binding .mouse-binding-select[data-button=1]").val(
+    "Magnify"
+  );
+  $("#secondary-mouse-binding .mouse-binding-select[data-button=2]").val(
+    "Rotate"
+  );
+  $("#secondary-mouse-binding .mouse-binding-select[data-button=4]").val(
+    "WwwcRegion"
+  );
+
+  loadPrimaryDicomInterface();
+  loadAltDicomInterface();
 
   element.addEventListener("cornerstoneimagerendered", onImageRendered);
 
@@ -961,14 +1190,8 @@ function loadCornerstoneMainImage(image, stack) {
   //  .addEventListener("change", changeControlSelection);
 
   //$("#dicom-image").attr("height", "1000px");
-  h = window.innerHeight - $("#header").height() - 16;
-  $("#dicom-image").height(h);
-  cornerstone.resize(element, true);
 
-  function resizeHandler() {
-    var element = document.getElementById("dicom-image");
-    cornerstone.resize(element, true);
-  }
+  resizeHandler();
 
   window.addEventListener("resize", resizeHandler);
   element.addEventListener(
@@ -981,15 +1204,25 @@ function loadCornerstoneMainImage(image, stack) {
   );
 }
 
+// Called when the dicom image is loaded / rendered
 function onImageRendered(e) {
   const eventData = e.detail;
+  //console.log(e);
 
   // Update ww/wl
   $("#wc").text(Math.round(eventData.viewport.voi.windowCenter));
   $("#ww").text(Math.round(eventData.viewport.voi.windowWidth));
 
   // update stack data
-  //stack = eventData.enabledElement.toolStateManager.toolState.stack.data[0];
+  stack = eventData.enabledElement.toolStateManager.toolState.stack.data[0];
+
+  $("#total_image_number").text(stack.imageIds.length);
+  $("#current_image_number").text(parseInt(stack.currentImageIdIndex) + 1);
+
+  if (stack.imageIds.length > 1) {
+    $(".thumb").removeClass("thumb-active");
+    $("#thumb-" + stack.currentImageIdIndex).addClass("thumb-active");
+  }
   //if (stack.imageIds.length > 1) {
   //  $("option[value=scroll").prop("disabled", false);
   //  $("option[value=scroll").prop("hidden", false);
@@ -1003,16 +1236,19 @@ function onImageRendered(e) {
 }
 
 function selectThumbClick(evt) {
+  console.log(evt);
   new_index = evt.target.dataset.id;
-  selectThumb(new_index)
+  selectThumb(new_index);
 }
 
 function selectThumb(new_index) {
-  
+  console.log("select thumb new index", new_index);
   // There must be a better way to do this...
   dicom_element = document.getElementById("dicom-image");
 
-  if (dicom_element == null) { return }
+  if (dicom_element == null) {
+    return;
+  }
 
   c = cornerstone.getEnabledElement(dicom_element);
 
@@ -1021,8 +1257,78 @@ function selectThumb(new_index) {
 
   c.toolStateManager.toolState.stack.data[0].currentImageIdIndex = new_index;
   id = c.toolStateManager.toolState.stack.data[0].imageIds[new_index];
+  console.log("select thumb id", id);
+  console.log("select thumb el", dicom_element);
   cornerstone.loadImage(id).then(b => {
     cornerstone.displayImage(dicom_element, b);
   });
   //c = cornerstone.getEnabledElement(dicom_element)
+}
+
+function resizeHandler() {
+  var element = document.getElementById("dicom-image");
+  h = window.innerHeight - $("#header").height() - 16;
+  $("#dicom-image").height(h);
+  cornerstone.resize(element, true);
+}
+
+async function loadPrimaryDicomInterface() {
+  const bindings = await db.mouse_bindings.where({ mode: "0" }).toArray();
+  console.log(bindings);
+  bindings.forEach(function(b) {
+    sel = $("#primary-mouse-binding select[data-button=" + b.button + "]").get(
+      0
+    );
+    sel.value = b.tool;
+    //sel.dispatchEvent(new Event("change"));
+  });
+  registerPrimaryDicomInterface();
+}
+
+async function loadAltDicomInterface() {
+  const bindings = await db.mouse_bindings.where({ mode: "1" }).toArray();
+  console.log(bindings);
+
+  bindings.forEach(function(b) {
+    sel = $(
+      "#secondary-mouse-binding select[data-button=" + b.button + "]"
+    ).get(0);
+    sel.value = b.tool;
+  });
+}
+function registerPrimaryDicomInterface() {
+  // Set mousetools based upon the selected options
+  selections = $("#primary-mouse-binding select");
+  selections.each((i, option) => {
+    cornerstoneTools.setToolActive(option.value, {
+      mouseButtonMask: parseInt(option.dataset.button)
+    });
+  });
+}
+function registerAltDicomInterface(e) {
+  // Called when control is pressed
+
+  // Set mousetools based upon the selected options
+  selections = $("#secondary-mouse-binding select");
+  selections.each((i, option) => {
+    cornerstoneTools.setToolActive(option.value, {
+      mouseButtonMask: parseInt(option.dataset.button)
+    });
+  });
+}
+
+function changeMouseBinding(e) {
+  select = e.currentTarget;
+  button = select.dataset.button;
+  mode = select.dataset.mode;
+  tool = select.value;
+
+  // Directly activate primary tools (secondary will be activated when modifier
+  // key is pressed
+  if (mode == "0") {
+    cornerstoneTools.setToolActive(tool, { mouseButtonMask: parseInt(button) });
+  }
+
+  db.mouse_bindings.put({ button: button, mode: mode, tool: tool });
+  //db.mouse_bindings.put({button: button, mode: mode, tool: tool}).then(loadPrimaryDicomInterface());
 }

@@ -225,7 +225,8 @@ function checkAnswer(e, load) {
                       "https://www.google.com/search?q=" +
                       replaced_lower_case_answer,
                     target: "newtab",
-                    class: "google-answer"
+                    class: "google-answer",
+                    title: "Search Google for " + replaced_lower_case_answer
                   })
                   .text("G")
               )
@@ -236,7 +237,8 @@ function checkAnswer(e, load) {
                       "https://www.imaios.com/en/content/search?SearchText=" +
                       replaced_lower_case_answer,
                     target: "newtab",
-                    class: "imaios-answer"
+                    class: "imaios-answer",
+                    title: "Search Imaios for " + replaced_lower_case_answer
                   })
                   .text("I")
               )
@@ -382,29 +384,8 @@ function checkAnswer(e, load) {
               })
               .text("(" + Math.round(best_sim * 100) / 100 + ")")
           )
-          .append(
-            $(document.createElement("a"))
-              .attr({
-                href:
-                  "https://www.google.com/search?q=" +
-                  replaced_lower_case_answer,
-                target: "newtab",
-                class: "google-answer"
-              })
-              .text("G")
-          )
-          .append(
-            $(document.createElement("a"))
-              .attr({
-                href:
-                  "https://www.imaios.com/en/content/search?SearchText=" +
-                  replaced_lower_case_answer,
-                target: "newtab",
-                class: "imaios-answer"
-              })
-              .text("I")
-          )
       );
+      addAnatomySearchLinks("#answer-block", replaced_lower_case_answer);
 
       $("#answer-block").append(
         $(document.createElement("p"))
@@ -518,29 +499,7 @@ function checkAnswer(e, load) {
           .replace("left", "")
           .replace("right", "");
 
-        $(option)
-          .append(
-            $(document.createElement("a"))
-              .attr({
-                href:
-                  "https://www.google.com/search?q=" +
-                  replaced_lower_case_answer,
-                target: "newtab",
-                class: "google-answer"
-              })
-              .text("G")
-          )
-          .append(
-            $(document.createElement("a"))
-              .attr({
-                href:
-                  "https://www.imaios.com/en/content/search?SearchText=" +
-                  replaced_lower_case_answer,
-                target: "newtab",
-                class: "imaios-answer"
-              })
-              .text("I")
-          );
+        addAnatomySearchLinks(option, replaced_lower_case_answer);
 
         answers[aid] = a;
       });
@@ -756,12 +715,23 @@ function checkAnswer(e, load) {
     .contents()
     .unwrap();
 
+  // This may have been deleted if it was moved
+  if ($("#feedback").length < 1) {
+    $("#content").append('<div id="feedback"></div>');
+  }
+
   $("#feedback").prepend(data["feedback"]);
   $("#feedback").append("<br />");
 
   if (data["external"] !== undefined) {
     $("#feedback").append("<br />");
     $("#feedback").append("<p>" + data["external"] + "</p>");
+  }
+
+  // Check if we have a valid dicom displayed
+  if ($("#dicom-image").length > 0) {
+    // Move feedback location if we do
+    $("#feedback").appendTo("#answer-block");
   }
 
   if (rebuild_score_list_on_answer) {
@@ -840,7 +810,8 @@ function checkBestAnswer(e, load) {
           .attr({
             href: "https://www.google.com/search?q=" + text,
             target: "newtab",
-            class: "google-answer answer-link"
+            class: "google-answer answer-link",
+            title: "Search Google for " + text
           })
           .text("G")
       )
@@ -851,7 +822,8 @@ function checkBestAnswer(e, load) {
               "https://radiopaedia.org/search?q=" +
               text.replace(/[^a-zA-Z0-9-_ ]/g, ""),
             target: "newtab",
-            class: "imaios-answer answer-link"
+            class: "radiopaedia-answer answer-link",
+            title: "Search Radiopaedia for " + text
           })
           .text("R")
       )
@@ -860,7 +832,8 @@ function checkBestAnswer(e, load) {
           .attr({
             href: "https://statdx.com/search?q=" + text, // not actually used
             target: "newtab",
-            class: "imaios-answer answer-link",
+            class: "statdx-answer answer-link",
+            title: "Search StatDx for " + text,
             onClick:
               "document.forms['form" + text + "'].submit(); return false;"
           })
@@ -887,3 +860,36 @@ function saveAnswerToHashMap(qid, ans) {
   remote_store_synced = false;
 }
 
+function addAnatomySearchLinks(target, ans) {
+  $(target)
+    .append(
+      $(document.createElement("a"))
+        .attr({
+          href: "https://www.google.com/search?q=" + ans,
+          target: "newtab",
+          class: "google-answer answer-link-perm",
+          title: "Search Google for: " + ans
+        })
+        .text("G")
+    )
+    .append(
+      $(document.createElement("a"))
+        .attr({
+          href: "https://www.imaios.com/en/content/search?SearchText=" + ans,
+          target: "newtab",
+          class: "imaios-answer answer-link-perm",
+          title: "Search Imaois for: " + ans
+        })
+        .text("I")
+    )
+    .append(
+      $(document.createElement("a"))
+        .attr({
+          href: "https://radiopaedia.org/search?q=" + ans,
+          target: "newtab",
+          class: "radiopaedia-answer answer-link-perm",
+          title: "Search Radiopaedia for: " + ans
+        })
+        .text("R")
+    );
+}

@@ -1,4 +1,5 @@
 #header {
+  user-select: none;
   /*float: right;*/
 }
 
@@ -41,15 +42,22 @@
 
 .answer-block-floating {
   position: absolute;
+  mix-blend-mode: screen;
 }
 
-.answer-block-floating input {
+.answer-block-floating:hover {
+  mix-blend-mode: unset;
+  background-color: black;
+  opacity: 90%;
+}
+
+.answer-block-floating input:enabled {
   background: transparent;
   color: green;
-  border: 1px dashed green;
+  border: 1px dashed blue;
 }
 
-.answer-block-floating input:hover {
+.answer-block-floating input:hover:enabled {
   background: darkgray;
 }
 
@@ -68,6 +76,10 @@ ol.answer-list {
   display: inline-block;
 }
 
+#answer-list {
+  width: fit-content;
+}
+
 #lower-buttons {
   clear: both;
 }
@@ -75,6 +87,11 @@ ol.answer-list {
 .answer-list li {
   padding: 6px;
   margin: 2px;
+}
+
+.answer-list li a {
+  color: lightgray;
+  text-decoration: none;
 }
 
 #flagged-button {
@@ -85,8 +102,11 @@ ol.answer-list {
   padding: 5px;
   border: 1px solid darkblue;
   border-radius: 5px;
-  color: darkblue;
   background-color: gray;
+}
+
+.answer-list.allow-hover li:hover a {
+  color: darkblue;
 }
 
 .correct {
@@ -179,6 +199,7 @@ li.alpha-list {
   width: 80px;
   height: 80%;
   overflow: overlay;
+  user-select: none;
 }
 
 #score-list {
@@ -190,7 +211,6 @@ li.alpha-list {
   display: none;
 
   width: 50%;
-  /*height: 50%;*/
   background-color: gray;
 
   position: absolute;
@@ -202,7 +222,6 @@ li.alpha-list {
   padding: 10px;
 
   margin: auto;
-
   margin-top: 20px;
   margin-bottom: 20px;
 
@@ -216,7 +235,7 @@ li.alpha-list {
   color: LightGray;
 }
 
-#about-close {
+.close-button {
   float: right;
   font-weight: bold;
 }
@@ -360,12 +379,12 @@ input {
 }
 
 .tf_answer_true .tf-true {
-  color: blue;
+  color: royalblue;
   font-weight: bold;
 }
 
 .tf-false {
-  color: blue;
+  color: royalblue;
   font-weight: bold;
 }
 
@@ -517,9 +536,10 @@ input {
   float: right;
 }
 
-.answer-list li:hover .answer-link {
+.answer-list li:hover .answer-link,
+.answer-link-perm {
   opacity: 1;
-  color: blue;
+  color: lightblue;
 }
 
 .popup-tag {
@@ -557,7 +577,7 @@ input {
 
 .canvas-panel {
   /*height: 100%;*/
-    position: relative;
+  position: relative;
 }
 
 #dicom-overlay {
@@ -571,8 +591,9 @@ input {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-    overflow-y: auto;
-    max-height: 100%;
+  overflow-y: auto;
+  max-height: 100%;
+  user-select: none;
 }
 
 .thumbnail {
@@ -582,12 +603,61 @@ input {
 }
 
 .thumb {
-    position: relative;
-    border: 1px dotted blue;
+  position: relative;
+  border: 1px dotted blue;
+}
+
+.thumb-active {
+  border: 5px dotted blue;
 }
 
 .thumb span {
-    position: absolute;
-    right: 0;
-    color: lightblue;
+  position: absolute;
+  right: 0;
+  color: lightblue;
+}
+
+#dicom-settings-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 40;
+  z-index: 99;
+  opacity: 20%;
+}
+
+#dicom-settings-button:hover {
+  opacity: 100%;
+}
+
+#dicom-settings-panel {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-bottom: 20px;
+  background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 100; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+}
+
+.drag-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: lightblue;
 }
