@@ -854,6 +854,7 @@ function loadCornerstone(images) {
   load(images);
 
   async function load(images) {
+    console.log("images", images);
     imageIds = [];
     for (i = 0; i < images.length; i++) {
       data_url = images[i];
@@ -874,6 +875,14 @@ function loadCornerstone(images) {
         //cornerstone.loadImage(imageId).then(function(image) {
         //    tempFunction(image);
         //});
+      } else {
+        url = window.location.origin+"/"+data_url
+        if (data_url.endsWith("dcm")) {
+            url = "wadouri:" + url;
+        }
+        imageIds.push(url);
+
+
       }
     }
     const stack = {
@@ -906,46 +915,65 @@ function loadCornerstone(images) {
 
       image_url = images[id];
 
-      // based (image) data url, just load the image directly
-      if (image_url.startsWith("data:image/")) {
-        img = $("<img />", {
-          src: image_url,
-          id: "thumb-image-" + id,
-          class: "thumbnail",
-          title: "Click on the thumbnail to view and manipulate the image.",
-          draggable: "false",
-          style: "height: 100px;"
-        });
+      if (image_url.startsWith("data")) {
+              // based (image) data url, just load the image directly
+              if (image_url.startsWith("data:image/")) {
+                img = $("<img />", {
+                  src: image_url,
+                  id: "thumb-image-" + id,
+                  class: "thumbnail",
+                  title: "Click on the thumbnail to view and manipulate the image.",
+                  draggable: "false",
+                  style: "height: 100px;"
+                });
 
-        $("#thumb-" + id).append(img);
+                $("#thumb-" + id).append(img);
 
-        // otherwise try to load it as a dicom
-      } else {
-        // convert the data url to a file
-        urltoFile(image_url, "dicom", "application/dicom").then(function(
-          dfile
-        ) {
-          // load the file using cornerstoneWADO file loader
-          const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
-            dfile
-          );
-          cornerstone.loadAndCacheImage(imageId).then(function(image) {
-            img = $("<div></div>").get(0);
-            img.id = "thumb-image-" + id;
-            img.class = "thumbnail";
-            img.title =
-              "Click on the thumbnail to view and manipulate the image.";
-            img.draggable = "false";
-            img.style = "height: 100px; width: 100px";
-            $("#thumb-" + id).append(img);
+                // otherwise try to load it as a dicom
+              } else {
+                // convert the data url to a file
+                urltoFile(image_url, "dicom", "application/dicom").then(function(
+                  dfile
+                ) {
+                  // load the file using cornerstoneWADO file loader
+                  const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
+                    dfile
+                  );
+                  cornerstone.loadAndCacheImage(imageId).then(function(image) {
+                    img = $("<div></div>").get(0);
+                    img.id = "thumb-image-" + id;
+                    img.class = "thumbnail";
+                    img.title =
+                      "Click on the thumbnail to view and manipulate the image.";
+                    img.draggable = "false";
+                    img.style = "height: 100px; width: 100px";
+                    $("#thumb-" + id).append(img);
 
-            const element = document.getElementById("thumb-image-" + id);
-            cornerstone.enable(element);
-            cornerstone.displayImage(element, image);
-            cornerstone.resize(element);
-          }); //.catch( function(error) {
-        });
-      }
+                    const element = document.getElementById("thumb-image-" + id);
+                    cornerstone.enable(element);
+                    cornerstone.displayImage(element, image);
+                    cornerstone.resize(element);
+                  }); //.catch( function(error) {
+                });
+              }
+    } else {
+              if (!image_url.endsWith("dicom") &&!image_url.endsWith("dcm")) {
+                img = $("<img />", {
+                  src: image_url,
+                  id: "thumb-image-" + id,
+                  class: "thumbnail",
+                  title: "Click on the thumbnail to view and manipulate the image.",
+                  draggable: "false",
+                  style: "height: 100px;"
+                });
+
+                $("#thumb-" + id).append(img);
+
+                // otherwise try to load it as a dicom
+              } else {
+
+}
+    }
     }
   }
 }

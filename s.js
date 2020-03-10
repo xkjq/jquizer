@@ -1276,13 +1276,11 @@ function dynamicSort(property) {
 }
 
 function createRemoteStoreButtonIfRequired() {
-  console.log("START");
   if (
     $("#save-remote-data-button").length == 0 &&
     remote_store &&
     remote_store_synced == false
   ) {
-    console.log("GO");
     $("#header-next-button").after(
       $(document.createElement("button"))
         .attr({ id: "save-remote-data-button" })
