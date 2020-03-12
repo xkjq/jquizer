@@ -188,20 +188,20 @@
   </div>
   <div id="content">
     <div id="loading">
-      Attempting to load shit...<br />
+      Loading...<br />
       <img src="ajax-loader.gif" title="useless loading animation" />
     </div>
     <div id="header"></div>
     <div id="main">
-      Welcome to the Quiz System
+      Welcome to the Quiz System<br /><br />
 
-      <br /><br />
-
-      Questions are JSON encoded objects, currenty SBAs and EMQs are
-      supported.<br /><br />
+      Questions are JSON encoded objects, currently SBAs/EMQs/TF/Rank/Label/Rapid are supported.<br /><br />
 
       Samples below (note the scheme may change in the future). HTML formatting
       is acceptable.
+
+      <div><button onclick='$("#examples").toggle()'>Show examples</button><div>
+      <div id="examples" style="display:none">
 
       <h4>SBAs</h4>
       <pre>
@@ -267,10 +267,6 @@
       >
       (You'll probably want to base64 all images.)<br /><br />
 
-      Source code will be going on bitbucket/github at some point in the future.
-      In the meantime feel free to view the source - its all html/javascript -
-      though I would strongly suggest you wait till its been cleaned up a
-      bit.<br /><br />
 
       <b
         ><i
@@ -278,6 +274,7 @@
           options menu.</i
         ></b
       >
+      <div>
     </div>
     <div id="feedback"></div>
   </div>

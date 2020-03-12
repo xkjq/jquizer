@@ -6,7 +6,9 @@
 #   * Single Best Answer (SBA)
 #   * Extended matching questions (EMQ)
 #   * True/False (TF)
-#   * Rank based
+#   * Rank based (SJT)
+#   * Image labelling
+#   * Rapids
 #
 #
 #######################################################################
