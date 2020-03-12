@@ -876,7 +876,7 @@ function loadCornerstone(images) {
         //    tempFunction(image);
         //});
       } else {
-        url = window.location.href.replace(/\#$/, '');+"/"+data_url
+        url = window.location.href.replace(/\#$/, '')+"/"+data_url
         if (data_url.endsWith("dcm")) {
             url = "wadouri:" + url;
         }
@@ -890,7 +890,7 @@ function loadCornerstone(images) {
       imageIds
     };
     //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-    console.log(imageIds);
+    console.log("100", imageIds);
     cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
       loadCornerstoneMainImage(image, stack);
     });
