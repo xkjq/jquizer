@@ -876,7 +876,7 @@ function loadCornerstone(images) {
         //    tempFunction(image);
         //});
       } else {
-        url = window.location.origin+"/"+data_url
+        url = window.location.href.replace(/\#$/, '');+"/"+data_url
         if (data_url.endsWith("dcm")) {
             url = "wadouri:" + url;
         }
