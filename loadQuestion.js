@@ -765,217 +765,233 @@ function loadImage(data) {
   $("#answer-block").append($("<span class='drag-handle'>+</span>;"));
 }
 function loadCornerstone(images) {
-  $("#main").append("<div class='canvas-panel'></div>");
-  $(".canvas-panel").append($("<div id='dicom-image'></div>"));
+    $("#main").append("<div class='canvas-panel'></div>");
+    $(".canvas-panel").append($("<div id='dicom-image'></div>"));
 
-  $("#dicom-image")
+    $("#dicom-image")
     .append(
-      $(
-        "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
-      )
+        $(
+            "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+        )
     )
     .append($("<span id='dicom-settings-button'>&#9881;</span>"))
     .append(
-      $(`<div id='dicom-settings-panel'>
-    <span id="dicom-settings-close" class="close-button"><a href="#">close</a></span>
-  <h3>Image viewer settings:</h3>
+        $(`<div id='dicom-settings-panel'>
+            <span id="dicom-settings-close" class="close-button"><a href="#">close</a></span>
+            <h3>Image viewer settings:</h3>
 
-    Primary
-    <div id="primary-mouse-binding">
-      <label for="left-mouse-dicom">Left mouse button:</label>
-      <select
-        id="left-mouse-dicom"
-        class="mouse-binding-select"
-        data-button="1"
-        data-mode="0"
-      >
-      </select>
-      <label for="middle-mouse-dicom">Middle mouse button:</label>
-      <select
-        id="middle-mouse-dicom"
-        class="mouse-binding-select"
-        data-button="4"
-        data-mode="0"
-      >
-      </select>
-      <label for="right-mouse-dicom">Right mouse button:</label>
-      <select
-        id="right-mouse-dicom"
-        class="mouse-binding-select"
-        data-button="2"
-        data-mode="0"
-      >
-      </select>
-    </div>
-    <br />
-    Secondary (Ctrl)
-    <div id="secondary-mouse-binding">
-      <label for="left-mouse-dicom-secondary">Left mouse button:</label>
-      <select
-        id="left-mouse-dicom-secondary"
-        class="mouse-binding-select"
-        data-button="1"
-        data-mode="1"
-      >
-      </select>
-      <label for="middle-mouse-dicom-secondary">Middle mouse button:</label>
-      <select
-        id="middle-mouse-dicom-secondary"
-        class="mouse-binding-select"
-        data-button="4"
-        data-mode="1"
-      >
-      </select>
-      <label for="right-mouse-dicom-secondary">Right mouse button:</label>
-      <select
-        id="right-mouse-dicom-secondary"
-        class="mouse-binding-select"
-        data-button="2"
-        data-mode="1"
-      >
-      </select>
-    </div>
-  
-  </div>`)
+            Primary
+            <div id="primary-mouse-binding">
+            <label for="left-mouse-dicom">Left mouse button:</label>
+            <select
+            id="left-mouse-dicom"
+            class="mouse-binding-select"
+            data-button="1"
+            data-mode="0"
+            >
+            </select>
+            <label for="middle-mouse-dicom">Middle mouse button:</label>
+            <select
+            id="middle-mouse-dicom"
+            class="mouse-binding-select"
+            data-button="4"
+            data-mode="0"
+            >
+            </select>
+            <label for="right-mouse-dicom">Right mouse button:</label>
+            <select
+            id="right-mouse-dicom"
+            class="mouse-binding-select"
+            data-button="2"
+            data-mode="0"
+            >
+            </select>
+            </div>
+            <br />
+            Secondary (Ctrl)
+            <div id="secondary-mouse-binding">
+            <label for="left-mouse-dicom-secondary">Left mouse button:</label>
+            <select
+            id="left-mouse-dicom-secondary"
+            class="mouse-binding-select"
+            data-button="1"
+            data-mode="1"
+            >
+            </select>
+            <label for="middle-mouse-dicom-secondary">Middle mouse button:</label>
+            <select
+            id="middle-mouse-dicom-secondary"
+            class="mouse-binding-select"
+            data-button="4"
+            data-mode="1"
+            >
+            </select>
+            <label for="right-mouse-dicom-secondary">Right mouse button:</label>
+            <select
+            id="right-mouse-dicom-secondary"
+            class="mouse-binding-select"
+            data-button="2"
+            data-mode="1"
+            >
+            </select>
+            </div>
+
+        </div>`)
     );
 
-  $("#dicom-settings-close").click(e => {
-    $("#dicom-settings-panel").hide();
-  });
-  $("#dicom-settings-button").click(e => {
-    $("#dicom-settings-panel").toggle();
-  });
-
-  // Make sure we have an array
-  if (!Array.isArray(images)) {
-    images = [images];
-  }
-
-  load(images);
-
-  async function load(images) {
-    console.log("images", images);
-    imageIds = [];
-    for (i = 0; i < images.length; i++) {
-      data_url = images[i];
-      // check stack type
-      if (data_url.startsWith("data:image")) {
-        imageId = "base64://" + data_url.split(",")[1];
-
-        imageIds.push(imageId);
-      } else if (data_url.startsWith("data:application/dicom")) {
-        //stack = stack.split(";")[1];
-
-        dfile = await urltoFile(data_url, "dicom", "application/dicom");
-
-        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
-          dfile
-        );
-        imageIds.push(imageId);
-        //cornerstone.loadImage(imageId).then(function(image) {
-        //    tempFunction(image);
-        //});
-      } else {
-        url = window.location.href.replace(/\#$/, '')+"/"+data_url
-        if (data_url.endsWith("dcm")) {
-            url = "wadouri:" + url;
-        }
-        imageIds.push(url);
-
-
-      }
-    }
-    const stack = {
-      currentImageIdIndex: 0,
-      imageIds
-    };
-    //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-    console.log("100", imageIds);
-    cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-      loadCornerstoneMainImage(image, stack);
+    $("#dicom-settings-close").click(e => {
+        $("#dicom-settings-panel").hide();
     });
-  }
+    $("#dicom-settings-button").click(e => {
+        $("#dicom-settings-panel").toggle();
+    });
 
-  if (images.length > 1) {
-    $(".canvas-panel").append("<div id='image-thumbs'></div>");
-    for (let id = 0; id < images.length; id++) {
-      n = id + 1;
-      console.log("load thumb", id);
-      thumb = $(
-        "<div class='thumb' id='thumb-" +
-          id +
-          "' data-id=" +
-          id +
-          "><span>" +
-          n +
-          "</span></div>"
-      );
-      $("#image-thumbs").append(thumb);
-      $("#thumb-" + id).click(selectThumbClick);
+    // Make sure we have an array
+    if (!Array.isArray(images)) {
+        images = [images];
+    }
 
-      image_url = images[id];
+    load(images);
 
-      if (image_url.startsWith("data")) {
-              // based (image) data url, just load the image directly
-              if (image_url.startsWith("data:image/")) {
-                img = $("<img />", {
-                  src: image_url,
-                  id: "thumb-image-" + id,
-                  class: "thumbnail",
-                  title: "Click on the thumbnail to view and manipulate the image.",
-                  draggable: "false",
-                  style: "height: 100px;"
-                });
+    async function load(images) {
+        console.log("images", images);
+        imageIds = [];
+        for (i = 0; i < images.length; i++) {
+            data_url = images[i];
+            // check stack type
+            if (data_url.startsWith("data:image")) {
+                imageId = "base64://" + data_url.split(",")[1];
 
-                $("#thumb-" + id).append(img);
+                imageIds.push(imageId);
+            } else if (data_url.startsWith("data:application/dicom")) {
+                //stack = stack.split(";")[1];
 
-                // otherwise try to load it as a dicom
-              } else {
-                // convert the data url to a file
-                urltoFile(image_url, "dicom", "application/dicom").then(function(
-                  dfile
-                ) {
-                  // load the file using cornerstoneWADO file loader
-                  const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
+                dfile = await urltoFile(data_url, "dicom", "application/dicom");
+
+                const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
                     dfile
-                  );
-                  cornerstone.loadAndCacheImage(imageId).then(function(image) {
-                    img = $("<div></div>").get(0);
-                    img.id = "thumb-image-" + id;
-                    img.class = "thumbnail";
-                    img.title =
-                      "Click on the thumbnail to view and manipulate the image.";
-                    img.draggable = "false";
-                    img.style = "height: 100px; width: 100px";
+                );
+                imageIds.push(imageId);
+                //cornerstone.loadImage(imageId).then(function(image) {
+                    //    tempFunction(image);
+        //});
+            } else {
+                url = window.location.href.replace(/\#$/, '')+"/"+data_url
+                if (data_url.endsWith("dcm")) {
+                    url = "wadouri:" + url;
+                }
+                imageIds.push(url);
+
+
+            }
+        }
+        const stack = {
+            currentImageIdIndex: 0,
+            imageIds
+        };
+        //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+            console.log("100", imageIds);
+            cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+                loadCornerstoneMainImage(image, stack);
+            });
+    }
+
+    if (images.length > 1) {
+        $(".canvas-panel").append("<div id='image-thumbs'></div>");
+        for (let id = 0; id < images.length; id++) {
+            n = id + 1;
+            console.log("load thumb", id);
+            thumb = $(
+                "<div class='thumb' id='thumb-" +
+                    id +
+                    "' data-id=" +
+                    id +
+                    "><span>" +
+                    n +
+                    "</span></div>"
+            );
+            $("#image-thumbs").append(thumb);
+            $("#thumb-" + id).click(selectThumbClick);
+
+            image_url = images[id];
+
+            if (image_url.startsWith("data")) {
+                // based (image) data url, just load the image directly
+                if (image_url.startsWith("data:image/")) {
+                    img = $("<img />", {
+                        src: image_url,
+                        id: "thumb-image-" + id,
+                        class: "thumbnail",
+                        title: "Click on the thumbnail to view and manipulate the image.",
+                        draggable: "false",
+                        style: "height: 100px;"
+                    });
+
                     $("#thumb-" + id).append(img);
 
-                    const element = document.getElementById("thumb-image-" + id);
-                    cornerstone.enable(element);
-                    cornerstone.displayImage(element, image);
-                    cornerstone.resize(element);
-                  }); //.catch( function(error) {
-                });
-              }
-    } else {
-              if (!image_url.endsWith("dicom") &&!image_url.endsWith("dcm")) {
-                img = $("<img />", {
-                  src: image_url,
-                  id: "thumb-image-" + id,
-                  class: "thumbnail",
-                  title: "Click on the thumbnail to view and manipulate the image.",
-                  draggable: "false",
-                  style: "height: 100px;"
-                });
+                    // otherwise try to load it as a dicom
+                } else {
+                    // convert the data url to a file
+                    urltoFile(image_url, "dicom", "application/dicom").then(function(
+                        dfile
+                    ) {
+                        // load the file using cornerstoneWADO file loader
+                        const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
+                            dfile
+                        );
+                        cornerstone.loadAndCacheImage(imageId).then(function(image) {
+                            img = $("<div></div>").get(0);
+                            img.id = "thumb-image-" + id;
+                            img.class = "thumbnail";
+                            img.title =
+                            "Click on the thumbnail to view and manipulate the image.";
+                            img.draggable = "false";
+                            img.style = "height: 100px; width: 100px";
+                            $("#thumb-" + id).append(img);
 
-                $("#thumb-" + id).append(img);
+                            const element = document.getElementById("thumb-image-" + id);
+                            cornerstone.enable(element);
+                            cornerstone.displayImage(element, image);
+                            cornerstone.resize(element);
+                        }); //.catch( function(error) {
+                    });
+                }
+            } else {
+                if (!image_url.endsWith("dicom") &&!image_url.endsWith("dcm")) {
+                    img = $("<img />", {
+                        src: image_url,
+                        id: "thumb-image-" + id,
+                        class: "thumbnail",
+                        title: "Click on the thumbnail to view and manipulate the image.",
+                        draggable: "false",
+                        style: "height: 100px;"
+                    });
 
-                // otherwise try to load it as a dicom
-              } else {
+                    $("#thumb-" + id).append(img);
 
-}
+                    // otherwise try to load it as a dicom
+                } else {
+
+                    url = "wadouri:" + image_url;
+                        cornerstone.loadAndCacheImage(url).then(function(image) {
+                            img = $("<div></div>").get(0);
+                            img.id = "thumb-image-" + id;
+                            img.class = "thumbnail";
+                            img.title =
+                            "Click on the thumbnail to view and manipulate the image.";
+                            img.draggable = "false";
+                            img.style = "height: 100px; width: 100px";
+                            $("#thumb-" + id).append(img);
+
+                            const element = document.getElementById("thumb-image-" + id);
+                            cornerstone.enable(element);
+                            cornerstone.displayImage(element, image);
+                            cornerstone.resize(element);
+                        });
+                }
+            }
+        }
     }
-    }
-  }
 }
 
 // This will stay for the moment, but is unlikely to be updated.
