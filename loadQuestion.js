@@ -1,4 +1,3 @@
-var dwvapp = [];
 
 cornerstoneBase64ImageLoader.external.cornerstone = cornerstone;
 cornerstoneWebImageLoader.external.cornerstone = cornerstone;
@@ -739,11 +738,7 @@ function moveElement(element, x, y) {
 }
 
 function loadImage(data) {
-  if (image_viewer == "dwv") {
-    loadDWV(data["images"]);
-    $(".canvas-panel").append("<span class='float-image-text'>");
-    $(".float-image-text").append(data["question"]);
-  } else if (image_viewer == "cornerstone") {
+  if (image_viewer == "cornerstone") {
     loadCornerstone(data["images"]);
   } else {
     $("#main")
@@ -994,72 +989,6 @@ function loadCornerstone(images) {
     }
 }
 
-// This will stay for the moment, but is unlikely to be updated.
-function loadDWV(images) {
-  $("#main").append("<div class='canvas-panel'></div>");
-  if (images != undefined) {
-    $(".canvas-panel").append(
-      $(
-        '<!-- DWV --> <div id="dwv"> <!-- Toolbar --> <div id="dwv-toolbar-container"><div id="dwv-toolbar" class="toolbar"></div> <input type="range" id="sliceRange" value="0"></div><!-- Layer Container --> <div id="dwv-layerContainer" class="layerContainer"> <div class="dropBox"></div> <canvas class="imageLayer">Only for HTML5 compatible browsers...</canvas> <div class="infoLayer"> <div class="infotl"></div> <div class="infotc"></div> <div class="infotr"></div> <div class="infocl"></div> <div class="infocr"></div> <div class="infobl"></div> <div class="infobc"></div> <div class="infobr" style="bottom: 64px;"></div></div></div><!-- /layerContainer -->  <!-- /dwv -->'
-      )
-    );
-
-    var app = new dwv.App();
-    dwvapp = app;
-    //DEBUG
-    var listenerWL = function(event) {
-      console.log("event: " + event.type);
-      console.log(event);
-      $(".infotc").text(event.wc);
-    };
-    app.addEventListener("wl-width-change", listenerWL);
-    //app.addEventListener("wl-center-change", listener);
-    app.init({
-      containerDivId: "dwv",
-      fitToWindow: true,
-      isMobile: true,
-      gui: ["tool"],
-      filters: ["Threshold", "Sharpen", "Sobel"],
-      tools: ["Scroll", "WindowLevel", "ZoomAndPan"] // or try "ZoomAndPan"
-    });
-
-    var range = document.getElementById("sliceRange");
-    range.min = 0;
-    app.addEventListener("load-end", function() {
-      range.max =
-        app
-          .getImage()
-          .getGeometry()
-          .getSize()
-          .getNumberOfSlices() - 1;
-
-      if (range.max == 0) {
-        $(range).hide();
-      }
-    });
-    app.addEventListener("slice-change", function() {
-      range.value = app.getViewController().getCurrentPosition().k;
-    });
-    range.oninput = function() {
-      var pos = app.getViewController().getCurrentPosition();
-      pos.k = this.value;
-      app.getViewController().setCurrentPosition(pos);
-    };
-
-    try {
-      app.abortLoad();
-      app.reset();
-      app.loadURLs(images);
-    } catch (error) {
-      toastr.error(error.message);
-    }
-    dwv.gui.appendResetHtml(app);
-    //}, 0);
-    //$(".layerContainer").height(size.height - 150);
-    //$(".imageLayer").height(size.height - 100);
-    //$(".layerContainer").width(size.width);
-  }
-}
 
 function appendAnswers(answers, question_number) {
   //$("#main").append("<ol id='question-1-answers' class='answer-list'>");

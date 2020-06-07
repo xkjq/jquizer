@@ -98,13 +98,9 @@ var control_pressed = false;
 // Settings regarding labelling questions
 var similarity_limit = 0.8;
 
-var use_dwv_as_image_viewer = true;
 var image_viewer = "cornerstone";
 
 var preload_images = 5;
-
-dwv.gui.getElement = dwv.gui.base.getElement;
-dwv.gui.displayProgress = function(percent) {};
 
 function loadExtraQuestionsCallback(i) {
   return function(e) {
@@ -246,10 +242,6 @@ $(document).ready(function() {
 
       $("#delete-answers-button").click(function() {
         resetAnswers();
-      });
-
-      $("#use-dwv-button").click(function() {
-        use_dwv_as_image_viewer = false;
       });
 
       $("#save-answers-button").click(function() {
