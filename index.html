@@ -1,77 +1,47 @@
 <html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link href="lib/toastr.min.css" rel="stylesheet" />
-    <link href="style.css" rel="stylesheet" />
-    <link href="dark.css" id="dark-css" rel="stylesheet" />
-    <link href="light.css" id="light-css" rel="stylesheet" disabled="true" />
-    <link
-      media="only screen and (max-width:400px)"
-      href="mobile.css"
-      rel="stylesheet"
-    />
-    <link
-      type="text/css"
-      rel="stylesheet"
-      href="lib/cornerstone/cornerstone.min.css"
-    />
 
-    <script type="text/javascript" src="lib/jquery-3.4.1.min.js"></script>
-    <script type="text/javascript" src="lib/interact.min.js"></script>
-    <script type="text/javascript" src="lib/lawnchair-0.6.1.min.js"></script>
-    <script type="text/javascript" src="lib/toastr.min.js"></script>
-    <script type="text/javascript" src="lib/jquery.sortable.js"></script>
-    <script type="text/javascript" src="lib/jquery.touchSwipe.min.js"></script>
-    <script type="text/javascript" src="lib/cornerstone/hammer.js"></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstone.min.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/dicomParser.min.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstone-base64-image-loader.umd.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstoneMath.min.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstoneTools.min.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstoneWADOImageLoader.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstoneWADOImageLoader.min.js"
-    ></script>
-    <script
-      type="text/javascript"
-      src="lib/cornerstone/cornerstoneWebImageLoader.min.js"
-    ></script>
-    <script type="text/javascript" src="lib/dexie.min.js"></script>
-    <script type="text/javascript" src="lib/fastbutton.js"></script>
-    <script type="text/javascript" src="lib/diff.js"></script>
-    <script type="text/javascript" src="fileload.js"></script>
-    <script type="text/javascript" src="distinct_words.js"></script>
-    <script type="text/javascript" src="s.js"></script>
-    <script type="text/javascript" src="loadQuestion.js"></script>
-    <script type="text/javascript" src="checkAnswer.js"></script>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="lib/toastr.min.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+  <link href="dark.css" id="dark-css" rel="stylesheet" />
+  <link href="light.css" id="light-css" rel="stylesheet" disabled="true" />
+  <link media="only screen and (max-width:400px)" href="mobile.css" rel="stylesheet" />
+  <link type="text/css" rel="stylesheet" href="lib/cornerstone/cornerstone.min.css" />
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="site.webmanifest">
+  <script type="text/javascript" src="lib/jquery-3.4.1.min.js"></script>
+  <script type="text/javascript" src="lib/interact.min.js"></script>
+  <script type="text/javascript" src="lib/lawnchair-0.6.1.min.js"></script>
+  <script type="text/javascript" src="lib/toastr.min.js"></script>
+  <script type="text/javascript" src="lib/jquery.sortable.js"></script>
+  <script type="text/javascript" src="lib/jquery.touchSwipe.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/hammer.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstone.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/dicomParser.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstone-base64-image-loader.umd.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstoneMath.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstoneTools.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstoneWADOImageLoader.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstoneWADOImageLoader.min.js"></script>
+  <script type="text/javascript" src="lib/cornerstone/cornerstoneWebImageLoader.min.js"></script>
+  <script type="text/javascript" src="lib/dexie.min.js"></script>
+  <script type="text/javascript" src="lib/fastbutton.js"></script>
+  <script type="text/javascript" src="lib/diff.js"></script>
+  <script type="text/javascript" src="fileload.js"></script>
+  <script type="text/javascript" src="distinct_words.js"></script>
+  <script type="module" src="dicomViewer.js"></script>
+  <script type="module" src="s.js"></script>
+  <script type="module" src="checkAnswer.js"></script>
 
-    <title>jQuizer</title>
-  </head>
-  <body class"use-fastclick">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <title>jQuizer</title>
+</head>
+
+<body class"use-fastclick">
   <div id="about-toggle">
     /<a href="#"><button>?</button></a>
   </div>
@@ -98,36 +68,21 @@
     <div id="goto-question">
       <form id="search-form">
         <input type="text" id="search-input" />
-        <a href="#"
-          ><button
-            type="button"
-            id="search-button"
-            title="Search questions. Note this search uses regexs"
-          >
+        <a href="#"><button type="button" id="search-button" title="Search questions. Note this search uses regexs">
             Search
-          </button></a
-        >
+          </button></a>
       </form>
       <form>
         <input type="text" id="goto-question-input" />
         <button id="goto-question-button" type="button">Goto question</button>
         <button id="goto-question-hide-button" type="button">+ hide</button>
       </form>
-      <input type="checkbox" id="show-answered-questions-button" /><label
-        for="show-answered-questions-button"
-        >Hide previously answered questions</label
-      >
+      <input type="checkbox" id="show-answered-questions-button" /><label for="show-answered-questions-button">Hide
+        previously answered questions</label>
       <input type="checkbox" id="show-only-flagged-questions-button" /><label
-        for="show-only-flagged-questions-button"
-        >Hide questions that have not been flagged</label
-      >
-      <input
-        type="checkbox"
-        id="auto-load-previous-answers-button"
-        checked
-      /><label for="auto-load-previous-answers-button"
-        >Automatically load previous answers</label
-      >
+        for="show-only-flagged-questions-button">Hide questions that have not been flagged</label>
+      <input type="checkbox" id="auto-load-previous-answers-button" checked /><label
+        for="auto-load-previous-answers-button">Automatically load previous answers</label>
       <hr />
       <button type="button" id="delete-answers-button">Delete Answers</button>
       <button type="button" id="save-answers-button">
@@ -147,14 +102,12 @@
       <h4>Load (local) questions:</h4>
       <input type="file" id="questions-file" name="file" />
       <button onclick="abortRead();">Cancel read</button>
-      <div id="progress_bar"><div class="percent">0%</div></div>
+      <div id="progress_bar">
+        <div class="percent">0%</div>
+      </div>
     </div>
     <hr />
-    <button
-      type="submit"
-      id="unload-questions-button"
-      title="Unload all questions"
-    >
+    <button type="submit" id="unload-questions-button" title="Unload all questions">
       Unload Questions
     </button>
     <hr />
@@ -197,11 +150,12 @@
       Samples below (note the scheme may change in the future). HTML formatting
       is acceptable.
 
-      <div><button onclick='$("#examples").toggle()'>Show examples</button><div>
-      <div id="examples" style="display:none">
+      <div><button onclick='$("#examples").toggle()'>Show examples</button>
+        <div>
+          <div id="examples" style="display:none">
 
-      <h4>SBAs</h4>
-      <pre>
+            <h4>SBAs</h4>
+            <pre>
 
 {
     "feedback": "Feedback for the question",
@@ -222,12 +176,11 @@
             "meta": ... # can contain any additional information (usually a string)
 }
 
-</pre
-      >
+</pre>
 
-      <h4>EMQs</h4>
-      Only the differences from above<br />
-      <pre>
+            <h4>EMQs</h4>
+            Only the differences from above<br />
+            <pre>
 
 {
     "question": "The question text (blurb)",
@@ -248,33 +201,28 @@
     "type": "emq",
 }
 
-</pre
-      >
+</pre>
 
-      Your questions must then be combined into another JSON object in which the
-      key is a unique question id and the value is the question object. e.g.
+            Your questions must then be combined into another JSON object in which the
+            key is a unique question id and the value is the question object. e.g.
 
-      <pre>
+            <pre>
 {
     "8lrcugh2h3rlc2ch3u" : { object as shown is the examples above },
         "12uhx98hu98ontch3u" : { object as shown is the examples above },
         ....
 }
-</pre
-      >
-      (You'll probably want to base64 all images.)<br /><br />
+</pre>
+            (You'll probably want to base64 all images.)<br /><br />
 
 
-      <b
-        ><i
-          >p.s. If you have your own question set it can be loaded from the
-          options menu.</i
-        ></b
-      >
-      <div>
-    </div>
-    <div id="feedback"></div>
-  </div>
-  <span class="popup-tag"></span>
-  </body>
+            <b><i>p.s. If you have your own question set it can be loaded from the
+                options menu.</i></b>
+            <div>
+            </div>
+            <div id="feedback"></div>
+          </div>
+          <span class="popup-tag"></span>
+</body>
+
 </html>
