@@ -69,8 +69,11 @@ let store = false;
 var db = new Dexie("user_interface");
 db.version(1).stores({
   mouse_bindings: "button,mode,tool",
-  element_position: "[type+element],x,y"
+  element_position: "[type+element],x,y",
+  answers: "qid,date,type,score,max_score,other"
 });
+
+window.db = db;
 
 window.element_positions = {
   //rapid: { "answer-block": { x: 0, y: 0 } }
@@ -337,29 +340,17 @@ Object.size = function (obj) {
   return size;
 };
 
-function saveAnswersToStorage() {
-  // Yes - it is (probably) bad practice to try / catch every access to localStorage
-  // TODO: switch to lawnchair
-  //ereader
-  store.save({ key: "answers", value: JSON.stringify(hash_answer_map) });
-  //    try {
-  //        localStorage.setItem('answers', JSON.stringify(hash_answer_map));
-  //    } catch(e) {
-  //        msg = "Local storage not supported";
-  //        return false;
-  //    }
-}
+// function saveAnswersToStorage() {
+//   // Yes - it is (probably) bad practice to try / catch every access to localStorage
+//   // TODO: switch to lawnchair
+//   //ereader
+//   store.save({ key: "answers", value: JSON.stringify(hash_answer_map) });
+// }
 
 function saveCheckboxState(id) {
   // There should be a better way to do this
   //ereader
   store.save({ key: "checkbox-" + id, value: 1 });
-  //    try {
-  //        localStorage.setItem('checkbox-'+id, 1);
-  //    } catch(e) {
-  //        msg = "Local storage not supported";
-  //        return false;
-  //    }
 }
 
 function saveOpenQuestion(n) {
@@ -415,10 +406,18 @@ function resetAnswers() {
     "Are you sure you wish to delete all your answers?\n\nThis is non-recoverable!";
 
   if(confirm(msg)) {
-    hash_answer_map = {};
+    // hash_answer_map = {};
     //localStorage.setItem('answers', {});
     //ereader
-    store.save({ key: "answers", value: {} });
+    // store.save({ key: "answers", value: {} });
+
+    db.answers.delete().then(() => {
+      console.log("Database successfully deleted");
+    }).catch((err) => {
+      console.error("Could not delete database");
+    }).finally(() => {
+      // Do what should be done next...
+    });
     loadFilters();
   }
 }
@@ -436,31 +435,32 @@ function loadAnswersAndFeedback(data) {
 }
 
 function loadAnswers(answers) {
-  // Rather than simply replacing the answers we merge them.
-  console.log(answers);
-  console.log(answers.length);
-  if(Object.keys(answers).length > 0) {
-    if(Object.keys(hash_answer_map).length < 1) {
-      console.log("DIRECT LOAD");
-      hash_answer_map = answers;
-    } else {
-      for(q in answers) {
-        if(hash_answer_map.hasOwnProperty(q)) {
-          ans = hash_answer_map[q].concat(answers[q]);
-          ans = ans.filter(
-            (ans, index, self) =>
-              index === self.findIndex(t => t.date === ans.date)
-          );
-          ans.sort(dynamicSort("date"));
-          hash_answer_map[q] = ans;
-        } else {
-          hash_answer_map[q] = answers[q];
-        }
-      }
-      console.log(hash_answer_map);
-    }
-    toastr.info(Object.keys(answers).length + " answers loaded.");
-  }
+  // TODO: implement with indexed db
+  // // Rather than simply replacing the answers we merge them.
+  // console.log(answers);
+  // console.log(answers.length);
+  // if(Object.keys(answers).length > 0) {
+  //   if(Object.keys(hash_answer_map).length < 1) {
+  //     console.log("DIRECT LOAD");
+  //     hash_answer_map = answers;
+  //   } else {
+  //     for(q in answers) {
+  //       if(hash_answer_map.hasOwnProperty(q)) {
+  //         ans = hash_answer_map[q].concat(answers[q]);
+  //         ans = ans.filter(
+  //           (ans, index, self) =>
+  //             index === self.findIndex(t => t.date === ans.date)
+  //         );
+  //         ans.sort(dynamicSort("date"));
+  //         hash_answer_map[q] = ans;
+  //       } else {
+  //         hash_answer_map[q] = answers[q];
+  //       }
+  //     }
+  //     console.log(hash_answer_map);
+  //   }
+  //   toastr.info(Object.keys(answers).length + " answers loaded.");
+  // }
 }
 
 // Attempt to load answers from localStorage
@@ -469,6 +469,7 @@ function loadAnswersFromStorage() {
   store.exists("answers", function (exists) {
     if(exists) {
       store.get("answers", function (obj) {
+        console.log("load", obj["value"])
         let loaded_answers = JSON.parse(obj["value"]);
         loadAnswers(loaded_answers);
       });
@@ -520,7 +521,7 @@ function loadFlaggedQuestionsFromStorage() {
 //    }
 
 // Generates the score section
-function buildActiveScoreList() {
+async function buildActiveScoreList() {
   // TODO: Consider caching the score list so it is now rebuilt everytime
   //       a question is loaded
 
@@ -534,25 +535,30 @@ function buildActiveScoreList() {
   // Empty any previously shown scores
   list.empty();
 
-  let questions_correct = 0;
-  let questions_answered = 0;
-
   // Build an array of answered questions (numerical number in all questions)
   var answers = [];
   var filtered_answers = [];
 
-  // Loop through all saved answers
-  for(let qid in hash_answer_map) {
-    // Check if the answer relates to a currently loaded question
-    if(hash_n_map.hasOwnProperty(qid)) {
-      answers.push(hash_n_map[qid]);
+  // Retrieve answers of all currently loaded questions
+  answers = await window.db.answers.where("qid").anyOf(Object.keys(hash_n_map)).toArray();
 
-      let filtered_answer_id = filtered_questions.indexOf(qid);
-      if(filtered_answer_id > -1) {
-        filtered_answers.push(filtered_answer_id);
-      }
+
+  let answers_by_qid = {}
+
+  answers.forEach(ans => {
+    // TODO: multiple answers
+    // currently will just use the latest....
+    answers_by_qid[ans.qid] = ans;
+
+    let filtered_answer_id = filtered_questions.indexOf(ans.qid);
+    if(filtered_answer_id > -1) {
+      filtered_answers.push(filtered_answer_id);
     }
-  }
+
+  })
+
+  let questions_correct = 0;
+  let questions_answered = 0;
 
   // If no answered questions loaded break;
   if(filtered_answers.length < 1) {
@@ -566,161 +572,42 @@ function buildActiveScoreList() {
     return a - b;
   });
 
+
   for(let ans in filtered_answers) {
     let i = filtered_answers[ans];
 
-    let answer = hash_answer_map[filtered_questions[i]].slice(-1)[0];
-
-    let type = answer["type"];
+    let answer = answers_by_qid[filtered_questions[i]];
 
     var n = i + 1; // The question number starts from 1
 
-    switch(type) {
-      case "rapid":
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: answer["correct"],
-              title: n
-            })
-            .text(n)
-        );
+    // To generate the correct colour we use HSL were
+    // the hue going from 0 -> 60 - 120 represents
+    // green -> yellow -> red
+    let ratio = answer.score / answer.max_score;
+    let hue = ratio * 120;
 
-        if(answer["correct"]) {
-          questions_correct++;
-        }
-        questions_answered++;
-        break;
-      case "image_answer":
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: answer["correct"],
-              title: n
-            })
-            .text(n)
-        );
+    list.append(
+      $(document.createElement("li"))
+        .attr({
+          id: "score-" + i,
+          class: "tf",
+          title: n
+        })
+        .text(
+          n +
+          " (" +
+          answer.score +
+          "/" +
+          answer.max_score +
+          ")"
+        )
+        .css({ "background-color": "hsl(" + hue + ", 100%, 50%)" })
+    );
 
-        if(answer["correct"]) {
-          questions_correct++;
-        }
-        questions_answered++;
-        break;
+    questions_correct = questions_correct + parseInt(answer.score);
+    questions_answered =
+      questions_answered + parseInt(answer.max_score);
 
-      case "sba":
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: answer["answer"],
-              title: n
-            })
-            .text(n)
-        );
-
-        if(answer["answer"] == "correct") {
-          questions_correct++;
-        }
-        questions_answered++;
-        break;
-
-      case "emq":
-        // To generate the correct colour we use HSL were
-        // the hue going from 0 -> 60 - 120 represents
-        // green -> yellow -> red
-        ratio = answer["n_correct"] / answer["answer"].length;
-        hue = ratio * 120;
-
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: "emq",
-              title: n
-            })
-            .text(
-              n +
-              " (" +
-              answer["n_correct"] +
-              "/" +
-              answer["answer"].length +
-              ")"
-            )
-            .css({ "background-color": "hsl(" + hue + ", 100%, 50%)" })
-        );
-
-        questions_correct = questions_correct + parseInt(answer["n_correct"]);
-        questions_answered =
-          questions_answered + parseInt(answer["answer"].length);
-        break;
-
-      case "mba":
-        correct = 0;
-        q_number = 0;
-
-        for(i in answer["answers"]) {
-          if(answer["answers"][i]["answer"] == "correct") {
-            correct++;
-          }
-          q_number++;
-        }
-
-        ratio = correct / q_number;
-
-        hue = ratio * 120;
-
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: "mba",
-              title: n
-            })
-            .text(n + " (" + correct + "/" + q_number + ")")
-            .css({ "background-color": "hsl(" + hue + ", 100%, 50%)" })
-        );
-
-        questions_correct = questions_correct + correct;
-        questions_answered = questions_answered + q_number;
-
-        break;
-
-      case "rank":
-        // TODO
-        console.log(answer);
-
-        break;
-
-      case "tf":
-        let ratio = answer["n_correct"] / answer["answer"].length;
-        let hue = ratio * 120;
-
-        list.append(
-          $(document.createElement("li"))
-            .attr({
-              id: "score-" + i,
-              class: "tf",
-              title: n
-            })
-            .text(
-              n +
-              " (" +
-              answer["n_correct"] +
-              "/" +
-              answer["answer"].length +
-              ")"
-            )
-            .css({ "background-color": "hsl(" + hue + ", 100%, 50%)" })
-        );
-
-        questions_correct = questions_correct + parseInt(answer["n_correct"]);
-        questions_answered =
-          questions_answered + parseInt(answer["answer"].length);
-
-        break;
-    }
 
     // Scores should link to their question
     $("#score-" + i).click(function (n) {
@@ -740,7 +627,7 @@ function buildActiveScoreList() {
       "/" +
       questions_answered +
       " over " +
-      Object.size(hash_answer_map) +
+      Object.size(filtered_answers) +
       " questions)"
     );
 
@@ -2067,16 +1954,29 @@ function loadQuestion(n) {
     $(e).click(nextQuestion);
   });
 
-  if(hash_answer_map.hasOwnProperty(qid) && auto_load_previous_answers) {
-    let ans = hash_answer_map[qid].slice(-1)[0];
-    if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
-      checkAnswer(ans, true);
-    }
-    //switch(question_type) {
-    //    case "sba":
-    //        checkAnswer(hash_answer_map[qid], true);
-    //        break
-    //}
+  // if(hash_answer_map.hasOwnProperty(qid) && auto_load_previous_answers) {
+  //   let ans = hash_answer_map[qid].slice(-1)[0];
+  //   console.log(ans)
+  //   if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
+  //     checkAnswer(ans, true);
+  //   }
+  //   //switch(question_type) {
+  //   //    case "sba":
+  //   //        checkAnswer(hash_answer_map[qid], true);
+  //   //        break
+  //   //}
+  // }
+  if(auto_load_previous_answers) {
+    console.log(qid)
+    window.db.answers.where("qid").equals(qid).first((ans) => {
+      // if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
+      //   checkAnswer(ans, true);
+      // }
+      if(ans != undefined) {
+        checkAnswer(ans, true);
+      }
+
+    });
   }
 
   //scrollTo(0, $("#content").position().top);
@@ -2289,17 +2189,14 @@ function urltoFile(url, filename, mimeType) {
 
 
 
-function checkAnswer(e, load) {
+function checkAnswer(ans, load) {
   //load = "undefined";
   //load = typeof load !== 'undefined' ? load : false;
   //
   //needed to stop anchor momevent
   //e.preventDefault();
 
-  console.log("cui", current_question_uid)
-
   let data = questions[current_question_uid];
-  console.log(data)
 
   //current_question_uid_hash = hash_n_map[current_question_uid];
 
@@ -2307,123 +2204,121 @@ function checkAnswer(e, load) {
 
   $("#feedback").empty();
 
-  let best_sim, best_answer, sim, replaced_lower_case_answer;
+  let best_sim, best_answer, sim, replaced_lower_case_answer, score, max_score;
 
   switch(question_type) {
     case "sba":
-      let return_value = checkBestAnswer(e, load);
+      let return_value = checkBestAnswer(ans, load);
 
       if(return_value.s) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "sba",
+        saveAnswerToHashMap(current_question_uid, "sba", return_value.score, 1, {
           target_id: return_value.t,
           question_number: return_value.q,
-          date: Date(),
           answer: return_value.a
         });
       }
       break;
 
-    case "emq":
-      if(load == true) {
-        let i = 0;
-        $(".emq-select-box").each(function (index, option) {
-          $(option).val(e["answer"][i]);
-          i = i + 1;
-        });
-      }
+    // case "emq":
+    //   if(load == true) {
+    //     let i = 0;
+    //     $(".emq-select-box").each(function (index, option) {
+    //       $(option).val(e["answer"][i]);
+    //       i = i + 1;
+    //     });
+    //   }
 
-      var answers = [];
-      var correct = [];
-      var n_correct = 0;
-      $(".emq-question").each(function (index, option) {
-        select = $(option).children("select");
+    //   var answers = [];
+    //   var correct = [];
+    //   var n_correct = 0;
+    //   $(".emq-question").each(function (index, option) {
+    //     select = $(option).children("select");
 
-        selected_option = select.val();
-        correct_option = option.getAttribute("data-answer");
-        feedback = option.getAttribute("data-feedback");
+    //     selected_option = select.val();
+    //     correct_option = option.getAttribute("data-answer");
+    //     feedback = option.getAttribute("data-feedback");
 
-        // Don't display feedback if none has been defined
-        if(feedback == null) {
-          feedback = "";
-        }
+    //     // Don't display feedback if none has been defined
+    //     if(feedback == null) {
+    //       feedback = "";
+    //     }
 
-        select.remove();
+    //     select.remove();
 
-        answers.push(selected_option);
+    //     answers.push(selected_option);
 
-        if(correct_option == selected_option) {
-          $(option).append(
-            "<br/><span class='emq-answer-feedback correct'>Correct: <b>" +
-            correct_option +
-            "</b> is the right answer<br/>-----------<br/>" +
-            feedback +
-            "</span>"
-          );
-          correct.push("correct");
-          n_correct = n_correct + 1;
-        } else {
-          //$(option).addClass("incorrect");
-          $(option).append(
-            "<br/><span class='emq-answer-feedback incorrect'>Incorrect: <b>" +
-            correct_option +
-            "</b> is the right answer (you said <i>" +
-            selected_option +
-            "</i>)<br/>-----------<br/>" +
-            feedback +
-            "</span>"
-          );
-          correct.push("incorrect");
-        }
-      });
+    //     if(correct_option == selected_option) {
+    //       $(option).append(
+    //         "<br/><span class='emq-answer-feedback correct'>Correct: <b>" +
+    //         correct_option +
+    //         "</b> is the right answer<br/>-----------<br/>" +
+    //         feedback +
+    //         "</span>"
+    //       );
+    //       correct.push("correct");
+    //       n_correct = n_correct + 1;
+    //     } else {
+    //       //$(option).addClass("incorrect");
+    //       $(option).append(
+    //         "<br/><span class='emq-answer-feedback incorrect'>Incorrect: <b>" +
+    //         correct_option +
+    //         "</b> is the right answer (you said <i>" +
+    //         selected_option +
+    //         "</i>)<br/>-----------<br/>" +
+    //         feedback +
+    //         "</span>"
+    //       );
+    //       correct.push("incorrect");
+    //     }
+    //   });
 
-      $(".check-button").remove();
+    //   $(".check-button").remove();
 
-      // Save answer
-      saveAnswerToHashMap(current_question_uid, {
-        type: "emq",
-        date: Date(),
-        answer: answers,
-        correct: correct,
-        n_correct: n_correct
-      });
+    //   // Save answer
+    //   saveAnswerToHashMap(current_question_uid, {
+    //     type: "emq",
+    //     date: Date(),
+    //     answer: answers,
+    //     correct: correct,
+    //     n_correct: n_correct
+    //   });
 
-      break;
-    case "mba":
-      if(load == true) {
-        for(i in e["answers"]) {
-          p = e["answers"][i];
-          checkBestAnswer(p, load);
-        }
-      } else {
-        var save_answer = false;
+    //   break;
+    // case "mba":
+    //   if(load == true) {
+    //     for(i in e["answers"]) {
+    //       p = e["answers"][i];
+    //       checkBestAnswer(p, load);
+    //     }
+    //   } else {
+    //     var save_answer = false;
 
-        return_value = checkBestAnswer(e, load);
+    //     return_value = checkBestAnswer(e, load);
 
-        if(return_value.s) {
-          mba_answers[return_value.q] = {
-            target_id: return_value.t,
-            answer: return_value.a,
-            question_number: return_value.q
-          };
-        }
+    //     if(return_value.s) {
+    //       mba_answers[return_value.q] = {
+    //         target_id: return_value.t,
+    //         answer: return_value.a,
+    //         question_number: return_value.q
+    //       };
+    //     }
 
-        n = $(".answer-list").length;
+    //     n = $(".answer-list").length;
 
-        if(n == Object.size(mba_answers)) {
-          saveAnswerToHashMap(current_question_uid, {
-            type: "mba",
-            answers: mba_answers,
-            date: Date.now()
-          });
-        } else {
-          // Don't show feedback until all the questions have been
-          // attempted
-          return;
-        }
-      }
+    //     if(n == Object.size(mba_answers)) {
+    //       saveAnswerToHashMap(current_question_uid, {
+    //         type: "mba",
+    //         answers: mba_answers,
+    //         date: Date.now()
+    //       });
+    //     } else {
+    //       // Don't show feedback until all the questions have been
+    //       // attempted
+    //       return;
+    //     }
+    //   }
 
-      break;
+    //   break;
     case "rapid":
       if(load == true) {
         //
@@ -2431,8 +2326,8 @@ function checkAnswer(e, load) {
         //                // and rebuild it from the saved answer.
         //                //$("#sortable-list").empty();
         //                //buildRankList(e['order'], data['answers']);
-        console.log(e["answer"]);
-        $("#answer input").val(e["answer"]);
+        console.log(ans["other"]["answer"]);
+        $("#answer input").val(ans["other"]["answer"]);
         //                //i = 0;
         //                $("#answer-list li").each(function(index, option) {
         //                    $(option).find("input").val(e["answers"][option.getAttribute("data-option")]);
@@ -2543,7 +2438,7 @@ function checkAnswer(e, load) {
           if(best_sim >= similarity_limit) {
             $("#answer").addClass("correct");
             $("#answer").addClass("similarity-correct");
-            n_correct = n_correct + 1;
+            // n_correct = n_correct + 1;
             correct = true;
           } else {
             $("#answer").addClass("incorrect");
@@ -2566,11 +2461,12 @@ function checkAnswer(e, load) {
       $("#normal-button").remove();
       $(".check-button").remove();
 
+      score = 0;
+      if(correct) { score = 1 }
+
       // Save answer
       if(load != true) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "rapid",
-          date: Date(),
+        saveAnswerToHashMap(current_question_uid, "rapid", score, 1, {
           answer: a,
           correct: correct
         });
@@ -2584,8 +2480,8 @@ function checkAnswer(e, load) {
         //                // and rebuild it from the saved answer.
         //                //$("#sortable-list").empty();
         //                //buildRankList(e['order'], data['answers']);
-        console.log(e["answer"]);
-        $("#answer input").val(e["answer"]);
+        console.log(ans["other"]["answer"]);
+        $("#answer input").val(ans["other"]["answer"]);
         //                //i = 0;
         //                $("#answer-list li").each(function(index, option) {
         //                    $(option).find("input").val(e["answers"][option.getAttribute("data-option")]);
@@ -2695,11 +2591,13 @@ function checkAnswer(e, load) {
       });
 
       correct = false;
+      score = 0;
       if(best_sim >= similarity_limit) {
         $("#answer").addClass("correct");
         $("#answer").addClass("similarity-correct");
-        n_correct = n_correct + 1;
+        // n_correct = n_correct + 1;
         correct = true;
+        score = 1;
       } else {
         $("#answer").addClass("incorrect");
       }
@@ -2710,9 +2608,7 @@ function checkAnswer(e, load) {
 
       // Save answer
       if(load != true) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "image_answer",
-          date: Date(),
+        saveAnswerToHashMap(current_question_uid, "image_answer", score, 1, {
           answer: a,
           correct: correct
         });
@@ -2725,12 +2621,12 @@ function checkAnswer(e, load) {
         // and rebuild it from the saved answer.
         //$("#sortable-list").empty();
         //buildRankList(e['order'], data['answers']);
-        console.log(e["answers"]);
+        console.log(ans["other"]["answers"]);
         //i = 0;
         $("#answer-list li").each(function (index, option) {
           $(option)
             .find("input")
-            .val(e["answers"][option.getAttribute("data-option")]);
+            .val(ans["other"]["answers"][option.getAttribute("data-option")]);
           //i = i+1;
         });
       }
@@ -2804,14 +2700,13 @@ function checkAnswer(e, load) {
 
       $(".check-button").remove();
 
+      max_score = $("#answer-list li").length;
+
       // Save answer
       if(load != true) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "label",
-          date: Date(),
+        saveAnswerToHashMap(current_question_uid, "label", n_correct, max_score, {
           answers: answers,
           correct: correct,
-          n_correct: n_correct
         });
       }
 
@@ -2821,7 +2716,7 @@ function checkAnswer(e, load) {
         // If we are loading an answer we clear our answer list
         // and rebuild it from the saved answer.
         $("#sortable-list").empty();
-        buildRankList(e["order"], data["answers"]);
+        buildRankList(ans["other"]["order"], data["answers"]);
       }
 
       order = [];
@@ -2841,7 +2736,7 @@ function checkAnswer(e, load) {
       var neg_marks = 0;
 
       // Max score is based upon the vumber of options
-      var max_score = 0;
+      max_score = 0;
       for(var x = 1; x < number_options; x++) {
         max_score = max_score + x;
       }
@@ -2910,13 +2805,9 @@ function checkAnswer(e, load) {
 
       // Save answer
       if(load != true) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "rank",
-          date: Date(),
+        saveAnswerToHashMap(current_question_uid, "rank", score, max_score, {
           order: order,
           correct_order: correct_order,
-          score: score,
-          max_score: max_score
         });
       }
 
@@ -2984,6 +2875,8 @@ function checkAnswer(e, load) {
         }
       });
 
+      max_score = answers.length
+
       $(".tf-answer-block")
         .removeClass("allow-hover")
         .find("*")
@@ -2992,13 +2885,13 @@ function checkAnswer(e, load) {
         });
 
       if(save_answer == true) {
-        saveAnswerToHashMap(current_question_uid, {
-          type: "tf",
-          date: Date(),
-          answer: answers,
-          correct: correct,
-          n_correct: n_correct
-        });
+        saveAnswerToHashMap(current_question_uid,
+          "tf",
+          score, max_score,
+          {
+            answer: answers,
+            correct: correct,
+          });
       }
 
       $(".check-button").remove();
@@ -3046,10 +2939,11 @@ function checkAnswer(e, load) {
 
 function checkBestAnswer(e, load) {
   let target_id, save_answer, question_number, answer, text;
+  console.log(e);
   if(load == true) {
-    target_id = e["target_id"];
+    target_id = e["other"]["target_id"];
     save_answer = false;
-    question_number = e["question_number"];
+    question_number = e["other"]["question_number"];
   } else {
     save_answer = true;
     target_id = e.currentTarget.getAttribute("id");
@@ -3059,9 +2953,11 @@ function checkBestAnswer(e, load) {
   // Add the "correct" class to all answers that are correct
   $("#question-" + question_number + "-answers > .1").addClass("correct");
 
+  let score = 0;
   // Check if the selected answer is correct
   if($("#" + target_id).hasClass("1")) {
     answer = "correct";
+    score = 1;
   } else {
     // If not we mark it as incorrect
     $("#" + target_id).addClass("incorrect");
@@ -3138,22 +3034,27 @@ function checkBestAnswer(e, load) {
       );
   });
 
+
   return {
     t: target_id,
     q: question_number,
     a: answer,
-    s: save_answer
+    s: save_answer,
+    score: score
   };
 }
 
-function saveAnswerToHashMap(qid, ans) {
-  if(!Array.isArray(hash_answer_map[qid])) {
-    hash_answer_map[qid] = [];
-  }
+function saveAnswerToHashMap(qid, type, score, max_score, other) {
 
-  hash_answer_map[qid].push(ans);
+  window.db.answers.put({ qid: qid, date: Date(), type: type, score: score, max_score: max_score, other: other });
 
-  saveAnswersToStorage();
+  // if(!Array.isArray(hash_answer_map[qid])) {
+  //   hash_answer_map[qid] = [];
+  // }
+
+  //hash_answer_map[qid].push(ans);
+
+  //saveAnswersToStorage();
   remote_store_synced = false;
 }
 
