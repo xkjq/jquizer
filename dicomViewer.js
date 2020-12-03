@@ -1,3 +1,17 @@
+// Dicom saved settings
+var dicom_settings_db = new Dexie("dicom_settings");
+dicom_settings_db.version(1).stores({
+    mouse_bindings: "button,mode,tool",
+});
+
+
+cornerstoneBase64ImageLoader.external.cornerstone = cornerstone;
+cornerstoneWebImageLoader.external.cornerstone = cornerstone;
+cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
+
+cornerstoneTools.init();
+
+
 
 export function loadCornerstone(main_element, db, images) {
     main_element.append("<div class='canvas-panel'></div>");
@@ -350,7 +364,7 @@ function resizeHandler() {
 }
 
 async function loadPrimaryDicomInterface(db) {
-    const bindings = await db.mouse_bindings.where({ mode: "0" }).toArray().catch((err) => { console.log(err); });
+    const bindings = await dicom_settings_db.mouse_bindings.where({ mode: "0" }).toArray().catch((err) => { console.log(err); });
     bindings.forEach(function (b) {
         let sel = $("#primary-mouse-binding select[data-button=" + b.button + "]").get(
             0
@@ -362,7 +376,7 @@ async function loadPrimaryDicomInterface(db) {
 }
 
 async function loadAltDicomInterface(db) {
-    const bindings = await db.mouse_bindings.where({ mode: "1" }).toArray().catch((err) => { console.log(err); });
+    const bindings = await dicom_settings_db.mouse_bindings.where({ mode: "1" }).toArray().catch((err) => { console.log(err); });
     bindings.forEach(function (b) {
         let sel = $(
             "#secondary-mouse-binding select[data-button=" + b.button + "]"
@@ -442,7 +456,7 @@ function changeMouseBinding(e, db) {
         cornerstoneTools.setToolActive(tool, { mouseButtonMask: parseInt(button) });
     }
 
-    db.mouse_bindings.put({ button: button, mode: mode, tool: tool });
+    dicom_settings_db.mouse_bindings.put({ button: button, mode: mode, tool: tool });
     //db.mouse_bindings.put({button: button, mode: mode, tool: tool}).then(loadPrimaryDicomInterface());
 }
 
@@ -464,4 +478,13 @@ export function selectThumb(new_index) {
         cornerstone.displayImage(dicom_element, b);
     });
     //c = cornerstone.getEnabledElement(dicom_element)
+}
+function urltoFile(url, filename, mimeType) {
+  return fetch(url)
+    .then(function (res) {
+      return res.arrayBuffer();
+    })
+    .then(function (buf) {
+      return new File([buf], filename, { type: mimeType });
+    });
 }

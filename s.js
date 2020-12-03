@@ -57,8 +57,8 @@ var search_string = false;
 var show_answered_questions = true;
 var show_only_flagged_questions = false;
 
-var questions_answered = 0;
-var questions_correct = 0;
+// let questions_answered = 0;
+// let questions_correct = 0;
 
 var last_answered_question = false;
 
@@ -68,7 +68,7 @@ let store = false;
 
 var db = new Dexie("user_interface");
 db.version(1).stores({
-  mouse_bindings: "button,mode,tool",
+  //mouse_bindings: "button,mode,tool",
   element_position: "[type+element],x,y",
   answers: "qid,date,type,score,max_score,other"
 });
@@ -1235,7 +1235,6 @@ $(document).ready(function () {
     $(".magnifyTool").hide();
 
     var selection = getSelected();
-    console.log(selection);
     selection = $.trim(selection);
     if(selection != "") {
       $("span.popup-tag").empty();
@@ -1244,7 +1243,7 @@ $(document).ready(function () {
       $("span.popup-tag").css("left", event.clientX);
       //$("span.popup-tag").text(selection);
 
-      text = selection;
+      let text = selection;
 
       // TODO: remove dulpication (also in checkAnswer.js
       // Build forms for statdx searches as it uses POST requests
@@ -1329,12 +1328,6 @@ $(document).ready(function () {
   });
 });
 
-
-cornerstoneBase64ImageLoader.external.cornerstone = cornerstone;
-cornerstoneWebImageLoader.external.cornerstone = cornerstone;
-cornerstoneWADOImageLoader.external.cornerstone = cornerstone;
-
-cornerstoneTools.init();
 
 function loadQuestion(n) {
   saveOpenQuestion(n);
@@ -2027,19 +2020,19 @@ function loadQuestion(n) {
       move: dragMoveListener,
 
       // call this function on every dragend event
-      end(event) {
-        var textEl = event.target.querySelector("p");
+      // end(event) {
+      //   var textEl = event.target.querySelector("p");
 
-        textEl &&
-          (textEl.textContent =
-            "moved a distance of " +
-            Math.sqrt(
-              (Math.pow(event.pageX - event.x0, 2) +
-                Math.pow(event.pageY - event.y0, 2)) |
-              0
-            ).toFixed(2) +
-            "px");
-      }
+      //   textEl &&
+      //     (textEl.textContent =
+      //       "moved a distance of " +
+      //       Math.sqrt(
+      //         (Math.pow(event.pageX - event.x0, 2) +
+      //           Math.pow(event.pageY - event.y0, 2)) |
+      //         0
+      //       ).toFixed(2) +
+      //       "px");
+      // }
     }
   });
 
@@ -2177,17 +2170,6 @@ function buildRankList(options, answers) {
   }
 }
 
-function urltoFile(url, filename, mimeType) {
-  return fetch(url)
-    .then(function (res) {
-      return res.arrayBuffer();
-    })
-    .then(function (buf) {
-      return new File([buf], filename, { type: mimeType });
-    });
-}
-
-
 
 function checkAnswer(ans, load) {
   //load = "undefined";
@@ -2204,7 +2186,7 @@ function checkAnswer(ans, load) {
 
   $("#feedback").empty();
 
-  let best_sim, best_answer, sim, replaced_lower_case_answer, score, max_score;
+  let best_sim, best_answer, sim, replaced_lower_case_answer, score, max_score, a, diff, fragment, span, color;
 
   switch(question_type) {
     case "sba":
@@ -2344,7 +2326,7 @@ function checkAnswer(ans, load) {
         .split(",");
       let is_normal = $("#answer").attr("data-normal");
 
-      let a = $("#answer input")
+      a = $("#answer input")
         .val()
         .trim();
 
@@ -2819,7 +2801,7 @@ function checkAnswer(ans, load) {
         var save_answer = false;
 
         $(".tf-answer-block li").each(function (index, option) {
-          if(e.answer[index] == 1) {
+          if(ans["other"].answer[index] == 1) {
             //$(option).find(".tf-true").addClass("tf-active");
             $(option).addClass("tf_answer_true");
           }
