@@ -2079,7 +2079,7 @@ function moveElement(element, x, y) {
 
 function loadImage(data) {
   if(image_viewer == "cornerstone") {
-    dicomViewer.loadCornerstone($("#main"), db, data["images"]);
+    dicomViewer.loadCornerstone($("#main"), db, data);
   } else {
     $("#main")
       .append("<br>")

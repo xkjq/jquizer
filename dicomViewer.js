@@ -13,7 +13,7 @@ cornerstoneTools.init();
 
 
 
-export function loadCornerstone(main_element, db, images) {
+export function loadCornerstone(main_element, db, data) {
     main_element.append("<div class='canvas-panel'></div>");
     $(".canvas-panel").append($("<div id='dicom-image'></div>"));
 
@@ -95,24 +95,50 @@ export function loadCornerstone(main_element, db, images) {
         $("#dicom-settings-panel").toggle();
     });
 
+    let images = data["images"];
+
     // Make sure we have an array
-    if(!Array.isArray(images)) {
+    if (!Array.isArray(images)) {
         images = [images];
     }
 
-    load(images);
+    let annotations = [];
+    if (data.annotations) { 
+      annotations = data.annotations[figure_to_load.split("-")[1]];
+      if (!Array.isArray(annotations)) {
+        annotations = [annotations];
+      }
+    }
 
-    async function load(images) {
-        console.log("images", images);
+    load(images, annotations);
+
+    function loadAnnotation(imageId, annotation) {
+        const toolStateManager = cornerstoneTools.globalImageIdSpecificToolStateManager;
+
+        if (annotation == undefined || annotation.length < 1) { return }
+
+        let tool_state_no_id = JSON.parse(annotation);
+
+        let tool_state = {};
+        tool_state[imageId] = tool_state_no_id;
+
+        toolStateManager.restoreToolState(tool_state);
+    }
+
+    async function load(images, annotations) {
+        console.log("images", images, annotations);
         let imageIds = [];
-        for(let i = 0; i < images.length; i++) {
+        for (let i = 0; i < images.length; i++) {
             let data_url = images[i];
+            const annotation = annotations[i];
             // check stack type
-            if(data_url.startsWith("data:image")) {
+            if (data_url.startsWith("data:image")) {
                 imageId = "base64://" + data_url.split(",")[1];
 
+                loadAnnotation(imageId, annotation);
+
                 imageIds.push(imageId);
-            } else if(data_url.startsWith("data:application/dicom")) {
+            } else if (data_url.startsWith("data:application/dicom")) {
                 //stack = stack.split(";")[1];
 
                 let dfile = await urltoFile(data_url, "dicom", "application/dicom");
@@ -120,6 +146,9 @@ export function loadCornerstone(main_element, db, images) {
                 const imageId = cornerstoneWADOImageLoader.wadouri.fileManager.add(
                     dfile
                 );
+
+                loadAnnotation(imageId, annotation);
+
                 imageIds.push(imageId);
                 //cornerstone.loadImage(imageId).then(function(image) {
                 //    tempFunction(image);
@@ -127,9 +156,12 @@ export function loadCornerstone(main_element, db, images) {
             } else {
                 console.log(window.location.href)
                 let url = window.location.href.replace(/\/\#\/?$/, '') + "/" + data_url
-                if(data_url.endsWith("dcm")) {
+                if (data_url.endsWith("dcm")) {
                     url = "wadouri:" + url;
                 }
+
+                loadAnnotation(url, annotation);
+
                 imageIds.push(url);
 
 
@@ -148,9 +180,9 @@ export function loadCornerstone(main_element, db, images) {
         });
     }
 
-    if(images.length > 1) {
+    if (images.length > 1) {
         $(".canvas-panel").append("<div id='image-thumbs'></div>");
-        for(let id = 0; id < images.length; id++) {
+        for (let id = 0; id < images.length; id++) {
             let n = id + 1;
             console.log("load thumb", id);
             let thumb = $(
@@ -169,9 +201,9 @@ export function loadCornerstone(main_element, db, images) {
 
             let img;
 
-            if(image_url.startsWith("data")) {
+            if (image_url.startsWith("data")) {
                 // based (image) data url, just load the image directly
-                if(image_url.startsWith("data:image/")) {
+                if (image_url.startsWith("data:image/")) {
                     img = $("<img />", {
                         src: image_url,
                         id: "thumb-image-" + id,
@@ -211,7 +243,7 @@ export function loadCornerstone(main_element, db, images) {
                     });
                 }
             } else {
-                if(!image_url.endsWith("dicom") && !image_url.endsWith("dcm")) {
+                if (!image_url.endsWith("dicom") && !image_url.endsWith("dcm")) {
                     img = $("<img />", {
                         src: image_url,
                         id: "thumb-image-" + id,
@@ -400,7 +432,7 @@ function onImageRendered(e) {
     $("#total_image_number").text(stack.imageIds.length);
     $("#current_image_number").text(parseInt(stack.currentImageIdIndex) + 1);
 
-    if(stack.imageIds.length > 1) {
+    if (stack.imageIds.length > 1) {
         $(".thumb").removeClass("thumb-active");
         $("#thumb-" + stack.currentImageIdIndex).addClass("thumb-active");
     }
@@ -452,7 +484,7 @@ function changeMouseBinding(e, db) {
 
     // Directly activate primary tools (secondary will be activated when modifier
     // key is pressed
-    if(mode == "0") {
+    if (mode == "0") {
         cornerstoneTools.setToolActive(tool, { mouseButtonMask: parseInt(button) });
     }
 
@@ -464,7 +496,7 @@ export function selectThumb(new_index) {
     console.log("select thumb new index", new_index);
     // There must be a better way to do this...
     let dicom_element = document.getElementById("dicom-image");
-    if(dicom_element == null) {
+    if (dicom_element == null) {
         return;
     }
     let c = cornerstone.getEnabledElement(dicom_element);
@@ -480,11 +512,11 @@ export function selectThumb(new_index) {
     //c = cornerstone.getEnabledElement(dicom_element)
 }
 function urltoFile(url, filename, mimeType) {
-  return fetch(url)
-    .then(function (res) {
-      return res.arrayBuffer();
-    })
-    .then(function (buf) {
-      return new File([buf], filename, { type: mimeType });
-    });
+    return fetch(url)
+        .then(function (res) {
+            return res.arrayBuffer();
+        })
+        .then(function (buf) {
+            return new File([buf], filename, { type: mimeType });
+        });
 }
