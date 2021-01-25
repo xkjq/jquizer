@@ -292,6 +292,7 @@ $(document).ready(function () {
       $("#randomise-question-order-btn").click(e => {
         shuffle(filtered_questions);
         saveLoadedQuestionSetOrder(filtered_questions);
+        loadFilters();
         loadQuestion(0);
       });
 
