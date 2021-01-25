@@ -221,7 +221,7 @@ $(document).ready(function () {
       });
 
       $("#goto-question-button").click(function () {
-        val = $("#goto-question-input").val();
+        let val = $("#goto-question-input").val();
         if(val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
           $("#goto-question-input").blur();
@@ -232,7 +232,7 @@ $(document).ready(function () {
 
       $("#goto-question-hide-button").click(function () {
         //duplicate stuff....
-        val = $("#goto-question-input").val();
+        let val = $("#goto-question-input").val();
         if(val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
           $("#goto-question-input").blur();
