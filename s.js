@@ -289,6 +289,12 @@ $(document).ready(function() {
           });
       });
 
+      $("#randomise-question-order-btn").click(e => {
+        shuffle(filtered_questions);
+        saveLoadedQuestionSetOrder(filtered_questions);
+        loadQuestion(0);
+      });
+
       $("#answers-file").on("change", handleAnswersFileSelect);
 
       $("#questions-file").on("change", handleQuestionsFileSelect);
@@ -384,6 +390,12 @@ function saveLoadedQuestionSet(n) {
   // (may be better ot use hashes instead)
   console.log("Save", n);
   store.save({ key: "current_question_set", value: n });
+}
+
+function saveLoadedQuestionSetOrder(n) {
+  // This will fail if filters are changed
+  console.log("Save question order", n);
+  store.save({ key: "question_order", value: n });
 }
 
 function loadPreviousQuestion(n) {
@@ -1129,6 +1141,22 @@ function loadFilters() {
     filtered_questions.push(n);
   }
 
+  // Try and load previous question order
+  store.exists("question_order", function(exists) {
+    if (exists) {
+      store.get("question_order", function(obj) {
+        loaded_question_order = obj["value"];
+
+        // Check we have the same question set (apparently javasrcipt sets are useless...)
+        if (areEqualArrays(loaded_question_order, filtered_questions)) {
+          // If so use the loaded one
+          filtered_questions = loaded_question_order
+        }
+      });
+    } else {
+    }
+  });
+
   for (n in filtered_questions) {
     hash_n_map[filtered_questions[n]] = parseInt(n);
   }
@@ -1447,3 +1475,35 @@ $(document).ready(function() {
     }
   });
 });
+
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+const areEqualArrays = (first, second) => {
+   if(first.length !== second.length){
+      return false;
+   };
+   for(let i = 0; i < first.length; i++){
+      if(!second.includes(first[i])){
+         return false;
+      };
+   };
+   return true;
+};
