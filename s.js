@@ -1030,7 +1030,7 @@ function loadFilters() {
   store.exists("question_order", function(exists) {
     if (exists) {
       store.get("question_order", function(obj) {
-        loaded_question_order = obj["value"];
+        let loaded_question_order = obj["value"];
 
         // Check we have the same question set (apparently javasrcipt sets are useless...)
         if (areEqualArrays(loaded_question_order, filtered_questions)) {
@@ -1042,7 +1042,7 @@ function loadFilters() {
     }
   });
 
-  for (n in filtered_questions) {
+  for (let n in filtered_questions) {
     hash_n_map[filtered_questions[n]] = parseInt(n);
   }
 
