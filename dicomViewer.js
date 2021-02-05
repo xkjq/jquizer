@@ -13,12 +13,13 @@ cornerstoneTools.init();
 
 
 
-export function loadCornerstone(main_element, db, data) {
+export function loadCornerstone(main_element, db, images, annotations_to_load, load_as_stack=false) {
     main_element.append("<div class='canvas-panel'></div>");
-    $(".canvas-panel").append($("<div id='dicom-image'></div>"));
+    $(".canvas-panel").append($("<div class='single-dicom-viewer'></div>"));
 
-    $("#dicom-image")
-        .append(
+    let single_dicom_viewer = main_element.find(".single-dicom-viewer").get(0);
+    console.log(single_dicom_viewer);
+    $(single_dicom_viewer).append(
             $(
                 "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
             )
@@ -95,28 +96,35 @@ export function loadCornerstone(main_element, db, data) {
         $("#dicom-settings-panel").toggle();
     });
 
-    let images = data["images"];
+    //let images = data["images"];
 
     // Make sure we have an array
     if (!Array.isArray(images)) {
         images = [images];
     }
 
-    let annotations = [];
-    if (data.annotations) { 
-      annotations = data.annotations[figure_to_load.split("-")[1]];
-      if (!Array.isArray(annotations)) {
+    //let annotations = [];
+    //if (annotations_to_load) { 
+      //annotations = annotations_to_load[figure_to_load.split("-")[1]];
+      //if (!Array.isArray(annotations)) {
+        //annotations = [annotations];
+      //}
+    //}
+    let annotations = annotations_to_load;
+    if (!Array.isArray(annotations)) {
         annotations = [annotations];
-      }
     }
+    console.log("annon", annotations);
 
     load(images, annotations);
 
     function loadAnnotation(imageId, annotation) {
+        console.log("loadAnnotations", imageId, annotations);
         const toolStateManager = cornerstoneTools.globalImageIdSpecificToolStateManager;
 
         if (annotation == undefined || annotation.length < 1) { return }
 
+        console.log(annotation);
         let tool_state_no_id = JSON.parse(annotation);
 
         let tool_state = {};
@@ -126,14 +134,17 @@ export function loadCornerstone(main_element, db, data) {
     }
 
     async function load(images, annotations) {
-        console.log("images", images, annotations);
+        console.log(images);
+        console.log(images.length);
         let imageIds = [];
         for (let i = 0; i < images.length; i++) {
+            console.log("process image", i, "url");
             let data_url = images[i];
+            console.log("process image url", data_url);
             const annotation = annotations[i];
             // check stack type
             if (data_url.startsWith("data:image")) {
-                imageId = "base64://" + data_url.split(",")[1];
+                let imageId = "base64://" + data_url.split(",")[1];
 
                 loadAnnotation(imageId, annotation);
 
@@ -155,8 +166,14 @@ export function loadCornerstone(main_element, db, data) {
                 //});
             } else {
                 console.log(window.location.href)
-                let url = window.location.href.replace(/\/\#\/?$/, '') + "/" + data_url
-                if (data_url.endsWith("dcm")) {
+                let url;
+                if (data_url.startsWith("http")) {
+                    url = data_url;
+                } else {
+                    url = window.location.href.replace(/\/\#\/?$/, '') + "/" + data_url
+                }
+
+                if (url.endsWith("dcm")) {
                     url = "wadouri:" + url;
                 }
 
@@ -174,14 +191,16 @@ export function loadCornerstone(main_element, db, data) {
         //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
         console.log("100", imageIds);
         cornerstone.loadAndCacheImage(imageIds[0]).then(function (image) {
-            loadCornerstoneMainImage(image, stack, db);
+
+            console.log("200", image);
+            loadCornerstoneMainImage(single_dicom_viewer, image, stack, db, load_as_stack);
         }).catch((err) => {
             console.log(err);
         });
     }
 
-    if (images.length > 1) {
-        $(".canvas-panel").append("<div id='image-thumbs'></div>");
+    if (images.length > 1 && load_as_stack == false) {
+        $(".single-dicom-viewer").append("<div id='image-thumbs'></div>");
         for (let id = 0; id < images.length; id++) {
             let n = id + 1;
             console.log("load thumb", id);
@@ -280,18 +299,21 @@ export function loadCornerstone(main_element, db, data) {
     }
 }
 
-function loadCornerstoneMainImage(image, stack, db) {
+function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
+    console.log("loadCornerstoneMainImage")
     // It is probably silly to do this each time we load a question
     const PanTool = cornerstoneTools.PanTool;
     const ZoomTool = cornerstoneTools.ZoomTool;
     const ZoomMouseWheelTool = cornerstoneTools.ZoomMouseWheelTool;
+    const StackScrollMouseWheelTool = cornerstoneTools.StackScrollMouseWheelTool;
     const WwwcTool = cornerstoneTools.WwwcTool;
     const WwwcRegionTool = cornerstoneTools.WwwcRegionTool;
     const RotateTool = cornerstoneTools.RotateTool;
     const StackScrollTool = cornerstoneTools.StackScrollTool;
     const MagnifyTool = cornerstoneTools.MagnifyTool;
+    const ArrowAnnotateTool = cornerstoneTools.ArrowAnnotateTool;
 
-    const element = document.getElementById("dicom-image");
+    console.log("enable element", element);
     cornerstone.enable(element);
 
     cornerstone.displayImage(element, image);
@@ -302,11 +324,26 @@ function loadCornerstoneMainImage(image, stack, db) {
     cornerstoneTools.addTool(PanTool);
     cornerstoneTools.addTool(ZoomTool);
     cornerstoneTools.addTool(ZoomMouseWheelTool);
+    cornerstoneTools.addTool(StackScrollMouseWheelTool);
     cornerstoneTools.addTool(WwwcTool);
     cornerstoneTools.addTool(WwwcRegionTool);
     cornerstoneTools.addTool(RotateTool);
     cornerstoneTools.addTool(StackScrollTool);
     cornerstoneTools.addTool(MagnifyTool);
+
+    cornerstoneTools.addTool(ArrowAnnotateTool, {
+    configuration: {
+        getTextCallback: () => {},
+        changeTextCallback: () => {},
+        allowEmptyLabel: true,
+        renderDashed: false,
+        drawHandles: false,
+        drawHandlesOnHover: true,
+    },
+  });
+
+  cornerstoneTools.setToolEnabled("ArrowAnnotate");
+
 
     let available_tools = [
         "Pan",
@@ -315,7 +352,7 @@ function loadCornerstoneMainImage(image, stack, db) {
         "WwwcRegion",
         "Rotate",
         "StackScroll",
-        "Magnify"
+        "Magnify",
     ];
     $(".mouse-binding-select option").remove();
 
@@ -335,7 +372,13 @@ function loadCornerstoneMainImage(image, stack, db) {
     $("#primary-mouse-binding .mouse-binding-select[data-button=2]").val("Wwwc");
     $("#primary-mouse-binding .mouse-binding-select[data-button=4]").val("Zoom");
     //cornerstoneTools.setToolActive("Pan", { mouseButtonMask: 1 });
-    cornerstoneTools.setToolActive("ZoomMouseWheel", { mouseButtonMask: 3 });
+
+    console.log(load_as_stack);
+    if (load_as_stack) {
+        cornerstoneTools.setToolActive("StackScrollMouseWheel", { mouseButtonMask: 3 });
+    } else {
+        cornerstoneTools.setToolActive("ZoomMouseWheel", { mouseButtonMask: 3 });
+    }
     //cornerstoneTools.setToolActive("Zoom", { mouseButtonMask: 4 });
     //cornerstoneTools.setToolActive("Wwwc", { mouseButtonMask: 2 });
     $("#secondary-mouse-binding .mouse-binding-select[data-button=1]").val(
@@ -373,8 +416,6 @@ function loadCornerstoneMainImage(image, stack, db) {
     //  .get(0)
     //  .addEventListener("change", changeControlSelection);
 
-    //$("#dicom-image").attr("height", "1000px");
-
     resizeHandler();
 
     window.addEventListener("resize", resizeHandler);
@@ -386,12 +427,17 @@ function loadCornerstoneMainImage(image, stack, db) {
         },
         false
     );
+
+
+    $(element).on("mouseup", function (event) {
+        $(".magnifyTool").hide();
+    });
 }
 
 function resizeHandler() {
-    let element = document.getElementById("dicom-image");
+    let element = document.getElementsByClassName("single-dicom-viewer")[0];
     let h = window.innerHeight - $("#header").height() - 16;
-    $("#dicom-image").height(h);
+    $(element).height(h);
     cornerstone.resize(element, true);
 }
 
@@ -495,7 +541,7 @@ function changeMouseBinding(e, db) {
 export function selectThumb(new_index) {
     console.log("select thumb new index", new_index);
     // There must be a better way to do this...
-    let dicom_element = document.getElementById("dicom-image");
+    let dicom_element = document.getElementsByClassName("single-dicom-viewer")[0];
     if (dicom_element == null) {
         return;
     }
@@ -507,6 +553,7 @@ export function selectThumb(new_index) {
     console.log("select thumb id", id);
     console.log("select thumb el", dicom_element);
     cornerstone.loadImage(id).then(b => {
+        console.log("b", b);
         cornerstone.displayImage(dicom_element, b);
     });
     //c = cornerstone.getEnabledElement(dicom_element)

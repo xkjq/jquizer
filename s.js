@@ -1232,7 +1232,7 @@ $(document).ready(function () {
 
   $("#main, #feedback").mouseup(function (event) {
     // Fix bug in cornerstone tools magnfiy??
-    $(".magnifyTool").hide();
+    //$(".magnifyTool").hide();
 
     var selection = getSelected();
     selection = $.trim(selection);
@@ -2079,7 +2079,7 @@ function moveElement(element, x, y) {
 
 function loadImage(data) {
   if(image_viewer == "cornerstone") {
-    dicomViewer.loadCornerstone($("#main"), db, data);
+    dicomViewer.loadCornerstone($("#main"), db, data["images"], data["annotations"]);
   } else {
     $("#main")
       .append("<br>")
@@ -2900,7 +2900,7 @@ function checkAnswer(ans, load) {
   }
 
   // Check if we have a valid dicom displayed
-  if($("#dicom-image").length > 0) {
+  if($(".single-dicom-viewer").length > 0) {
     // Move feedback location if we do
     $("#feedback").appendTo("#answer-block");
   }
