@@ -134,13 +134,9 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     }
 
     async function load(images, annotations) {
-        console.log(images);
-        console.log(images.length);
         let imageIds = [];
         for (let i = 0; i < images.length; i++) {
-            console.log("process image", i, "url");
             let data_url = images[i];
-            console.log("process image url", data_url);
             const annotation = annotations[i];
             // check stack type
             if (data_url.startsWith("data:image")) {
@@ -149,7 +145,9 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
                 loadAnnotation(imageId, annotation);
 
                 imageIds.push(imageId);
-            } else if (data_url.startsWith("data:application/dicom")) {
+
+            // Treat application/octet-stream as if they are dicoms
+            } else if (data_url.startsWith("data:application/dicom") || data_url.startsWith("data:application/octet-stream")) {
                 //stack = stack.split(";")[1];
 
                 let dfile = await urltoFile(data_url, "dicom", "application/dicom");
@@ -165,7 +163,6 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
                 //    tempFunction(image);
                 //});
             } else {
-                console.log(window.location.href)
                 let url;
                 if (data_url.startsWith("http")) {
                     url = data_url;
@@ -189,10 +186,8 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             imageIds
         };
         //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
-        console.log("100", imageIds);
         cornerstone.loadAndCacheImage(imageIds[0]).then(function (image) {
 
-            console.log("200", image);
             loadCornerstoneMainImage(single_dicom_viewer, image, stack, db, load_as_stack);
         }).catch((err) => {
             console.log(err);
@@ -203,7 +198,6 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
         $(".single-dicom-viewer").append("<div id='image-thumbs'></div>");
         for (let id = 0; id < images.length; id++) {
             let n = id + 1;
-            console.log("load thumb", id);
             let thumb = $(
                 "<div class='thumb' id='thumb-" +
                 id +

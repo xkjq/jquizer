@@ -26,6 +26,7 @@ var fix_broken_question_formatting = true;
 
 var default_question_set = "questions/default";
 
+
 // Settings
 var auto_load_previous_answers = true;
 var rebuild_score_list_on_answer = true;
