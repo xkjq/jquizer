@@ -10,6 +10,7 @@
   transform: translateY(-50%);
   overflow-y: auto;
   max-height: 100%;
+  max-width: 30%;
   user-select: none;
 }
 
@@ -37,6 +38,17 @@
 .single-dicom-viewer {
     position: relative;
 }
+#dicom-toggle-mode-button {
+  position: absolute;
+  left: 0;
+  font-size: 40;
+  z-index: 99;
+  opacity: 20%;
+}
+
+#dicom-toggle-mode-button:hover {
+  opacity: 100%;
+}
 
 #dicom-settings-button {
   position: absolute;
@@ -63,4 +75,14 @@
   max-width: 100%;
   max-height: 100%;
   z-index: 999;
+}
+
+#dicom-window-panel {
+  position: absolute;
+  top: 100%;
+  transform: translate(0, -100%);
+  opacity: 0.0;
+}
+#dicom-window-panel:hover {
+  opacity: 1;
 }

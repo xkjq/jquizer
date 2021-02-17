@@ -13,17 +13,18 @@ cornerstoneTools.init();
 
 
 
-export function loadCornerstone(main_element, db, images, annotations_to_load, load_as_stack=false) {
+export function loadCornerstone(main_element, db, images, annotations_to_load, load_as_stack = false) {
     main_element.append("<div class='canvas-panel'></div>");
     $(".canvas-panel").append($("<div class='single-dicom-viewer'></div>"));
 
     let single_dicom_viewer = main_element.find(".single-dicom-viewer").get(0);
     console.log(single_dicom_viewer);
     $(single_dicom_viewer).append(
-            $(
-                "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
-            )
+        $(
+            "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
         )
+    )
+        .append($("<span id='dicom-toggle-mode-button' title='toggle stack/thumbnail view'>↻</span>"))
         .append($("<span id='dicom-settings-button'>&#9881;</span>"))
         .append(
             $(`<div id='dicom-settings-panel'>
@@ -87,13 +88,56 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             </div>
 
         </div>`)
+        ).append(
+            $(`<div id='dicom-window-panel'>
+           <button id='window-btn-abdomen'>Abdomen</button> 
+           <button id='window-btn-liver'>Liver</button> 
+           <button id='window-btn-mediastinum'>Mediastinum</button> 
+           <button id='window-btn-lung'>Lungs</button> 
+           <button id='window-btn-brain'>Brain</button> 
+           <button id='window-btn-stroke'>Stroke</button> 
+           <button id='window-btn-bone'>Bone</button> 
+            </div>`)
         );
+
+    let window_presets = {
+        "window-btn-abdomen": [400, 50],
+        "window-btn-liver": [150, 30],
+        "window-btn-mediastinum": [350, 50],
+        "window-btn-lung": [1500, -600],
+        "window-btn-brain": [80, 40],
+        "window-btn-stroke": [40, 40],
+        "window-btn-bone": [1800, 400]
+    }
+
+    $("#dicom-window-panel button").each((n, el) => {
+        $(el).click((e) => {
+            console.log(e);
+            console.log(e.target);
+            let button_id = e.target.id;
+            let [ww, wc] = window_presets[button_id];
+
+        let viewport = cornerstone.getViewport(single_dicom_viewer);
+        viewport.voi.windowWidth = parseFloat(ww);
+        viewport.voi.windowCenter = parseFloat(wc);
+        cornerstone.setViewport(single_dicom_viewer, viewport);
+
+        e.preventDefault();
+        })
+    })
 
     $("#dicom-settings-close").click(e => {
         $("#dicom-settings-panel").hide();
+        e.preventDefault();
     });
     $("#dicom-settings-button").click(e => {
         $("#dicom-settings-panel").toggle();
+    });
+    $("#dicom-toggle-mode-button").click(e => {
+        //$("#dicom-settings-panel").toggle();
+        let stack = !load_as_stack;
+        $(main_element).empty();
+        loadCornerstone(main_element, db, images, annotations_to_load, stack)
     });
 
     //let images = data["images"];
@@ -105,10 +149,10 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
 
     //let annotations = [];
     //if (annotations_to_load) { 
-      //annotations = annotations_to_load[figure_to_load.split("-")[1]];
-      //if (!Array.isArray(annotations)) {
-        //annotations = [annotations];
-      //}
+    //annotations = annotations_to_load[figure_to_load.split("-")[1]];
+    //if (!Array.isArray(annotations)) {
+    //annotations = [annotations];
+    //}
     //}
     let annotations = annotations_to_load;
     if (!Array.isArray(annotations)) {
@@ -134,6 +178,7 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     }
 
     async function load(images, annotations) {
+        console.log("LOAD");
         let imageIds = [];
         for (let i = 0; i < images.length; i++) {
             let data_url = images[i];
@@ -146,7 +191,7 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
 
                 imageIds.push(imageId);
 
-            // Treat application/octet-stream as if they are dicoms
+                // Treat application/octet-stream as if they are dicoms
             } else if (data_url.startsWith("data:application/dicom") || data_url.startsWith("data:application/octet-stream")) {
                 //stack = stack.split(";")[1];
 
@@ -174,6 +219,11 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
                     url = "wadouri:" + url;
                 }
 
+                // if there is no extension treat it as a dicom
+                if (/(?:\/|^)[^.\/]+$/.test(url)) {
+                    url = "wadouri:" + url;
+                }
+
                 loadAnnotation(url, annotation);
 
                 imageIds.push(url);
@@ -186,14 +236,16 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             imageIds
         };
         //cornerstone.loadAndCacheImage(imageIds[0]).then(function(image) {
+        console.log("load and cache", imageIds[0])
         cornerstone.loadAndCacheImage(imageIds[0]).then(function (image) {
 
+            console.log("LOAD and cache, then");
             loadCornerstoneMainImage(single_dicom_viewer, image, stack, db, load_as_stack);
         })
-        //.catch((err, err2) => {
-        //    console.log(err);
-        //    console.log(err2);
-        //});
+            .catch((err, err2) => {
+                console.log(err);
+
+            });
     }
 
     if (images.length > 1 && load_as_stack == false) {
@@ -329,17 +381,17 @@ function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
     cornerstoneTools.addTool(MagnifyTool);
 
     cornerstoneTools.addTool(ArrowAnnotateTool, {
-    configuration: {
-        getTextCallback: () => {},
-        changeTextCallback: () => {},
-        allowEmptyLabel: true,
-        renderDashed: false,
-        drawHandles: false,
-        drawHandlesOnHover: true,
-    },
-  });
+        configuration: {
+            getTextCallback: () => { },
+            changeTextCallback: () => { },
+            allowEmptyLabel: true,
+            renderDashed: false,
+            drawHandles: false,
+            drawHandlesOnHover: true,
+        },
+    });
 
-  cornerstoneTools.setToolEnabled("ArrowAnnotate");
+    cornerstoneTools.setToolEnabled("ArrowAnnotate");
 
 
     let available_tools = [
