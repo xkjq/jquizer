@@ -189,9 +189,11 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
         cornerstone.loadAndCacheImage(imageIds[0]).then(function (image) {
 
             loadCornerstoneMainImage(single_dicom_viewer, image, stack, db, load_as_stack);
-        }).catch((err) => {
-            console.log(err);
-        });
+        })
+        //.catch((err, err2) => {
+        //    console.log(err);
+        //    console.log(err2);
+        //});
     }
 
     if (images.length > 1 && load_as_stack == false) {
@@ -295,6 +297,7 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
 
 function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
     console.log("loadCornerstoneMainImage")
+    console.log("load as stack:", load_as_stack)
     // It is probably silly to do this each time we load a question
     const PanTool = cornerstoneTools.PanTool;
     const ZoomTool = cornerstoneTools.ZoomTool;
