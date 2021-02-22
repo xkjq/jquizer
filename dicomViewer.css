@@ -38,28 +38,30 @@
 .single-dicom-viewer {
     position: relative;
 }
-#dicom-toggle-mode-button {
-  position: absolute;
-  left: 0;
+
+.dicom-button {
   font-size: 40;
   z-index: 99;
   opacity: 20%;
 }
 
-#dicom-toggle-mode-button:hover {
+.dicom-button:hover {
   opacity: 100%;
+}
+
+#dicom-toggle-mode-button {
+  position: absolute;
+  left: 0;
 }
 
 #dicom-settings-button {
   position: absolute;
   right: 0;
-  font-size: 40;
-  z-index: 99;
-  opacity: 20%;
 }
 
-#dicom-settings-button:hover {
-  opacity: 100%;
+#dicom-fullscreen-button {
+  position: absolute;
+  right: 50%;
 }
 
 #dicom-settings-panel {
