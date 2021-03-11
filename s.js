@@ -2619,13 +2619,13 @@ function checkAnswer(ans, load) {
       correct = false;
       score = 0;
       if(best_sim >= similarity_limit) {
-        $("#answer").addClass("correct");
-        $("#answer").addClass("similarity-correct");
+        $("#answer input").addClass("correct");
+        $("#answer input").addClass("similarity-correct");
         // n_correct = n_correct + 1;
         correct = true;
         score = 1;
       } else {
-        $("#answer").addClass("incorrect");
+        $("#answer input").addClass("incorrect");
       }
 
       $("#feedback").append("<br />");
