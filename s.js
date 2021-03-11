@@ -48,7 +48,7 @@ var hash_n_map = {};
 // Object to store all the answers given to a particualar question
 var hash_answer_map = {};
 
-var flagged_questions = new Set();
+//var flagged_questions = new Set();
 
 // uid of the currently loaded question
 let current_question_uid = 0;
@@ -72,6 +72,7 @@ db.version(1).stores({
   //mouse_bindings: "button,mode,tool",
   element_position: "[type+element],x,y",
   answers: "qid,date,type,score,max_score,other",
+  flagged: "&qid",
   //question_cache: "qid,date,type,score,max_score,other"
 });
 
@@ -309,9 +310,9 @@ $(document).ready(function () {
       $(document).keyup(keyUpHandler);
     });
 
-  loadAnswersFromStorage();
+  //loadAnswersFromStorage();
 
-  loadFlaggedQuestionsFromStorage();
+  //loadFlaggedQuestionsFromStorage();
 
   $("#content").swipe({
     swipeLeft: function (event, direction, distance, duration, fingerCount) {
@@ -368,13 +369,14 @@ function saveOpenQuestion(n) {
   store.save({ key: "current_question", value: n });
 }
 
-function saveFlaggedQuestions() {
-  // JSON.stringify doesn't suport sets...
-  store.save({
-    key: "flagged_questions",
-    value: JSON.stringify([...flagged_questions])
-  });
-}
+//function saveFlaggedQuestions() {
+//  // JSON.stringify doesn't suport sets...
+//  //db.flagged.put()
+//  store.save({
+//    key: "flagged_questions",
+//    value: JSON.stringify([...flagged_questions])
+//  });
+//}
 
 function saveLoadedQuestionSet(n) {
   // This will fail if filters are changed
@@ -427,30 +429,32 @@ function resetAnswers() {
     //ereader
     // store.save({ key: "answers", value: {} });
 
-    db.answers.delete().then(() => {
+    db.answers.clear().then(() => {
       console.log("Database successfully deleted");
     }).catch((err) => {
-      console.error("Could not delete database");
+      console.error("Could not delete database", err);
     }).finally(() => {
       // Do what should be done next...
+      loadFilters();
+      buildActiveScoreList();
+      $("#options").slideToggle("slow");
     });
-    loadFilters();
   }
 }
 
-function loadAnswersAndFeedback(data) {
-  console.log("LAF");
-  d = data;
-  console.log(d);
-  answers = d["answers"];
-  flagged_questions = d["flagged_questions"];
-  loadAnswers(answers);
-  loadFlaggedQuestions(flagged_questions);
-  saveAnswersToStorage();
-  saveFlaggedQuestions();
-}
+//function loadAnswersAndFeedback(data) {
+//  console.log("LAF");
+//  d = data;
+//  console.log(d);
+//  answers = d["answers"];
+//  flagged_questions = d["flagged_questions"];
+//  loadAnswers(answers);
+//  loadFlaggedQuestions(flagged_questions);
+//  saveAnswersToStorage();
+//  saveFlaggedQuestions();
+//}
 
-function loadAnswers(answers) {
+//function loadAnswers(answers) {
   // TODO: implement with indexed db
   // // Rather than simply replacing the answers we merge them.
   // console.log(answers);
@@ -477,64 +481,42 @@ function loadAnswers(answers) {
   //   }
   //   toastr.info(Object.keys(answers).length + " answers loaded.");
   // }
-}
+//}
 
 // Attempt to load answers from localStorage
-function loadAnswersFromStorage() {
-  //ereader
-  store.exists("answers", function (exists) {
-    if(exists) {
-      store.get("answers", function (obj) {
-        console.log("load", obj["value"])
-        let loaded_answers = JSON.parse(obj["value"]);
-        loadAnswers(loaded_answers);
-      });
-    }
-  });
-}
-
-function loadFlaggedQuestions(flagged) {
-  // JSON returns set as an array
-  if(flagged.length > 0) {
-    flagged_questions = new Set([...flagged_questions, ...flagged]);
-    toastr.info("Flagged question data loaded.");
-  }
-}
-
-// Attempt to load answers from localStorage
-function loadFlaggedQuestionsFromStorage() {
-  //ereader
-  store.exists("flagged_questions", function (exists) {
-    if(exists) {
-      store.get("flagged_questions", function (obj) {
-        let fq = JSON.parse(obj["value"]);
-        loadFlaggedQuestions(fq);
-      });
-    }
-  });
-}
-
-//    if (localStorage) {
-//        try {
-//            loaded_answers = localStorage.getItem('answers');
-//
-//            if (loaded_answers == null || loaded_answers == "null") {
-//
-//            } else {
-//
-//                loadAnswers(loaded_answers);
-//
-//            }
-//        } catch (error) {
-//            msg = "There was a problem loaded your saved answers.\n\n"+error;
-//
-//            toastr.warning(msg);
-//            hash_answer_map = {};
-//        }
-//    } else {
-//
-//        toastr.warning("It appears your browser does not support localStorage. Your answers will not be saved.");
+//function loadAnswersFromStorage() {
+//  //ereader
+//  store.exists("answers", function (exists) {
+//    if(exists) {
+//      store.get("answers", function (obj) {
+//        console.log("load", obj["value"])
+//        let loaded_answers = JSON.parse(obj["value"]);
+//        loadAnswers(loaded_answers);
+//      });
 //    }
+//  });
+//}
+
+//function loadFlaggedQuestions(flagged) {
+//  // JSON returns set as an array
+//  if(flagged.length > 0) {
+//    flagged_questions = new Set([...flagged_questions, ...flagged]);
+//    toastr.info("Flagged question data loaded.");
+//  }
+//}
+
+//// Attempt to load answers from localStorage
+//function loadFlaggedQuestionsFromStorage() {
+//  //ereader
+//  store.exists("flagged_questions", function (exists) {
+//    if(exists) {
+//      store.get("flagged_questions", function (obj) {
+//        let fq = JSON.parse(obj["value"]);
+//        loadFlaggedQuestions(fq);
+//      });
+//    }
+//  });
+//}
 
 // Generates the score section
 async function buildActiveScoreList() {
@@ -931,21 +913,21 @@ function setUpFilters() {
   });
 
   $("#show-answered-questions-button").click(function () {
-    let show_answered_questions = !$("#show-answered-questions-button").is(
+    show_answered_questions = !$("#show-answered-questions-button").is(
       ":checked"
     );
     loadFilters();
   });
 
   $("#show-only-flagged-questions-button").click(function () {
-    let show_only_flagged_questions = $("#show-only-flagged-questions-button").is(
+    show_only_flagged_questions = $("#show-only-flagged-questions-button").is(
       ":checked"
     );
     loadFilters();
   });
 
   $("#auto-load-previous-answers-button").click(function () {
-    let auto_load_previous_answers = $("#auto-load-previous-answers-button").is(
+    auto_load_previous_answers = $("#auto-load-previous-answers-button").is(
       ":checked"
     );
   });
@@ -953,7 +935,7 @@ function setUpFilters() {
   loadFilters();
 }
 
-function loadFilters() {
+async function loadFilters() {
   console.log("load filters")
   filtered_questions = [];
 
@@ -981,19 +963,29 @@ function loadFilters() {
     search_string = new RegExp(search_string, "i");
   }
 
+  // There must be a better way to do this!
+  let flagged_questions = await db.flagged.toArray()
+  flagged_questions = flagged_questions.map((d) => {return d.qid});
+  let answered_questions = await db.answers.toArray();
+  answered_questions = answered_questions.map((d) => {return d.qid});
+
+  console.log("flagged", flagged_questions)
+  console.log("answer", answered_questions)
+
   for(let n in questions) {
     let q = questions[n];
 
+
     // Filter questions that have an answer saved
     if(!show_answered_questions) {
-      if(hash_answer_map.hasOwnProperty(n)) {
+      if(answered_questions.includes(n)) {
         continue;
       }
     }
 
     // Filter questions that have not been flagged
     if(show_only_flagged_questions) {
-      if(!flagged_questions.has(n)) {
+      if(!flagged_questions.includes(n)) {
         continue;
       }
     }
@@ -1101,6 +1093,7 @@ function searchObject(o, search_str) {
   return false;
 }
 
+// TODO: fix
 function saveAnswersAsFile() {
   var textToWrite = JSON.stringify({
     answers: hash_answer_map,
@@ -1215,18 +1208,19 @@ function loadRemoteServer() {
 }
 
 function toggleFlagged() {
-  console.log("TEST, fl");
+  db.flagged.get(current_question_uid).then((d) => {
+    if (d == undefined) {
+      db.flagged.put({qid: current_question_uid})
+      $("#flagged-button").text("FLAGGED");
+      toastr.info("Question flagged.");
+    } else {
+      $("#flagged-button").text("NOT FLAGGED");
+      db.flagged.delete(current_question_uid)
+      toastr.info("Question unflagged.");
+    }
+  // We handle the error above
+  }).catch(() => {})
 
-  if(flagged_questions.has(current_question_uid)) {
-    $("#flagged-button").text("NOT FLAGGED");
-    flagged_questions.delete(current_question_uid);
-    toastr.info("Question unflagged.");
-  } else {
-    $("#flagged-button").text("FLAGGED");
-    flagged_questions.add(current_question_uid);
-    toastr.info("Question flagged.");
-  }
-  saveFlaggedQuestions();
   remote_store_synced = false;
 }
 
@@ -1462,11 +1456,14 @@ function loadQuestion(n) {
     })
   );
 
-  if(flagged_questions.has(current_question_uid)) {
-    $("#flagged-button").text("FLAGGED");
-  } else {
-    $("#flagged-button").text("NOT FLAGGED");
-  }
+  db.flagged.get(current_question_uid).then((d) => {
+    if (d == undefined) {
+      $("#flagged-button").text("NOT FLAGGED");
+    } else {
+      $("#flagged-button").text("FLAGGED");
+    }
+  // We handle the error above
+  }).catch(() => {})
 
   // Set up the question details block
   $("#question-details").append("Question details...<br />");
