@@ -14,19 +14,14 @@ cornerstoneTools.init();
 
 
 export function loadCornerstone(main_element, db, images, annotations_to_load, load_as_stack = false) {
+    // canvas-panel holds the enabled elements and all tools / menus
     main_element.append("<div class='canvas-panel'></div>");
     $(".canvas-panel").append($("<div class='single-dicom-viewer'></div>"));
 
     let single_dicom_viewer = main_element.find(".single-dicom-viewer").get(0);
     console.log(single_dicom_viewer);
-    $(single_dicom_viewer).append(
-        $(
-            "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
-        )
-    )
-        .append($("<span id='dicom-toggle-mode-button' title='toggle stack/thumbnail view'>↻</span>"))
-        .append($("<span id='dicom-settings-button'>&#9881;</span>"))
-        .append(
+    // Add generic settings menus to canvas-panel
+    $(".canvas-panel").append(
             $(`<div id='dicom-settings-panel'>
             <span id="dicom-settings-close" class="close-button"><a href="#">close</a></span>
             <h3>Image viewer settings:</h3>
@@ -88,7 +83,18 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             </div>
 
         </div>`)
-        ).append(
+    )
+        .append($("<span id='dicom-toggle-mode-button' class='dicom-button' title='toggle stack/thumbnail view'>↻</span>"))
+        .append($("<span id='dicom-fullscreen-button' class='dicom-button' title='toggle stack/thumbnail view'>⛶</span>"))
+        .append($("<span id='dicom-settings-button' class='dicom-button' title='open settings'>&#9881;</span>"));
+
+    $(single_dicom_viewer).append(
+        $(
+            "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+        )
+    )
+        // Add buttons
+        .append(
             $(`<div id='dicom-window-panel'>
            <button id='window-btn-abdomen'>Abdomen</button> 
            <button id='window-btn-liver'>Liver</button> 
@@ -117,12 +123,12 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             let button_id = e.target.id;
             let [ww, wc] = window_presets[button_id];
 
-        let viewport = cornerstone.getViewport(single_dicom_viewer);
-        viewport.voi.windowWidth = parseFloat(ww);
-        viewport.voi.windowCenter = parseFloat(wc);
-        cornerstone.setViewport(single_dicom_viewer, viewport);
+            let viewport = cornerstone.getViewport(single_dicom_viewer);
+            viewport.voi.windowWidth = parseFloat(ww);
+            viewport.voi.windowCenter = parseFloat(wc);
+            cornerstone.setViewport(single_dicom_viewer, viewport);
 
-        e.preventDefault();
+            e.preventDefault();
         })
     })
 
@@ -132,6 +138,15 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     });
     $("#dicom-settings-button").click(e => {
         $("#dicom-settings-panel").toggle();
+    });
+    $("#dicom-fullscreen-button").click(e => {
+        if (!document.fullscreenElement) {
+            $(".canvas-panel").get(0).requestFullscreen().catch(err => {
+                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
     });
     $("#dicom-toggle-mode-button").click(e => {
         //$("#dicom-settings-panel").toggle();
@@ -160,7 +175,6 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     }
     console.log("annon", annotations);
 
-    load(images, annotations);
 
     function loadAnnotation(imageId, annotation) {
         console.log("loadAnnotations", imageId, annotations);
@@ -249,7 +263,7 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     }
 
     if (images.length > 1 && load_as_stack == false) {
-        $(".single-dicom-viewer").append("<div id='image-thumbs'></div>");
+        $(".canvas-panel").append("<div id='image-thumbs'></div>");
         for (let id = 0; id < images.length; id++) {
             let n = id + 1;
             let thumb = $(
@@ -262,7 +276,7 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
                 "</span></div>"
             );
             $("#image-thumbs").append(thumb);
-            $("#thumb-" + id).click(selectThumbClick);
+            $("#thumb-" + id).click(selectThumbClick).mousedown(stopEvent);
 
             let image_url = images[id];
 
@@ -345,6 +359,8 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
             }
         }
     }
+
+    load(images, annotations);
 }
 
 function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
@@ -361,6 +377,7 @@ function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
     const StackScrollTool = cornerstoneTools.StackScrollTool;
     const MagnifyTool = cornerstoneTools.MagnifyTool;
     const ArrowAnnotateTool = cornerstoneTools.ArrowAnnotateTool;
+    const LengthTool = cornerstoneTools.LengthTool;
 
     console.log("enable element", element);
     cornerstone.enable(element);
@@ -379,6 +396,7 @@ function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
     cornerstoneTools.addTool(RotateTool);
     cornerstoneTools.addTool(StackScrollTool);
     cornerstoneTools.addTool(MagnifyTool);
+    cornerstoneTools.addTool(LengthTool);
 
     cornerstoneTools.addTool(ArrowAnnotateTool, {
         configuration: {
@@ -402,6 +420,7 @@ function loadCornerstoneMainImage(element, image, stack, db, load_as_stack) {
         "Rotate",
         "StackScroll",
         "Magnify",
+        "Length",
     ];
     $(".mouse-binding-select option").remove();
 
@@ -543,9 +562,16 @@ function onImageRendered(e) {
     //  );
 }
 
+function stopEvent(evt) {
+    console.log("stop", evt)
+    evt.preventDefault();
+    evt.stopPropagation();
+}
+
 function selectThumbClick(evt) {
     let new_index = evt.currentTarget.dataset.id;
     selectThumb(new_index);
+    evt.preventDefault();
 }
 
 

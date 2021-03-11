@@ -1390,6 +1390,7 @@ const areEqualArrays = (first, second) => {
    };
    return true;
 };
+
 function loadQuestion(n) {
   saveOpenQuestion(n);
   //question_number = Object.size(filtered_questions);
@@ -1508,6 +1509,22 @@ function loadQuestion(n) {
       .data("x", answer_block_x)
       .data("y", answer_block_y)
   );
+
+
+  function maintainFocusOnElement(el) {
+    // Force focus to the input element (does this break anything?)
+    el.on("blur", function () {
+      // unless the options menu is open
+      if($("#options, #dicom-settings-panel").is(":visible")) {
+        return;
+      }
+      var blurEl = $(this);
+      setTimeout(function () {
+        blurEl.focus();
+      }, 10);
+    });
+
+  }
 
   // Reposition element if saved in db
 
@@ -1733,17 +1750,7 @@ function loadQuestion(n) {
           }
         });
 
-      // Force focus to the input element (does this break anything?)
-      $("#answer-block input").on("blur", function () {
-        // unless the options menu is open
-        if($("#options, #dicom-settings-panel").is(":visible")) {
-          return;
-        }
-        var blurEl = $(this);
-        setTimeout(function () {
-          blurEl.focus();
-        }, 10);
-      });
+      maintainFocusOnElement($("#answer-block input"));
 
       break;
     case "image_answer":
@@ -1791,7 +1798,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#answer-block")
+      $("#answer-block input")
         .focus()
         .on("keyup", function (e) {
           if(e.keyCode == 13) {
@@ -1799,18 +1806,7 @@ function loadQuestion(n) {
           }
         });
 
-      // Force focus to the input element (does this break anything?)
-      $("#answer-block input").on("blur", function () {
-        // unless the options menu is open
-        if($("#options").is(":visible")) {
-          return;
-        }
-        var blurEl = $(this);
-        setTimeout(function () {
-          blurEl.focus();
-        }, 10);
-      });
-
+      maintainFocusOnElement($("#answer-block input"));
       break;
     case "label":
       loadImage(data);
