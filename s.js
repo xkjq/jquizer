@@ -1526,9 +1526,18 @@ function loadQuestion(n) {
 
   }
 
+  function enterKeyChecks(el) {
+        el.on("keyup", function (e) {
+          if(e.keyCode == 13) {
+            $(".check-button").click();
+          }
+        });
+
+  }
+
   // Reposition element if saved in db
 
-  let answers, options;
+  let question, answers, options;
   switch(question_type) {
     case "sba":
       $("#question-block")
@@ -1689,11 +1698,6 @@ function loadQuestion(n) {
 
       options.sort();
 
-      //$("#main").append($(document.createElement("div")).attr({
-      //    'id': 'answer-block',
-      //}));
-
-      //buildRankList(options, answers);
       $("#answer-block").append(
         $(document.createElement("span"))
           .attr({
@@ -1711,7 +1715,6 @@ function loadQuestion(n) {
           )
       );
 
-      //$("#sortable-list").sortable();
 
       $("#answer-block").append("<br />");
 
@@ -1742,31 +1745,25 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
+      enterKeyChecks(
       $("#answer-block input")
         .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+        )
 
       maintainFocusOnElement($("#answer-block input"));
 
       break;
     case "image_answer":
       loadImage(data);
+      console.log(data)
 
+      question = data["question"];
       answers = data["answers"];
 
       options = Object.keys(answers);
 
       options.sort();
 
-      //$("#main").append($(document.createElement("div")).attr({
-      //    'id': 'answer-block',
-      //}));
-
-      //buildRankList(options, answers);
       $("#answer-block").append(
         $(document.createElement("span"))
           .attr({
@@ -1777,15 +1774,19 @@ function loadQuestion(n) {
             //'data-question-number': question_number
           })
           .append(
+            $(document.createElement("span")).attr({
+              //'id': "answer-input-"+option,
+            }).text(question)
+          )
+          .append(
+            "<br/>"
+          )
+          .append(
             $(document.createElement("input")).attr({
               //'id': "answer-input-"+option,
             })
           )
       );
-
-      //$("#sortable-list").sortable();
-
-      //$("#answer-block").append("<br />");
 
       $("#answer-block").append(
         $(document.createElement("button"))
@@ -1798,13 +1799,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#answer-block input")
-        .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+      enterKeyChecks( $("#answer-block input") .focus())
 
       maintainFocusOnElement($("#answer-block input"));
       break;
@@ -1861,13 +1856,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#main input")
-        .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+      enterKeyChecks( $("#main input") .focus())
 
       $("#answer-list input")
         .first()

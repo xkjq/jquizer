@@ -34,7 +34,7 @@
 #answer-block {
   display: inline-block;
   max-width: 800px;
-  z-index: 1;
+  z-index: 999;
 }
 
 .answer-block-floating {
