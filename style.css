@@ -37,6 +37,14 @@
   z-index: 999;
 }
 
+#answer-block .question-text {
+  display: block;
+}
+
+#answer-block p {
+  margin: 5px;
+}
+
 .answer-block-floating {
   position: absolute;
   mix-blend-mode: screen;

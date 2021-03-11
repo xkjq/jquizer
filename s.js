@@ -71,7 +71,8 @@ var db = new Dexie("user_interface");
 db.version(1).stores({
   //mouse_bindings: "button,mode,tool",
   element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other"
+  answers: "qid,date,type,score,max_score,other",
+  //question_cache: "qid,date,type,score,max_score,other"
 });
 
 window.db = db;
@@ -1775,11 +1776,8 @@ function loadQuestion(n) {
           })
           .append(
             $(document.createElement("span")).attr({
-              //'id': "answer-input-"+option,
-            }).text(question)
-          )
-          .append(
-            "<br/>"
+              'class': "question-text",
+            }).html(question)
           )
           .append(
             $(document.createElement("input")).attr({
