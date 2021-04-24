@@ -1,3 +1,10 @@
+.canvas-panel {
+  height: 100%;
+  position: relative;
+  color: white;
+}
+
+
 #dicom-overlay {
   position: absolute;
   bottom: 0;
@@ -37,12 +44,15 @@
 
 .single-dicom-viewer {
     position: relative;
+    height: 100%;
 }
 
 .dicom-button {
-  font-size: 40;
+  font-size: 40px;
   z-index: 99;
   opacity: 20%;
+  color: gray;
+  top: 0;
 }
 
 .dicom-button:hover {
@@ -61,6 +71,7 @@
 
 #dicom-fullscreen-button {
   position: absolute;
+  transform: translate(0, -20%);
   right: 50%;
 }
 

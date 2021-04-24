@@ -34,7 +34,15 @@
 #answer-block {
   display: inline-block;
   max-width: 800px;
-  z-index: 1;
+  z-index: 999;
+}
+
+#answer-block .question-text {
+  display: block;
+}
+
+#answer-block p {
+  margin: 5px;
 }
 
 .answer-block-floating {

@@ -71,7 +71,8 @@ var db = new Dexie("user_interface");
 db.version(1).stores({
   //mouse_bindings: "button,mode,tool",
   element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other"
+  answers: "qid,date,type,score,max_score,other",
+  //question_cache: "qid,date,type,score,max_score,other"
 });
 
 window.db = db;
@@ -1390,6 +1391,7 @@ const areEqualArrays = (first, second) => {
    };
    return true;
 };
+
 function loadQuestion(n) {
   saveOpenQuestion(n);
   //question_number = Object.size(filtered_questions);
@@ -1509,9 +1511,34 @@ function loadQuestion(n) {
       .data("y", answer_block_y)
   );
 
+
+  function maintainFocusOnElement(el) {
+    // Force focus to the input element (does this break anything?)
+    el.on("blur", function () {
+      // unless the options menu is open
+      if($("#options, #dicom-settings-panel").is(":visible")) {
+        return;
+      }
+      var blurEl = $(this);
+      setTimeout(function () {
+        blurEl.focus();
+      }, 10);
+    });
+
+  }
+
+  function enterKeyChecks(el) {
+        el.on("keyup", function (e) {
+          if(e.keyCode == 13) {
+            $(".check-button").click();
+          }
+        });
+
+  }
+
   // Reposition element if saved in db
 
-  let answers, options;
+  let question, answers, options;
   switch(question_type) {
     case "sba":
       $("#question-block")
@@ -1672,11 +1699,6 @@ function loadQuestion(n) {
 
       options.sort();
 
-      //$("#main").append($(document.createElement("div")).attr({
-      //    'id': 'answer-block',
-      //}));
-
-      //buildRankList(options, answers);
       $("#answer-block").append(
         $(document.createElement("span"))
           .attr({
@@ -1694,7 +1716,6 @@ function loadQuestion(n) {
           )
       );
 
-      //$("#sortable-list").sortable();
 
       $("#answer-block").append("<br />");
 
@@ -1725,41 +1746,25 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
+      enterKeyChecks(
       $("#answer-block input")
         .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+        )
 
-      // Force focus to the input element (does this break anything?)
-      $("#answer-block input").on("blur", function () {
-        // unless the options menu is open
-        if($("#options, #dicom-settings-panel").is(":visible")) {
-          return;
-        }
-        var blurEl = $(this);
-        setTimeout(function () {
-          blurEl.focus();
-        }, 10);
-      });
+      maintainFocusOnElement($("#answer-block input"));
 
       break;
     case "image_answer":
       loadImage(data);
+      console.log(data)
 
+      question = data["question"];
       answers = data["answers"];
 
       options = Object.keys(answers);
 
       options.sort();
 
-      //$("#main").append($(document.createElement("div")).attr({
-      //    'id': 'answer-block',
-      //}));
-
-      //buildRankList(options, answers);
       $("#answer-block").append(
         $(document.createElement("span"))
           .attr({
@@ -1770,15 +1775,16 @@ function loadQuestion(n) {
             //'data-question-number': question_number
           })
           .append(
+            $(document.createElement("span")).attr({
+              'class': "question-text",
+            }).html(question)
+          )
+          .append(
             $(document.createElement("input")).attr({
               //'id': "answer-input-"+option,
             })
           )
       );
-
-      //$("#sortable-list").sortable();
-
-      //$("#answer-block").append("<br />");
 
       $("#answer-block").append(
         $(document.createElement("button"))
@@ -1791,26 +1797,9 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#answer-block")
-        .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+      enterKeyChecks( $("#answer-block input") .focus())
 
-      // Force focus to the input element (does this break anything?)
-      $("#answer-block input").on("blur", function () {
-        // unless the options menu is open
-        if($("#options").is(":visible")) {
-          return;
-        }
-        var blurEl = $(this);
-        setTimeout(function () {
-          blurEl.focus();
-        }, 10);
-      });
-
+      maintainFocusOnElement($("#answer-block input"));
       break;
     case "label":
       loadImage(data);
@@ -1865,13 +1854,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      $("#main input")
-        .focus()
-        .on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+      enterKeyChecks( $("#main input") .focus())
 
       $("#answer-list input")
         .first()
@@ -2636,13 +2619,13 @@ function checkAnswer(ans, load) {
       correct = false;
       score = 0;
       if(best_sim >= similarity_limit) {
-        $("#answer").addClass("correct");
-        $("#answer").addClass("similarity-correct");
+        $("#answer input").addClass("correct");
+        $("#answer input").addClass("similarity-correct");
         // n_correct = n_correct + 1;
         correct = true;
         score = 1;
       } else {
-        $("#answer").addClass("incorrect");
+        $("#answer input").addClass("incorrect");
       }
 
       $("#feedback").append("<br />");
