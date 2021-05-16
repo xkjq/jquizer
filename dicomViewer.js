@@ -20,8 +20,16 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
 
     let single_dicom_viewer = main_element.find(".single-dicom-viewer").get(0);
     console.log(single_dicom_viewer);
-    // Add generic settings menus to canvas-panel
-    $(".canvas-panel").append(
+    $(single_dicom_viewer).append(
+        $(
+            "<div id='dicom-overlay'>Image <span id='current_image_number'></span> of <span id='total_image_number'></span><br />wc: <span id='wc'></span> ww: <span id='ww'></span></div>"
+        )
+    )
+        // Add buttons
+        .append($("<span id='dicom-toggle-mode-button' class='dicom-button' title='toggle stack/thumbnail view'>↻</span>"))
+        .append($("<span id='dicom-fullscreen-button' class='dicom-button' title='toggle stack/thumbnail view'>⛶</span>"))
+        .append($("<span id='dicom-settings-button' class='dicom-button' title='open settings'>&#9881;</span>"))
+        .append(
             $(`<div id='dicom-settings-panel'>
             <span id="dicom-settings-close" class="close-button"><a href="#">close</a></span>
             <h3>Image viewer settings:</h3>
@@ -141,8 +149,8 @@ export function loadCornerstone(main_element, db, images, annotations_to_load, l
     });
     $("#dicom-fullscreen-button").click(e => {
         if (!document.fullscreenElement) {
-            $(".canvas-panel").get(0).requestFullscreen().catch(err => {
-                alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            single_dicom_viewer.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
             });
         } else {
             document.exitFullscreen();
