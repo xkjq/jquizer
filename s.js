@@ -110,6 +110,7 @@ var preload_images = 5;
 const globalPromiseRejectionHandler = (event) => {
     console.log('Unhandled promise ', event);
     console.log('Unhandled promise rejection reason: ', event.reason);
+    alert("Unhandled promised. This probably means your database is out of date and no valid upgrade path is found (it will need resetting)")
 }
 
 // Here we assign our handler to the corresponding global, window property
