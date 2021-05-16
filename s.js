@@ -2798,7 +2798,7 @@ function checkAnswer(ans, load) {
       if(save_answer == true) {
         saveAnswerToHashMap(current_question_uid,
           "tf",
-          score, max_score,
+          n_correct, max_score,
           {
             answer: answers,
             correct: correct,
