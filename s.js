@@ -144,7 +144,11 @@ function loadExtraQuestions(q) {
 function loadData(data, textStatus) {
   $.extend(questions, data);
   //filtered_questions = data;
+  try {
   setUpFilters();
+  } catch (err) {console.log(err)
+  alert("Unable to set up filters. Database is probably out of date (you will need to reset)")
+  };
 
   buildActiveScoreList();
 }
