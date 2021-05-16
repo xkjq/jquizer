@@ -106,6 +106,15 @@ var image_viewer = "cornerstone";
 
 var preload_images = 5;
 
+// This function handles any unhandled promise rejections
+const globalPromiseRejectionHandler = (event) => {
+    console.log('Unhandled promise ', event);
+    console.log('Unhandled promise rejection reason: ', event.reason);
+}
+
+// Here we assign our handler to the corresponding global, window property
+window.onunhandledrejection = globalPromiseRejectionHandler;
+
 function loadExtraQuestionsCallback(i) {
   return function (e) {
     loadExtraQuestions(i);
@@ -144,11 +153,7 @@ function loadExtraQuestions(q) {
 function loadData(data, textStatus) {
   $.extend(questions, data);
   //filtered_questions = data;
-  try {
-  setUpFilters();
-  } catch (err) {console.log(err)
-  alert("Unable to set up filters. Database is probably out of date (you will need to reset)")
-  };
+  setUpFilters().catch((err) => {console.log(err)});
 
   buildActiveScoreList();
 }
