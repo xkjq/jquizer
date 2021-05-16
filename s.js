@@ -19,7 +19,6 @@
 // import * as loadQuestion from "./loadQuestion.js"
 import * as dicomViewer from "./dicomViewer.js"
 
-
 var quiz_version = "0.1";
 
 var fix_broken_question_formatting = true;
@@ -44,11 +43,6 @@ let filtered_questions = [];
 // Object which stores the inverse of the filtered questions array
 // Allows the lookup of a questions hash by its current number.
 var hash_n_map = {};
-
-// Object to store all the answers given to a particualar question
-var hash_answer_map = {};
-
-//var flagged_questions = new Set();
 
 // uid of the currently loaded question
 let current_question_uid = 0;
@@ -350,13 +344,6 @@ Object.size = function (obj) {
   return size;
 };
 
-// function saveAnswersToStorage() {
-//   // Yes - it is (probably) bad practice to try / catch every access to localStorage
-//   // TODO: switch to lawnchair
-//   //ereader
-//   store.save({ key: "answers", value: JSON.stringify(hash_answer_map) });
-// }
-
 function saveCheckboxState(id) {
   // There should be a better way to do this
   //ereader
@@ -424,10 +411,6 @@ function resetAnswers() {
     "Are you sure you wish to delete all your answers?\n\nThis is non-recoverable!";
 
   if(confirm(msg)) {
-    // hash_answer_map = {};
-    //localStorage.setItem('answers', {});
-    //ereader
-    // store.save({ key: "answers", value: {} });
 
     db.answers.clear().then(() => {
       console.log("Database successfully deleted");
@@ -441,82 +424,6 @@ function resetAnswers() {
     });
   }
 }
-
-//function loadAnswersAndFeedback(data) {
-//  console.log("LAF");
-//  d = data;
-//  console.log(d);
-//  answers = d["answers"];
-//  flagged_questions = d["flagged_questions"];
-//  loadAnswers(answers);
-//  loadFlaggedQuestions(flagged_questions);
-//  saveAnswersToStorage();
-//  saveFlaggedQuestions();
-//}
-
-//function loadAnswers(answers) {
-  // TODO: implement with indexed db
-  // // Rather than simply replacing the answers we merge them.
-  // console.log(answers);
-  // console.log(answers.length);
-  // if(Object.keys(answers).length > 0) {
-  //   if(Object.keys(hash_answer_map).length < 1) {
-  //     console.log("DIRECT LOAD");
-  //     hash_answer_map = answers;
-  //   } else {
-  //     for(q in answers) {
-  //       if(hash_answer_map.hasOwnProperty(q)) {
-  //         ans = hash_answer_map[q].concat(answers[q]);
-  //         ans = ans.filter(
-  //           (ans, index, self) =>
-  //             index === self.findIndex(t => t.date === ans.date)
-  //         );
-  //         ans.sort(dynamicSort("date"));
-  //         hash_answer_map[q] = ans;
-  //       } else {
-  //         hash_answer_map[q] = answers[q];
-  //       }
-  //     }
-  //     console.log(hash_answer_map);
-  //   }
-  //   toastr.info(Object.keys(answers).length + " answers loaded.");
-  // }
-//}
-
-// Attempt to load answers from localStorage
-//function loadAnswersFromStorage() {
-//  //ereader
-//  store.exists("answers", function (exists) {
-//    if(exists) {
-//      store.get("answers", function (obj) {
-//        console.log("load", obj["value"])
-//        let loaded_answers = JSON.parse(obj["value"]);
-//        loadAnswers(loaded_answers);
-//      });
-//    }
-//  });
-//}
-
-//function loadFlaggedQuestions(flagged) {
-//  // JSON returns set as an array
-//  if(flagged.length > 0) {
-//    flagged_questions = new Set([...flagged_questions, ...flagged]);
-//    toastr.info("Flagged question data loaded.");
-//  }
-//}
-
-//// Attempt to load answers from localStorage
-//function loadFlaggedQuestionsFromStorage() {
-//  //ereader
-//  store.exists("flagged_questions", function (exists) {
-//    if(exists) {
-//      store.get("flagged_questions", function (obj) {
-//        let fq = JSON.parse(obj["value"]);
-//        loadFlaggedQuestions(fq);
-//      });
-//    }
-//  });
-//}
 
 // Generates the score section
 async function buildActiveScoreList() {
@@ -969,9 +876,6 @@ async function loadFilters() {
   let answered_questions = await db.answers.toArray();
   answered_questions = answered_questions.map((d) => {return d.qid});
 
-  console.log("flagged", flagged_questions)
-  console.log("answer", answered_questions)
-
   for(let n in questions) {
     let q = questions[n];
 
@@ -1094,10 +998,12 @@ function searchObject(o, search_str) {
 }
 
 // TODO: fix
-function saveAnswersAsFile() {
+async function saveAnswersAsFile() {
+  let answers = await db.answers.toArray();
+  let flagged = await db.flagged.toArray();
   var textToWrite = JSON.stringify({
-    answers: hash_answer_map,
-    flagged_questions: [...flagged_questions]
+    answers: answers,
+    flagged_questions: flagged,
   });
   var textFileAsBlob = new Blob([textToWrite], { type: "text/plain" });
   var fileNameToSaveAs = "answers";
@@ -1222,12 +1128,6 @@ function toggleFlagged() {
   }).catch(() => {})
 
   remote_store_synced = false;
-}
-
-function stopAnswersAutoloading() {
-  for(qid in hash_answer_map) {
-    hash_answer_map[qid].slice(-1)[0]["autoload"] = false;
-  }
 }
 
 // Popup search option for selected text
@@ -1988,18 +1888,6 @@ function loadQuestion(n) {
     $(e).click(nextQuestion);
   });
 
-  // if(hash_answer_map.hasOwnProperty(qid) && auto_load_previous_answers) {
-  //   let ans = hash_answer_map[qid].slice(-1)[0];
-  //   console.log(ans)
-  //   if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
-  //     checkAnswer(ans, true);
-  //   }
-  //   //switch(question_type) {
-  //   //    case "sba":
-  //   //        checkAnswer(hash_answer_map[qid], true);
-  //   //        break
-  //   //}
-  // }
   if(auto_load_previous_answers) {
     console.log(qid)
     window.db.answers.where("qid").equals(qid).first((ans) => {
@@ -3071,13 +2959,6 @@ function saveAnswerToHashMap(qid, type, score, max_score, other) {
 
   window.db.answers.put({ qid: qid, date: Date(), type: type, score: score, max_score: max_score, other: other });
 
-  // if(!Array.isArray(hash_answer_map[qid])) {
-  //   hash_answer_map[qid] = [];
-  // }
-
-  //hash_answer_map[qid].push(ans);
-
-  //saveAnswersToStorage();
   remote_store_synced = false;
 }
 
