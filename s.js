@@ -78,15 +78,15 @@ window.element_positions = {
 
 // Load saved UI element positions into local memory
 db.element_position.each(data => {
-  if(data == undefined) {
+  if (data == undefined) {
     return;
   }
 
   // Create object / dict as required
-  if(!window.element_positions.hasOwnProperty(data.type)) {
+  if (!window.element_positions.hasOwnProperty(data.type)) {
     window.element_positions[data.type] = {};
   }
-  if(!window.element_positions[data.type].hasOwnProperty(data.element)) {
+  if (!window.element_positions[data.type].hasOwnProperty(data.element)) {
     window.element_positions[data.type][data.element] = {};
   }
 
@@ -108,9 +108,9 @@ var preload_images = 5;
 
 // This function handles any unhandled promise rejections
 const globalPromiseRejectionHandler = (event) => {
-    console.log('Unhandled promise ', event);
-    console.log('Unhandled promise rejection reason: ', event.reason);
-    alert("Unhandled promised. This probably means your database is out of date and no valid upgrade path is found (you will probably need to clear site data)")
+  console.log('Unhandled promise ', event);
+  console.log('Unhandled promise rejection reason: ', event.reason);
+  alert("Unhandled promised. This probably means your database is out of date and no valid upgrade path is found (you will probably need to clear site data)")
 }
 
 // Here we assign our handler to the corresponding global, window property
@@ -127,7 +127,7 @@ function loadExtraQuestionsCallback(i) {
 function buildQuestionList(data, textStatus) {
   let list = data["questions"];
   list.sort();
-  for(let key in list) {
+  for (let key in list) {
     var f = list[key];
     let $input = $(
       '<input type="button" class="question-load-button" value="' +
@@ -160,11 +160,11 @@ function loadData(data, textStatus) {
 }
 
 var detectTap;
-$(document).on('touchstart', function() {
-    detectTap = true; // Detects all touch events
+$(document).on('touchstart', function () {
+  detectTap = true; // Detects all touch events
 });
-$(document).on('touchmove', function() {
-    detectTap = false; // Excludes the scroll events from touch events
+$(document).on('touchmove', function () {
+  detectTap = false; // Excludes the scroll events from touch events
 });
 
 $(document).ready(function () {
@@ -192,7 +192,7 @@ $(document).ready(function () {
   let questions_to_load = default_question_set;
   store.exists("current_question_set", function (exists) {
     console.log("load question set");
-    if(exists) {
+    if (exists) {
       store.get("current_question_set", function (obj) {
         let n = obj["value"];
         questions_to_load = n;
@@ -237,7 +237,7 @@ $(document).ready(function () {
 
       $("#goto-question-button").click(function () {
         let val = $("#goto-question-input").val();
-        if(val && !isNaN(val)) {
+        if (val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
           $("#goto-question-input").blur();
         } else {
@@ -248,7 +248,7 @@ $(document).ready(function () {
       $("#goto-question-hide-button").click(function () {
         //duplicate stuff....
         let val = $("#goto-question-input").val();
-        if(val && !isNaN(val)) {
+        if (val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
           $("#goto-question-input").blur();
         } else {
@@ -337,7 +337,7 @@ $(document).ready(function () {
   });
 
   window.addEventListener("beforeunload", function (e) {
-    if(remote_store == true && remote_store_synced == false) {
+    if (remote_store == true && remote_store_synced == false) {
       var confirmationMessage =
         "Questions have not been saved remotely. Continue?";
 
@@ -356,8 +356,8 @@ function escaper(expression) {
 Object.size = function (obj) {
   var size = 0,
     key;
-  for(key in obj) {
-    if(obj.hasOwnProperty(key)) size++;
+  for (key in obj) {
+    if (obj.hasOwnProperty(key)) size++;
   }
   return size;
 };
@@ -398,9 +398,9 @@ function saveLoadedQuestionSetOrder(n) {
 
 function loadPreviousQuestion(n) {
   //ereader
-  store.exists("current_question", function(exists) {
+  store.exists("current_question", function (exists) {
     if (exists) {
-      store.get("current_question", function(obj) {
+      store.get("current_question", function (obj) {
         n = obj["value"];
         loadQuestion(n);
       });
@@ -415,8 +415,8 @@ function clearSavedCheckboxStates() {
   //ereader
   //Object.keys(localStorage).forEach(function(key) {
   store.keys("store_keys = keys");
-  for(let i in store_keys) {
-    if(/^(checkbox-)/.test(store_keys[i])) {
+  for (let i in store_keys) {
+    if (/^(checkbox-)/.test(store_keys[i])) {
       store.remove(store_keys[i]);
       //localStorage.removeItem(key);
     }
@@ -428,7 +428,7 @@ function resetAnswers() {
   var msg =
     "Are you sure you wish to delete all your answers?\n\nThis is non-recoverable!";
 
-  if(confirm(msg)) {
+  if (confirm(msg)) {
 
     db.answers.clear().then(() => {
       console.log("Database successfully deleted");
@@ -451,7 +451,7 @@ async function buildActiveScoreList() {
   let list = $("#score-list");
 
   // Don't build the score list if it is not visible
-  if(list.is(":hidden")) {
+  if (list.is(":hidden")) {
     return;
   }
 
@@ -474,7 +474,7 @@ async function buildActiveScoreList() {
     answers_by_qid[ans.qid] = ans;
 
     let filtered_answer_id = filtered_questions.indexOf(ans.qid);
-    if(filtered_answer_id > -1) {
+    if (filtered_answer_id > -1) {
       filtered_answers.push(filtered_answer_id);
     }
 
@@ -484,7 +484,7 @@ async function buildActiveScoreList() {
   let questions_answered = 0;
 
   // If no answered questions loaded break;
-  if(filtered_answers.length < 1) {
+  if (filtered_answers.length < 1) {
     $("#score-percent")
       .empty()
       .append("No questions answered.");
@@ -496,7 +496,7 @@ async function buildActiveScoreList() {
   });
 
 
-  for(let ans in filtered_answers) {
+  for (let ans in filtered_answers) {
     let i = filtered_answers[ans];
 
     let answer = answers_by_qid[filtered_questions[i]];
@@ -559,7 +559,7 @@ async function buildActiveScoreList() {
   let truncated = false;
 
   // Trucate the score list
-  if(list_items.length > trucate_score_list_at && show_all_scores == false) {
+  if (list_items.length > trucate_score_list_at && show_all_scores == false) {
     list_items.hide();
     list_items.slice(-trucate_score_list_at).show();
     truncated = true;
@@ -571,14 +571,14 @@ async function buildActiveScoreList() {
     })
   );
 
-  if(show_all_scores) {
+  if (show_all_scores) {
     $("#toggle-score-vis")
       .text("--Show Less--")
       .click(function () {
         show_all_scores = false;
         buildActiveScoreList();
       });
-  } else if(truncated) {
+  } else if (truncated) {
     $("#toggle-score-vis")
       .text("--Show More--")
       .click(function () {
@@ -590,7 +590,7 @@ async function buildActiveScoreList() {
 
 // Key bindings
 function keyUpHandler(e) {
-  if(e.key == "Control") {
+  if (e.key == "Control") {
     dicomViewer.registerPrimaryDicomInterface(e);
     control_pressed = false;
   }
@@ -599,16 +599,16 @@ function keyUpHandler(e) {
 function keyDownHandler(e) {
   // Ignore our custom keybindings if we are currently in a field that
   // accepts some kind of input
-  if($("*:focus:not(disabled)").is("textarea, input")) {
+  if ($("*:focus:not(disabled)").is("textarea, input")) {
     // unless a modifier key is pressed (not shift)
-    if(e.altKey ? true : false || e.ctrlKey ? true : false) {
+    if (e.altKey ? true : false || e.ctrlKey ? true : false) {
     } else {
       return;
     }
   }
 
-  if(e.key == "Control") {
-    if(control_pressed == false) {
+  if (e.key == "Control") {
+    if (control_pressed == false) {
       control_pressed = true;
       dicomViewer.registerAltDicomInterface(e);
     }
@@ -618,7 +618,7 @@ function keyDownHandler(e) {
   console.log(e, charCode);
 
   function numberKeyPressed(e, x) {
-    if(e.altKey ? true : false) {
+    if (e.altKey ? true : false) {
       dicomViewer.selectThumb(x);
       e.preventDefault();
     } else {
@@ -626,16 +626,16 @@ function keyDownHandler(e) {
     }
   }
 
-  switch(charCode) {
+  switch (charCode) {
     case 13: // Return
-      if(e.shiftKey ? true : false) {
+      if (e.shiftKey ? true : false) {
         $(".next-button:last").click();
       } else {
         $(".check-button:last").click();
       }
       break;
     case 32: // Space
-      if(e.shiftKey ? true : false) {
+      if (e.shiftKey ? true : false) {
         $(".previous-button:last").click();
       } else {
         $(".next-button:last").click();
@@ -703,7 +703,7 @@ function keyDownHandler(e) {
 
 function startSearch(str) {
   $("#clear-search-button").remove();
-  if(str.length > 0) {
+  if (str.length > 0) {
     search_string = str;
     $("#search-form").append(
       $(document.createElement("button"))
@@ -723,8 +723,8 @@ function setUpFilters() {
   let source_filters = {};
   $("#specialty-filters").empty();
   $("#source-filters").empty();
-  for(let q in questions) {
-    for(let s in questions[q]["specialty"]) {
+  for (let q in questions) {
+    for (let s in questions[q]["specialty"]) {
       specialty_filters[questions[q]["specialty"][s]] = true;
     }
     source_filters[questions[q]["source"]] = true;
@@ -736,7 +736,7 @@ function setUpFilters() {
   specialty_filter_keys.sort();
 
   let i = 0;
-  for(let s in specialty_filter_keys) {
+  for (let s in specialty_filter_keys) {
     i = i + 1;
     $("#specialty-filters")
       .append(
@@ -760,7 +760,7 @@ function setUpFilters() {
     //$("#filter-specialty-"+i).append(s);
   }
 
-  if($("[name='filter-specialty-checkbox']").length > 1) {
+  if ($("[name='filter-specialty-checkbox']").length > 1) {
     $("#specialty-filters").append(
       $(document.createElement("li"))
         .attr({ class: "select-all" })
@@ -775,7 +775,7 @@ function setUpFilters() {
   }
 
   i = 0;
-  for(let s in source_filters) {
+  for (let s in source_filters) {
     i = i + 1;
     $("#source-filters").append(
       $(document.createElement("li"))
@@ -793,7 +793,7 @@ function setUpFilters() {
     );
   }
 
-  if($("[name='filter-source-checkbox']").length > 1) {
+  if ($("[name='filter-source-checkbox']").length > 1) {
     $("#source-filters").append(
       $(document.createElement("li"))
         .attr({ class: "select-all" })
@@ -810,8 +810,8 @@ function setUpFilters() {
   // Restore previously selected filters (before we attach the events)
   // ereader
   store.keys("store_keys = keys");
-  for(let i in store_keys) {
-    if(/^(checkbox-)/.test(store_keys[i])) {
+  for (let i in store_keys) {
+    if (/^(checkbox-)/.test(store_keys[i])) {
       let id = store_keys[i].substr(9);
 
       $("#" + id).prop("checked", "checked");
@@ -884,57 +884,57 @@ async function loadFilters() {
 
   let filter_source = !isEmptyObject(active_source_filters);
 
-  if(search_string) {
+  if (search_string) {
     search_string = new RegExp(search_string, "i");
   }
 
   // There must be a better way to do this!
   let flagged_questions = await db.flagged.toArray()
-  flagged_questions = flagged_questions.map((d) => {return d.qid});
+  flagged_questions = flagged_questions.map((d) => { return d.qid });
   let answered_questions = await db.answers.toArray();
-  answered_questions = answered_questions.map((d) => {return d.qid});
+  answered_questions = answered_questions.map((d) => { return d.qid });
 
-  for(let n in questions) {
+  for (let n in questions) {
     let q = questions[n];
 
 
     // Filter questions that have an answer saved
-    if(!show_answered_questions) {
-      if(answered_questions.includes(n)) {
+    if (!show_answered_questions) {
+      if (answered_questions.includes(n)) {
         continue;
       }
     }
 
     // Filter questions that have not been flagged
-    if(show_only_flagged_questions) {
-      if(!flagged_questions.includes(n)) {
+    if (show_only_flagged_questions) {
+      if (!flagged_questions.includes(n)) {
         continue;
       }
     }
 
-    if(filter_specialty) {
+    if (filter_specialty) {
       var specialty_exists = false;
-      for(let s in q["specialty"]) {
-        if(active_specialty_filters.hasOwnProperty(q["specialty"][s])) {
+      for (let s in q["specialty"]) {
+        if (active_specialty_filters.hasOwnProperty(q["specialty"][s])) {
           specialty_exists = true;
           break;
         } else {
           specialty_exists = false;
         }
       }
-      if(!specialty_exists) {
+      if (!specialty_exists) {
         continue;
       }
     }
 
-    if(filter_source) {
-      if(!active_source_filters.hasOwnProperty(q["source"])) {
+    if (filter_source) {
+      if (!active_source_filters.hasOwnProperty(q["source"])) {
         continue;
       }
     }
 
-    if(search_string) {
-      if(!searchObject(q, search_string)) {
+    if (search_string) {
+      if (!searchObject(q, search_string)) {
         continue;
       }
     }
@@ -944,9 +944,9 @@ async function loadFilters() {
   }
 
   // Try and load previous question order
-  store.exists("question_order", function(exists) {
+  store.exists("question_order", function (exists) {
     if (exists) {
-      store.get("question_order", function(obj) {
+      store.get("question_order", function (obj) {
         let loaded_question_order = obj["value"];
 
         // Check we have the same question set (apparently javasrcipt sets are useless...)
@@ -975,7 +975,7 @@ function getQuestionDataByNumber(n) {
 }
 
 function previousQuestion(e) {
-  if(e && e.shiftKey) {
+  if (e && e.shiftKey) {
     loadQuestion(hash_n_map[current_question_uid] - 10);
   } else {
     loadQuestion(hash_n_map[current_question_uid] - 1);
@@ -983,7 +983,7 @@ function previousQuestion(e) {
 }
 
 function nextQuestion(e) {
-  if(e && e.shiftKey) {
+  if (e && e.shiftKey) {
     loadQuestion(hash_n_map[current_question_uid] + 10);
   } else {
     loadQuestion(hash_n_map[current_question_uid] + 1);
@@ -997,14 +997,14 @@ function isEmptyObject(obj) {
 // Searches within a object for a specified regex.
 // If found return true, else false
 function searchObject(o, search_str) {
-  for(var i in o) {
-    if(typeof o[i] == "object") {
+  for (var i in o) {
+    if (typeof o[i] == "object") {
       // Recursively search the object tree
-      if(searchObject(o[i], search_str)) {
+      if (searchObject(o[i], search_str)) {
         return true;
       }
     } else {
-      if(
+      if (
         String(o[i]).search(search_str) > -1 ||
         String(i).search(search_str) > -1
       ) {
@@ -1029,7 +1029,7 @@ async function saveAnswersAsFile() {
   var downloadLink = document.createElement("a");
   downloadLink.download = fileNameToSaveAs;
   downloadLink.innerHTML = "Download File";
-  if(window.webkitURL != null) {
+  if (window.webkitURL != null) {
     // Chrome allows the link to be clicked
     // without actually adding it to the DOM.
     downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
@@ -1046,23 +1046,23 @@ async function saveAnswersAsFile() {
 }
 
 function similarity(s1, s2, toLower = true, stripWhitespace = true) {
-  if(toLower == true) {
+  if (toLower == true) {
     s1 = s1.toLowerCase();
     s2 = s2.toLowerCase();
   }
 
-  if(stripWhitespace) {
+  if (stripWhitespace) {
     s1 = s1.replace(/ /g, "");
     s2 = s2.replace(/ /g, "");
   }
   var longer = s1;
   var shorter = s2;
-  if(s1.length < s2.length) {
+  if (s1.length < s2.length) {
     longer = s2;
     shorter = s1;
   }
   var longerLength = longer.length;
-  if(longerLength == 0) {
+  if (longerLength == 0) {
     return 1.0;
   }
   return (
@@ -1075,28 +1075,28 @@ function editDistance(s1, s2) {
   s2 = s2.toLowerCase();
 
   var costs = new Array();
-  for(var i = 0; i <= s1.length; i++) {
+  for (var i = 0; i <= s1.length; i++) {
     var lastValue = i;
-    for(var j = 0; j <= s2.length; j++) {
-      if(i == 0) costs[j] = j;
+    for (var j = 0; j <= s2.length; j++) {
+      if (i == 0) costs[j] = j;
       else {
-        if(j > 0) {
+        if (j > 0) {
           var newValue = costs[j - 1];
-          if(s1.charAt(i - 1) != s2.charAt(j - 1))
+          if (s1.charAt(i - 1) != s2.charAt(j - 1))
             newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
           costs[j - 1] = lastValue;
           lastValue = newValue;
         }
       }
     }
-    if(i > 0) costs[s2.length] = lastValue;
+    if (i > 0) costs[s2.length] = lastValue;
   }
   return costs[s2.length];
 }
 
 function dynamicSort(property) {
   var sortOrder = 1;
-  if(property[0] === "-") {
+  if (property[0] === "-") {
     sortOrder = -1;
     property = property.substr(1);
   }
@@ -1108,7 +1108,7 @@ function dynamicSort(property) {
 }
 
 function createRemoteStoreButtonIfRequired() {
-  if(
+  if (
     $("#save-remote-data-button").length == 0 &&
     remote_store &&
     remote_store_synced == false
@@ -1134,7 +1134,7 @@ function loadRemoteServer() {
 function toggleFlagged() {
   db.flagged.get(current_question_uid).then((d) => {
     if (d == undefined) {
-      db.flagged.put({qid: current_question_uid})
+      db.flagged.put({ qid: current_question_uid })
       $("#flagged-button").text("FLAGGED");
       toastr.info("Question flagged.");
     } else {
@@ -1142,21 +1142,21 @@ function toggleFlagged() {
       db.flagged.delete(current_question_uid)
       toastr.info("Question unflagged.");
     }
-  // We handle the error above
-  }).catch(() => {})
+    // We handle the error above
+  }).catch(() => { })
 
   remote_store_synced = false;
 }
 
 // Popup search option for selected text
 function getSelected() {
-  if(window.getSelection) {
+  if (window.getSelection) {
     return window.getSelection();
-  } else if(document.getSelection) {
+  } else if (document.getSelection) {
     return document.getSelection();
   } else {
     var selection = document.selection && document.selection.createRange();
-    if(selection.text) {
+    if (selection.text) {
       return selection.text;
     }
     return false;
@@ -1169,7 +1169,7 @@ function getSelected() {
 $(document).ready(function () {
   $("body").mouseup(function (event) {
     var selection = getSelected();
-    if(selection == "") {
+    if (selection == "") {
       $("span.popup-tag").css("display", "none");
     }
   });
@@ -1180,7 +1180,7 @@ $(document).ready(function () {
 
     var selection = getSelected();
     selection = $.trim(selection);
-    if(selection != "") {
+    if (selection != "") {
       $("span.popup-tag").empty();
       $("span.popup-tag").css("display", "block");
       $("span.popup-tag").css("top", event.clientY);
@@ -1293,15 +1293,15 @@ function shuffle(array) {
 }
 
 const areEqualArrays = (first, second) => {
-   if(first.length !== second.length){
+  if (first.length !== second.length) {
+    return false;
+  };
+  for (let i = 0; i < first.length; i++) {
+    if (!second.includes(first[i])) {
       return false;
-   };
-   for(let i = 0; i < first.length; i++){
-      if(!second.includes(first[i])){
-         return false;
-      };
-   };
-   return true;
+    };
+  };
+  return true;
 };
 
 function loadQuestion(n) {
@@ -1318,7 +1318,7 @@ function loadQuestion(n) {
   // Hide any open search popups
   $("span.popup-tag").css("display", "none");
 
-  if(question_number == 0) {
+  if (question_number == 0) {
     $("#header").append(
       "No questions to show. Refine your filter(s)/search or load more questions."
     );
@@ -1380,8 +1380,8 @@ function loadQuestion(n) {
     } else {
       $("#flagged-button").text("FLAGGED");
     }
-  // We handle the error above
-  }).catch(() => {})
+    // We handle the error above
+  }).catch(() => { })
 
   // Set up the question details block
   $("#question-details").append("Question details...<br />");
@@ -1401,7 +1401,7 @@ function loadQuestion(n) {
 
   let answer_block_x = 0;
   let answer_block_y = 0;
-  if(
+  if (
     window.element_positions.hasOwnProperty(question_type) &&
     window.element_positions[question_type].hasOwnProperty("answer-block")
   ) {
@@ -1431,7 +1431,7 @@ function loadQuestion(n) {
     // Force focus to the input element (does this break anything?)
     el.on("blur", function () {
       // unless the options menu is open
-      if($("#options, #dicom-settings-panel").is(":visible")) {
+      if ($("#options, #dicom-settings-panel").is(":visible")) {
         return;
       }
       var blurEl = $(this);
@@ -1443,18 +1443,18 @@ function loadQuestion(n) {
   }
 
   function enterKeyChecks(el) {
-        el.on("keyup", function (e) {
-          if(e.keyCode == 13) {
-            $(".check-button").click();
-          }
-        });
+    el.on("keyup", function (e) {
+      if (e.keyCode == 13) {
+        $(".check-button").click();
+      }
+    });
 
   }
 
   // Reposition element if saved in db
 
   let question, answers, options;
-  switch(question_type) {
+  switch (question_type) {
     case "sba":
       $("#question-block")
         .append("<br>")
@@ -1474,7 +1474,7 @@ function loadQuestion(n) {
 
       answer_options = data["emq_options"];
 
-      for(n in answer_options) {
+      for (n in answer_options) {
         $("#emq-options").append(
           $(document.createElement("li"))
             .attr({
@@ -1494,14 +1494,14 @@ function loadQuestion(n) {
 
       answers = data["answers"];
 
-      for(a in answers) {
+      for (a in answers) {
         selector = $(document.createElement("select")).attr({
           class: "emq-select-box"
         });
 
         // I can't decide if we should allow this flexibility
         // (currently also allowed for true false questions
-        if(answers[a] instanceof Array) {
+        if (answers[a] instanceof Array) {
           actual_answer = answers[a][0];
           feedback = answers[a][1];
         } else {
@@ -1556,7 +1556,7 @@ function loadQuestion(n) {
         .append(data["background"])
         .append("<br>");
 
-      for(i in data["question"]) {
+      for (i in data["question"]) {
         $("#answer-block")
           .append("<br>")
           .append(data["question"][i])
@@ -1662,9 +1662,9 @@ function loadQuestion(n) {
       );
 
       enterKeyChecks(
-      $("#answer-block input")
-        .focus()
-        )
+        $("#answer-block input")
+          .focus()
+      )
 
       maintainFocusOnElement($("#answer-block input"));
 
@@ -1712,7 +1712,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      enterKeyChecks( $("#answer-block input") .focus())
+      enterKeyChecks($("#answer-block input").focus())
 
       maintainFocusOnElement($("#answer-block input"));
       break;
@@ -1734,7 +1734,7 @@ function loadQuestion(n) {
       options.sort();
 
       //buildRankList(options, answers);
-      for(var i = 0; i < options.length; i++) {
+      for (var i = 0; i < options.length; i++) {
         let option = options[i];
         $("#answer-list").append(
           $(document.createElement("li"))
@@ -1769,7 +1769,7 @@ function loadQuestion(n) {
           .click(checkAnswer)
       );
 
-      enterKeyChecks( $("#main input") .focus())
+      enterKeyChecks($("#main input").focus())
 
       $("#answer-list input")
         .first()
@@ -1801,7 +1801,7 @@ function loadQuestion(n) {
         "<span class='tf-answer-options'><span class='tf-true'>True</span> / <span class='tf-false'>False</span></span>";
 
       // Test if it is an ordered list
-      if(options[0].substring(0, 2).match(/[A-Z]\./i)) {
+      if (options[0].substring(0, 2).match(/[A-Z]\./i)) {
         options.sort();
         // If it is we must maintain the order. Otherwise
         // we can randomise it. (NOT YET IMPLEMENTED)
@@ -1809,12 +1809,12 @@ function loadQuestion(n) {
       }
 
       i = 0;
-      for(n in options) {
+      for (n in options) {
         let a = options[n];
 
         // I can't decide if we should allow this flexibility
         let actual_answer, feedback;
-        if(answers[a] instanceof Array) {
+        if (answers[a] instanceof Array) {
           actual_answer = answers[a][0];
           feedback = answers[a][1];
         } else {
@@ -1823,7 +1823,7 @@ function loadQuestion(n) {
         }
 
         let c = `no-select ${actual_answer}`;
-        if(ordered) {
+        if (ordered) {
           c = c + " alpha-list";
           a = options[n].substring(2);
         }
@@ -1839,17 +1839,21 @@ function loadQuestion(n) {
             })
             .append("<span class='answer-option-link'>" + a + "</span>")
             .append(tf)
-            .on("click touchend", function (e) {
-      if (e.type == "click") detectTap = true; // Detects click events
-        if (detectTap){
-              $(e.currentTarget).toggleClass("tf_answer_true");
-              //if ($(e.currentTarget).find(".tf-active").length > 0) {
-              //    $(e.currentTarget).find(".tf-true, .tf-false").toggleClass("tf-active");
+            .on("click touchend contextmenu", function (e) {
+              if (e.type == "contextmenu") {
+                e.preventDefault();
+              }
 
-              //} else {
-              //    $(e.currentTarget).find(".tf-true").addClass("tf-active");
-              //}
-        }
+              if (e.type == "click") detectTap = true; // Detects click events
+              if (detectTap) {
+                $(e.currentTarget).toggleClass("tf_answer_true");
+                //if ($(e.currentTarget).find(".tf-active").length > 0) {
+                //    $(e.currentTarget).find(".tf-true, .tf-false").toggleClass("tf-active");
+
+                //} else {
+                //    $(e.currentTarget).find(".tf-true").addClass("tf-active");
+                //}
+              }
             })
         );
         i = i + 1;
@@ -1911,13 +1915,13 @@ function loadQuestion(n) {
     $(e).click(nextQuestion);
   });
 
-  if(auto_load_previous_answers) {
+  if (auto_load_previous_answers) {
     console.log(qid)
     window.db.answers.where("qid").equals(qid).first((ans) => {
       // if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
       //   checkAnswer(ans, true);
       // }
-      if(ans != undefined) {
+      if (ans != undefined) {
         checkAnswer(ans, true);
       }
 
@@ -1926,7 +1930,7 @@ function loadQuestion(n) {
 
   //scrollTo(0, $("#content").position().top);
 
-  if(fix_broken_question_formatting) {
+  if (fix_broken_question_formatting) {
     $(".btn-link").remove();
     $(".btn-xs").remove();
   }
@@ -1936,11 +1940,11 @@ function loadQuestion(n) {
   // Preload images for the next N questions
   // (N = preload_images value)
   let x = 1;
-  while(x <= preload_images) {
+  while (x <= preload_images) {
     let data = getQuestionDataByNumber(n + x);
 
     // TODO: This should be rewritten
-    if(typeof data !== "undefined" && data.hasOwnProperty("images")) {
+    if (typeof data !== "undefined" && data.hasOwnProperty("images")) {
       data["images"].forEach(function (img) {
         setTimeout(function () {
           var xhr = new XMLHttpRequest();
@@ -2016,10 +2020,10 @@ function moveElement(element, x, y) {
 
   let question_type = questions[current_question_uid].type;
 
-  if(!window.element_positions.hasOwnProperty(question_type)) {
+  if (!window.element_positions.hasOwnProperty(question_type)) {
     window.element_positions[question_type] = {};
   }
-  if(!window.element_positions[question_type].hasOwnProperty(element.id)) {
+  if (!window.element_positions[question_type].hasOwnProperty(element.id)) {
     window.element_positions[question_type][element.id] = {};
   }
 
@@ -2030,7 +2034,7 @@ function moveElement(element, x, y) {
 }
 
 function loadImage(data) {
-  if(image_viewer == "cornerstone") {
+  if (image_viewer == "cornerstone") {
     dicomViewer.loadCornerstone($("#main"), db, data["images"], data["annotations"]);
   } else {
     $("#main")
@@ -2038,7 +2042,7 @@ function loadImage(data) {
       .append(data["question"])
       .append("<br>");
 
-    if(data["images"] != undefined) {
+    if (data["images"] != undefined) {
       data["images"].forEach(function (img) {
         $("#main").append(
           $(document.createElement("img")).attr({
@@ -2068,7 +2072,7 @@ function appendAnswers(answers, question_number) {
   var ordered = false;
 
   // Test if it is an ordered list
-  if(options[0].substring(0, 2).match(/[A-Z]\./i)) {
+  if (options[0].substring(0, 2).match(/[A-Z]\./i)) {
     options.sort();
     // If it is we must maintain the order. Otherwise
     // we can randomise it. (NOT YET IMPLEMENTED)
@@ -2076,11 +2080,11 @@ function appendAnswers(answers, question_number) {
   }
 
   let i = 0;
-  for(let n in options) {
+  for (let n in options) {
     let a = options[n];
 
     let c = answers[a];
-    if(ordered) {
+    if (ordered) {
       c = c + " alpha-list";
       a = options[n].substring(2);
     }
@@ -2104,7 +2108,7 @@ function appendAnswers(answers, question_number) {
 }
 
 function buildRankList(options, answers) {
-  for(var i = 0; i < options.length; i++) {
+  for (var i = 0; i < options.length; i++) {
     option = options[i];
 
     //c = answers[n];
@@ -2140,11 +2144,11 @@ function checkAnswer(ans, load) {
 
   let best_sim, best_answer, sim, replaced_lower_case_answer, score, max_score, a, diff, fragment, span, color;
 
-  switch(question_type) {
+  switch (question_type) {
     case "sba":
       let return_value = checkBestAnswer(ans, load);
 
-      if(return_value.s) {
+      if (return_value.s) {
         saveAnswerToHashMap(current_question_uid, "sba", return_value.score, 1, {
           target_id: return_value.t,
           question_number: return_value.q,
@@ -2254,7 +2258,7 @@ function checkAnswer(ans, load) {
 
     //   break;
     case "rapid":
-      if(load == true) {
+      if (load == true) {
         //
         //                // If we are loading an answer we clear our answer list
         //                // and rebuild it from the saved answer.
@@ -2288,9 +2292,9 @@ function checkAnswer(ans, load) {
 
       correct = false;
 
-      if(is_normal == "true") {
+      if (is_normal == "true") {
         // Correct normal
-        if(a.toLowerCase() == "normal" || a == "") {
+        if (a.toLowerCase() == "normal" || a == "") {
           $("#answer").addClass("correct");
           correct = true;
         } else {
@@ -2305,7 +2309,7 @@ function checkAnswer(ans, load) {
           );
         }
       } else {
-        if(a.toLowerCase() == "normal" || a == "") {
+        if (a.toLowerCase() == "normal" || a == "") {
           $("#answer").addClass("incorrect");
           $("#answer-block").append(
             $(document.createElement("span"))
@@ -2319,7 +2323,7 @@ function checkAnswer(ans, load) {
           best_answer = correct_answers[0];
           correct_answers.forEach(function (option) {
             sim = similarity(a.toLowerCase(), option.toLowerCase());
-            if(sim > best_sim) {
+            if (sim > best_sim) {
               best_answer = option;
               best_sim = sim;
             }
@@ -2369,7 +2373,7 @@ function checkAnswer(ans, load) {
               )
           );
 
-          if(best_sim >= similarity_limit) {
+          if (best_sim >= similarity_limit) {
             $("#answer").addClass("correct");
             $("#answer").addClass("similarity-correct");
             // n_correct = n_correct + 1;
@@ -2396,10 +2400,10 @@ function checkAnswer(ans, load) {
       $(".check-button").remove();
 
       score = 0;
-      if(correct) { score = 1 }
+      if (correct) { score = 1 }
 
       // Save answer
-      if(load != true) {
+      if (load != true) {
         saveAnswerToHashMap(current_question_uid, "rapid", score, 1, {
           answer: a,
           correct: correct
@@ -2408,7 +2412,7 @@ function checkAnswer(ans, load) {
 
       break;
     case "image_answer":
-      if(load == true) {
+      if (load == true) {
         //
         //                // If we are loading an answer we clear our answer list
         //                // and rebuild it from the saved answer.
@@ -2438,15 +2442,15 @@ function checkAnswer(ans, load) {
 
       correct_answers.forEach(function (option) {
         sim = similarity(a.toLowerCase(), option.toLowerCase());
-        if(sim > best_sim) {
+        if (sim > best_sim) {
           best_answer = option;
           best_sim = sim;
         }
       });
 
-      if(best_sim < 1) {
+      if (best_sim < 1) {
         $.each(wordlist, function (key, value) {
-          if(
+          if (
             best_answer.toLowerCase().indexOf(key) != -1 &&
             a.toLowerCase().indexOf(value) != -1 &&
             best_answer.toLowerCase().indexOf(value) == -1
@@ -2454,7 +2458,7 @@ function checkAnswer(ans, load) {
             best_sim = -1;
           }
 
-          if(
+          if (
             best_answer.toLowerCase().indexOf(value) != -1 &&
             a.toLowerCase().indexOf(key) != -1 &&
             best_answer.toLowerCase().indexOf(key) == -1
@@ -2462,7 +2466,7 @@ function checkAnswer(ans, load) {
             best_sim = -1;
           }
 
-          if(best_sim < 0) {
+          if (best_sim < 0) {
             $("#answer").append(
               $(document.createElement("span"))
                 .attr({
@@ -2477,7 +2481,7 @@ function checkAnswer(ans, load) {
       }
 
       // Display a colour diff for similar answers
-      if(best_sim < 1 && best_sim > min_colour_diff) {
+      if (best_sim < 1 && best_sim > min_colour_diff) {
         diff = JsDiff.diffChars(a.toLowerCase(), best_answer.toLowerCase());
         fragment = document.createDocumentFragment();
         span = null;
@@ -2526,7 +2530,7 @@ function checkAnswer(ans, load) {
 
       correct = false;
       score = 0;
-      if(best_sim >= similarity_limit) {
+      if (best_sim >= similarity_limit) {
         $("#answer input").addClass("correct");
         $("#answer input").addClass("similarity-correct");
         // n_correct = n_correct + 1;
@@ -2541,7 +2545,7 @@ function checkAnswer(ans, load) {
       $(".check-button").remove();
 
       // Save answer
-      if(load != true) {
+      if (load != true) {
         saveAnswerToHashMap(current_question_uid, "image_answer", score, 1, {
           answer: a,
           correct: correct
@@ -2550,7 +2554,7 @@ function checkAnswer(ans, load) {
 
       break;
     case "label":
-      if(load == true) {
+      if (load == true) {
         // If we are loading an answer we clear our answer list
         // and rebuild it from the saved answer.
         //$("#sortable-list").empty();
@@ -2587,7 +2591,7 @@ function checkAnswer(ans, load) {
             .text(a)
         );
 
-        if(a.toLowerCase() == correct_answer.toLowerCase()) {
+        if (a.toLowerCase() == correct_answer.toLowerCase()) {
           $(option).addClass("correct");
           n_correct = n_correct + 1;
           correct.push("correct");
@@ -2610,7 +2614,7 @@ function checkAnswer(ans, load) {
               .text("(" + Math.round(sim * 100) / 100 + ")")
           );
 
-          if(sim >= similarity_limit) {
+          if (sim >= similarity_limit) {
             $(option).addClass("correct");
             $(option).addClass("similarity-correct");
             n_correct = n_correct + 1;
@@ -2637,7 +2641,7 @@ function checkAnswer(ans, load) {
       max_score = $("#answer-list li").length;
 
       // Save answer
-      if(load != true) {
+      if (load != true) {
         saveAnswerToHashMap(current_question_uid, "label", n_correct, max_score, {
           answers: answers,
           correct: correct,
@@ -2646,7 +2650,7 @@ function checkAnswer(ans, load) {
 
       break;
     case "rank":
-      if(load == true) {
+      if (load == true) {
         // If we are loading an answer we clear our answer list
         // and rebuild it from the saved answer.
         $("#sortable-list").empty();
@@ -2659,7 +2663,7 @@ function checkAnswer(ans, load) {
 
       map = {};
 
-      for(i in correct_order) {
+      for (i in correct_order) {
         map[correct_order[i]] = i;
       }
 
@@ -2671,7 +2675,7 @@ function checkAnswer(ans, load) {
 
       // Max score is based upon the vumber of options
       max_score = 0;
-      for(var x = 1; x < number_options; x++) {
+      for (var x = 1; x < number_options; x++) {
         max_score = max_score + x;
       }
       max_score = max_score + Math.floor(number_options / 2);
@@ -2715,7 +2719,7 @@ function checkAnswer(ans, load) {
         })
       );
 
-      for(item in correct_order) {
+      for (item in correct_order) {
         option = correct_order[item];
 
         $("#correct-list").append(
@@ -2738,7 +2742,7 @@ function checkAnswer(ans, load) {
       $(".check-button").remove();
 
       // Save answer
-      if(load != true) {
+      if (load != true) {
         saveAnswerToHashMap(current_question_uid, "rank", score, max_score, {
           order: order,
           correct_order: correct_order,
@@ -2749,11 +2753,11 @@ function checkAnswer(ans, load) {
     case "tf":
       var save_answer = true;
 
-      if(load == true) {
+      if (load == true) {
         var save_answer = false;
 
         $(".tf-answer-block li").each(function (index, option) {
-          if(ans["other"].answer[index] == 1) {
+          if (ans["other"].answer[index] == 1) {
             //$(option).find(".tf-true").addClass("tf-active");
             $(option).addClass("tf_answer_true");
           }
@@ -2773,7 +2777,7 @@ function checkAnswer(ans, load) {
         //a = $(option).find(".tf_answer_true");
         //
 
-        if($(option).hasClass("tf_answer_true")) {
+        if ($(option).hasClass("tf_answer_true")) {
           answer = 1;
           answers.push(1);
         } else {
@@ -2783,11 +2787,11 @@ function checkAnswer(ans, load) {
         }
 
         answer_option = "This is True. ";
-        if($(option).hasClass("0")) {
+        if ($(option).hasClass("0")) {
           answer_option = "This is False. ";
         }
 
-        if($(option).hasClass(answer)) {
+        if ($(option).hasClass(answer)) {
           $(option).addClass("correct");
           correct.push("correct");
           n_correct = n_correct + 1;
@@ -2818,7 +2822,7 @@ function checkAnswer(ans, load) {
           $(e).off();
         });
 
-      if(save_answer == true) {
+      if (save_answer == true) {
         saveAnswerToHashMap(current_question_uid,
           "tf",
           n_correct, max_score,
@@ -2839,29 +2843,29 @@ function checkAnswer(ans, load) {
     .unwrap();
 
   // This may have been deleted if it was moved
-  if($("#feedback").length < 1) {
+  if ($("#feedback").length < 1) {
     $("#content").append('<div id="feedback"></div>');
   }
 
   $("#feedback").prepend(data["feedback"]);
   $("#feedback").append("<br />");
 
-  if(data["external"] !== undefined) {
+  if (data["external"] !== undefined) {
     $("#feedback").append("<br />");
     $("#feedback").append("<p>" + data["external"] + "</p>");
   }
 
   // Check if we have a valid dicom displayed
-  if($(".single-dicom-viewer").length > 0) {
+  if ($(".single-dicom-viewer").length > 0) {
     // Move feedback location if we do
     $("#feedback").appendTo("#answer-block");
   }
 
-  if(rebuild_score_list_on_answer) {
+  if (rebuild_score_list_on_answer) {
     buildActiveScoreList();
   }
 
-  if(fix_broken_question_formatting) {
+  if (fix_broken_question_formatting) {
     $(".btn-link").remove();
     $(".btn-xs").remove();
   }
@@ -2874,7 +2878,7 @@ function checkAnswer(ans, load) {
 function checkBestAnswer(e, load) {
   let target_id, save_answer, question_number, answer, text;
   console.log(e);
-  if(load == true) {
+  if (load == true) {
     target_id = e["other"]["target_id"];
     save_answer = false;
     question_number = e["other"]["question_number"];
@@ -2889,7 +2893,7 @@ function checkBestAnswer(e, load) {
 
   let score = 0;
   // Check if the selected answer is correct
-  if($("#" + target_id).hasClass("1")) {
+  if ($("#" + target_id).hasClass("1")) {
     answer = "correct";
     score = 1;
   } else {

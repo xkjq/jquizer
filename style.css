@@ -62,10 +62,6 @@
   border: 1px dashed blue;
 }
 
-.answer-block-floating input:hover:enabled {
-  background: darkgray;
-}
-
 .answer-block-floating button {
   background: transparent;
   color: lightblue;
@@ -101,17 +97,6 @@ ol.answer-list {
 
 #flagged-button {
   /*display: block;*/
-}
-
-.answer-list.allow-hover li:hover {
-  padding: 5px;
-  border: 1px solid darkblue;
-  border-radius: 5px;
-  background-color: gray;
-}
-
-.answer-list.allow-hover li:hover a {
-  color: darkblue;
 }
 
 .correct {
@@ -519,4 +504,22 @@ input {
 
 .no-select {
   user-select: none;
+}
+
+
+@media (hover: hover) and (pointer: fine) {
+  .answer-block-floating input:hover:enabled {
+    background: darkgray;
+  }
+.answer-list.allow-hover li:hover {
+  padding: 5px;
+  border: 1px solid darkblue;
+  border-radius: 5px;
+  background-color: gray;
+}
+
+.answer-list.allow-hover li:hover a {
+  color: darkblue;
+}
+
 }
