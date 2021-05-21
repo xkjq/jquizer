@@ -159,6 +159,14 @@ function loadData(data, textStatus) {
   buildActiveScoreList();
 }
 
+var detectTap;
+$(document).on('touchstart', function() {
+    detectTap = true; // Detects all touch events
+});
+$(document).on('touchmove', function() {
+    detectTap = false; // Excludes the scroll events from touch events
+});
+
 $(document).ready(function () {
   // TODO: conside switching the following all to indexdb
   // Load lawnchair store
@@ -1780,7 +1788,7 @@ function loadQuestion(n) {
       $("#answer-block").append(
         $(document.createElement("ol")).attr({
           id: "question-" + question_number + "-answers",
-          class: "tf-answer-block answer-list allow-hover",
+          class: "tf-answer-block answer-list allow-hover no-select",
           "data-answered": 0
         })
       );
@@ -1814,7 +1822,7 @@ function loadQuestion(n) {
           actual_answer = answers[a];
         }
 
-        let c = actual_answer;
+        let c = `no-select ${actual_answer}`;
         if(ordered) {
           c = c + " alpha-list";
           a = options[n].substring(2);
@@ -1829,9 +1837,11 @@ function loadQuestion(n) {
               "data-feedback": feedback
               //}).append(a).append(tf).click(function(e) {
             })
-            .append("<a href='#/' class='answer-option-link'>" + a + "</a>")
+            .append("<span class='answer-option-link'>" + a + "</span>")
             .append(tf)
-            .click(function (e) {
+            .on("click touchend", function (e) {
+      if (e.type == "click") detectTap = true; // Detects click events
+        if (detectTap){
               $(e.currentTarget).toggleClass("tf_answer_true");
               //if ($(e.currentTarget).find(".tf-active").length > 0) {
               //    $(e.currentTarget).find(".tf-true, .tf-false").toggleClass("tf-active");
@@ -1839,19 +1849,22 @@ function loadQuestion(n) {
               //} else {
               //    $(e.currentTarget).find(".tf-true").addClass("tf-active");
               //}
+        }
             })
         );
         i = i + 1;
       }
 
-      $(".tf-true, .tf-false")
-        .off()
-        .click(function (e) {
-          $(e.currentTarget).toggleClass("tf_answer_true");
-          //$(e.currentTarget.parentNode).children().removeClass("tf-active");
-          //$(e.currentTarget).addClass("tf-active");
-          e.stopPropagation();
-        });
+      // Not sure what this is for????
+      //$(".tf-true, .tf-false")
+      //  .off()
+      //  .click(function (e) {
+      //        console.log(e)
+      //    $(e.currentTarget).toggleClass("tf_answer_true");
+      //    //$(e.currentTarget.parentNode).children().removeClass("tf-active");
+      //    //$(e.currentTarget).addClass("tf-active");
+      //    e.stopPropagation();
+      //  });
 
       $("#answer-block").append("<br />");
 

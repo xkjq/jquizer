@@ -516,3 +516,7 @@ input {
   top: 0;
   color: lightblue;
 }
+
+.no-select {
+  user-select: none;
+}
