@@ -1018,19 +1018,63 @@ function getQuestionDataByNumber(n) {
   return questions[qid];
 }
 
-function previousQuestion(e) {
+// Helper to find next/previous unanswered question index.
+async function findUnansweredIndex(startIndex, step) {
+  // step = +1 for next, -1 for previous
+  let idx = startIndex + step;
+  while (idx >= 0 && idx < filtered_questions.length) {
+    const qid = filtered_questions[idx];
+    // Check DB for an answer for this qid
+    const ans = await db.answers.where('qid').equals(qid).first();
+    if (ans === undefined) {
+      return idx;
+    }
+    idx += step;
+  }
+  return -1;
+}
+
+async function previousQuestion(e) {
+  const currentIndex = hash_n_map[current_question_uid];
+  // Ctrl/Cmd + click: jump to previous unanswered
+  const ctrl = e && (e.ctrlKey || e.metaKey);
+  if (ctrl) {
+    const idx = await findUnansweredIndex(currentIndex, -1);
+    if (idx >= 0) {
+      loadQuestion(idx);
+      return;
+    } else {
+      toastr.info('No previous unanswered questions');
+      return;
+    }
+  }
+
   if (e && e.shiftKey) {
-    loadQuestion(hash_n_map[current_question_uid] - 10);
+    loadQuestion(currentIndex - 10);
   } else {
-    loadQuestion(hash_n_map[current_question_uid] - 1);
+    loadQuestion(currentIndex - 1);
   }
 }
 
-function nextQuestion(e) {
+async function nextQuestion(e) {
+  const currentIndex = hash_n_map[current_question_uid];
+  // Ctrl/Cmd + click: jump to next unanswered
+  const ctrl = e && (e.ctrlKey || e.metaKey);
+  if (ctrl) {
+    const idx = await findUnansweredIndex(currentIndex, +1);
+    if (idx >= 0) {
+      loadQuestion(idx);
+      return;
+    } else {
+      toastr.info('No next unanswered questions');
+      return;
+    }
+  }
+
   if (e && e.shiftKey) {
-    loadQuestion(hash_n_map[current_question_uid] + 10);
+    loadQuestion(currentIndex + 10);
   } else {
-    loadQuestion(hash_n_map[current_question_uid] + 1);
+    loadQuestion(currentIndex + 1);
   }
 }
 
