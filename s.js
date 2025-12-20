@@ -159,6 +159,50 @@ function loadData(data, textStatus) {
   buildActiveScoreList();
 }
 
+// Expose loadData to non-module scripts (some legacy scripts like fileload.js
+// expect this function on the global window object)
+window.loadData = loadData;
+
+/**
+ * Load answers/flagged data from a file into the local DB.
+ * fileload.js calls this on file load. Provide a minimal, resilient
+ * implementation so the legacy file loader works when `s.js` is loaded
+ * as a module.
+ */
+async function loadAnswersAndFeedback(obj) {
+  if (!obj) return;
+
+  try {
+    if (Array.isArray(obj.answers)) {
+      for (const a of obj.answers) {
+        // Use put so existing entries are updated or created
+        await db.answers.put(a);
+      }
+    }
+
+    if (Array.isArray(obj.flagged_questions)) {
+      for (const f of obj.flagged_questions) {
+        // Accept either an object with qid or a primitive
+        const qid = f && (f.qid || f);
+        if (qid !== undefined) {
+          await db.flagged.put({ qid: qid });
+        }
+      }
+    }
+
+    // Refresh UI to reflect newly loaded answers/flags
+    loadFilters();
+    buildActiveScoreList();
+    toastr.info("Answers loaded.");
+  } catch (err) {
+    console.error("Error loading answers:", err);
+    toastr.warning("Unable to load answers file.");
+  }
+}
+
+// Expose for legacy callers
+window.loadAnswersAndFeedback = loadAnswersAndFeedback;
+
 var detectTap;
 $(document).on('touchstart', function () {
   detectTap = true; // Detects all touch events
