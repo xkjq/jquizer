@@ -66,18 +66,27 @@
     <div id="accent-controls" aria-live="polite">
       <label for="accent-color-input" style="display:block;margin-top:8px;font-weight:600">Accent colour</label>
       <div class="accent-presets" role="list" aria-label="Accent colour presets">
-        <button type="button" class="accent-preset" data-color="#33ff33" title="Green" aria-label="Accent green" style="background:#33ff33;"></button>
-        <button type="button" class="accent-preset" data-color="#1f6feb" title="Blue" aria-label="Accent blue" style="background:#1f6feb;"></button>
-        <button type="button" class="accent-preset" data-color="#ff8c00" title="Orange" aria-label="Accent orange" style="background:#ff8c00;"></button>
-  <button type="button" class="accent-preset" data-color="#ff4d4d" title="Red" aria-label="Accent red" style="background:#ff4d4d;"></button>
-  <button type="button" class="accent-preset" data-color="#9b59b6" title="Purple" aria-label="Accent purple" style="background:#9b59b6;"></button>
-  <button type="button" class="accent-preset" data-color="#9e9e9e" title="Gray" aria-label="Accent gray" style="background:#9e9e9e;"></button>
+        <button type="button" class="accent-preset" data-color="#33ff33" title="Green" aria-label="Accent green"
+          style="background:#33ff33;"></button>
+        <button type="button" class="accent-preset" data-color="#1f6feb" title="Blue" aria-label="Accent blue"
+          style="background:#1f6feb;"></button>
+        <button type="button" class="accent-preset" data-color="#ff8c00" title="Orange" aria-label="Accent orange"
+          style="background:#ff8c00;"></button>
+        <button type="button" class="accent-preset" data-color="#ff4d4d" title="Red" aria-label="Accent red"
+          style="background:#ff4d4d;"></button>
+        <button type="button" class="accent-preset" data-color="#9b59b6" title="Purple" aria-label="Accent purple"
+          style="background:#9b59b6;"></button>
+        <button type="button" class="accent-preset" data-color="#9e9e9e" title="Gray" aria-label="Accent gray"
+          style="background:#9e9e9e;"></button>
       </div>
-      <input type="color" id="accent-color-input" aria-label="Choose accent colour" style="margin-top:6px;width:100%;height:34px;padding:2px;" />
+      <input type="color" id="accent-color-input" aria-label="Choose accent colour"
+        style="margin-top:6px;width:100%;height:34px;padding:2px;" />
     </div>
-    <h4>Filter options:</h4>
-    <div id="source-filters">Source</div>
-    <div id="specialty-filters">Specialty</div>
+    <div id="filter-options">
+      <h4>Filter options:</h4>
+      <div id="source-filters">Source</div>
+      <div id="specialty-filters">Specialty</div>
+    </div>
     <div id="goto-question">
       <form id="search-form">
         <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
@@ -90,45 +99,46 @@
         <button id="goto-question-button" type="button">Goto question</button>
         <button id="goto-question-hide-button" type="button">+ hide</button>
       </form>
-      <div class="checkbox-row">
-        <input type="checkbox" id="show-answered-questions-button" />
-        <label for="show-answered-questions-button">
-          <span class="toggle-label-text">Hide previously answered questions</span>
-          <span class="switch" aria-hidden="true"></span>
-        </label>
-      </div>
-      <div class="checkbox-row">
-        <input type="checkbox" id="show-only-flagged-questions-button" />
-        <label for="show-only-flagged-questions-button">
-          <span class="toggle-label-text">Hide questions that have not been flagged</span>
-          <span class="switch" aria-hidden="true"></span>
-        </label>
-      </div>
-      <div class="checkbox-row">
-        <input type="checkbox" id="auto-load-previous-answers-button" checked />
-        <label for="auto-load-previous-answers-button">
-          <span class="toggle-label-text">Automatically load previous answers</span>
-          <span class="switch" aria-hidden="true"></span>
-        </label>
-      </div>
-      <hr />
-      <button type="button" id="delete-answers-button">Delete Answers</button>
-      <button type="button" id="save-answers-button">
-        Save Answers (locally)
-      </button>
-      <br />
-      <hr />
-      <h4>Load (local) answers:</h4>
-  <input type="file" id="answers-file" name="file" title="Load saved answers (JSON)" aria-label="Load answers file" />
-      <button onclick="abortRead();">Cancel read</button>
-      <br />
-      <b>Note: this will overwrite all your current answers</b>
-      <br />
     </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="show-answered-questions-button" />
+      <label for="show-answered-questions-button">
+        <span class="toggle-label-text">Hide previously answered questions</span>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="show-only-flagged-questions-button" />
+      <label for="show-only-flagged-questions-button">
+        <span class="toggle-label-text">Hide questions that have not been flagged</span>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="auto-load-previous-answers-button" checked />
+      <label for="auto-load-previous-answers-button">
+        <span class="toggle-label-text">Automatically load previous answers</span>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </div>
+    <hr />
+    <button type="button" id="delete-answers-button">Delete Answers</button>
+    <button type="button" id="save-answers-button">
+      Save Answers (locally)
+    </button>
+    <br />
+    <hr />
+    <h4>Load (local) answers:</h4>
+    <input type="file" id="answers-file" name="file" title="Load saved answers (JSON)" aria-label="Load answers file" />
+    <button onclick="abortRead();">Cancel read</button>
+    <br />
+    <b>Note: this will overwrite all your current answers</b>
+    <br />
     <hr />
     <div id="fileloader">
       <h4>Load (local) questions:</h4>
-  <input type="file" id="questions-file" name="file" title="Load questions (JSON)" aria-label="Load questions file" />
+      <input type="file" id="questions-file" name="file" title="Load questions (JSON)"
+        aria-label="Load questions file" />
       <button onclick="abortRead();">Cancel read</button>
       <div id="progress_bar">
         <div class="percent">0%</div>
@@ -153,7 +163,7 @@
     <ul id="score-list"></ul>
   </div>
   <div id="about">
-    <div id="version-info"></div><br/>
+    <div id="version-info"></div><br />
     <span id="about-close" class="close-button"><a href="#">close</a></span>
     <h2>What is it?</h2>
     <div id="about-contents">
@@ -251,46 +261,46 @@
             <div id="feedback"></div>
           </div>
           <span class="popup-tag"></span>
-    <script>
-      (function(){
-        const root = document.documentElement;
-        const key = 'jquizer-accent-color';
-        const colorInput = document.getElementById('accent-color-input');
-        const presets = document.querySelectorAll('.accent-preset');
+          <script>
+            (function () {
+              const root = document.documentElement;
+              const key = 'jquizer-accent-color';
+              const colorInput = document.getElementById('accent-color-input');
+              const presets = document.querySelectorAll('.accent-preset');
 
-        function applyColor(c){
-          if(!c) return;
-          root.style.setProperty('--console-fg', c);
-          root.style.setProperty('--accent', c);
-        }
+              function applyColor(c) {
+                if (!c) return;
+                root.style.setProperty('--console-fg', c);
+                root.style.setProperty('--accent', c);
+              }
 
-        const saved = localStorage.getItem(key);
-        if(saved){
-          applyColor(saved);
-        }
+              const saved = localStorage.getItem(key);
+              if (saved) {
+                applyColor(saved);
+              }
 
-        if(colorInput){
-          // set initial value from saved or computed style
-          const computed = getComputedStyle(root).getPropertyValue('--console-fg').trim() || '#33ff33';
-          try{ colorInput.value = saved || computed; }catch(e){}
-          colorInput.addEventListener('input', function(e){
-            const v = e.target.value;
-            applyColor(v);
-            localStorage.setItem(key, v);
-          });
-        }
+              if (colorInput) {
+                // set initial value from saved or computed style
+                const computed = getComputedStyle(root).getPropertyValue('--console-fg').trim() || '#33ff33';
+                try { colorInput.value = saved || computed; } catch (e) { }
+                colorInput.addEventListener('input', function (e) {
+                  const v = e.target.value;
+                  applyColor(v);
+                  localStorage.setItem(key, v);
+                });
+              }
 
-        presets.forEach(function(b){
-          b.addEventListener('click', function(){
-            const c = b.getAttribute('data-color');
-            applyColor(c);
-            if(colorInput) try{ colorInput.value = c; }catch(e){}
-            localStorage.setItem(key, c);
-          });
-        });
-      })();
-    </script>
+              presets.forEach(function (b) {
+                b.addEventListener('click', function () {
+                  const c = b.getAttribute('data-color');
+                  applyColor(c);
+                  if (colorInput) try { colorInput.value = c; } catch (e) { }
+                  localStorage.setItem(key, c);
+                });
+              });
+            })();
+          </script>
 
-  </body>
+</body>
 
-  </html>
+</html>

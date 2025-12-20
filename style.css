@@ -171,7 +171,7 @@ li.alpha-list {
   z-index: 110;
   /* layout filters inside as columns */
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   /* ensure items align to the start of their grid cells (left) */
   justify-items: start;
@@ -655,12 +655,15 @@ input, textarea, select {
 }
 
 #options button {
-  /* make option buttons slightly smaller and full width where appropriate */
+  /* make option buttons slightly smaller and stretch to full width in single-column layout */
   padding: 8px 10px;
   font-size: 14px;
   display: inline-block;
-  justify-self: start;
-  margin: 6px 4px;
+  justify-self: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0;
+  text-align: left;
 }
 
 #options .action-row {
