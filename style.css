@@ -182,10 +182,7 @@ li.alpha-list {
   clear: right;
 }
 
-#load-remote-server-button {
-  float: right;
-  clear: left;
-}
+/* load-remote-server-button removed */
 
 #question-details-toggle {
   float: right;

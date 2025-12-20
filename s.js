@@ -267,9 +267,8 @@ $(document).ready(function () {
         $("#question-details").slideToggle("slow");
       });
 
-      $("#load-remote-server-button").click(function () {
-        loadRemoteServer();
-      });
+      // Gapps removed: hide remote-server button and disable handler
+      $("#load-remote-server-button").remove();
 
       $("#score-toggle").click(function () {
         $("#score").slideToggle("slow");
@@ -1151,28 +1150,14 @@ function dynamicSort(property) {
   };
 }
 
+// Gapps integration removed — keep a no-op function so callers remain safe.
 function createRemoteStoreButtonIfRequired() {
-  if (
-    $("#save-remote-data-button").length == 0 &&
-    remote_store &&
-    remote_store_synced == false
-  ) {
-    $("#header-next-button").after(
-      $(document.createElement("button"))
-        .attr({ id: "save-remote-data-button" })
-        .text("Save answers to Google")
-        .click(function () {
-          document
-            .getElementById("remote-frame")
-            .contentWindow.saveRemoteAnswers();
-        })
-    );
-  }
+  // intentionally left blank
 }
 
 function loadRemoteServer() {
-  $("body").append('<iframe id="remote-frame" src="gapp.html">');
-  $("#load-remote-server-button").remove();
+  // Gapps removed — no-op. If code calls this, log a message for debugging.
+  console.info("loadRemoteServer() called but Google Apps integration has been removed.");
 }
 
 function toggleFlagged() {
