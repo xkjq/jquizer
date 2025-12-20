@@ -810,7 +810,7 @@ function setUpFilters() {
         .attr({ class: "select-all" })
         .text("Select All")
         .click(function () {
-          checkBoxes = $("[name='filter-specialty-checkbox']");
+          let checkBoxes = $("[name='filter-specialty-checkbox']");
           checkBoxes.prop("checked", !checkBoxes.prop("checked"));
 
           loadFilters();
@@ -843,7 +843,7 @@ function setUpFilters() {
         .attr({ class: "select-all" })
         .text("Select All")
         .click(function () {
-          checkBoxes = $("[name='filter-source-checkbox']");
+          let checkBoxes = $("[name='filter-source-checkbox']");
           checkBoxes.prop("checked", !checkBoxes.prop("checked"));
 
           loadFilters();
