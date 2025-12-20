@@ -158,7 +158,7 @@
 
   <!-- Separate Search / Goto menu -->
   <div id="search-menu" aria-hidden="true">
-    <form id="search-form">
+    <form id="search-form" onsubmit="return false;">
       <label for="search-input" style="display:block;font-weight:600">Search (regex)</label>
       Search within questions:
       <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
@@ -168,9 +168,9 @@
       </div>
     </form>
     <hr />
-    <form class="goto-form">
+    <form class="goto-form" onsubmit="return false;">
       <label for="goto-question-input" style="display:block;font-weight:600">Goto question</label>
-      <input type="text" id="goto-question-input" placeholder="Question number" aria-label="Goto question number" />
+      <input type="number" id="goto-question-input" placeholder="Question number" aria-label="Goto question number" min="1" inputmode="numeric" pattern="\d*" />
       <div class="action-row">
         <button id="goto-question-button" type="button">Goto question</button>
         <button id="goto-question-hide-button" type="button">+ hide</button>
@@ -354,6 +354,39 @@
                 defaultNavCheckbox.addEventListener('change', function () {
                   const v = defaultNavCheckbox.checked ? '1' : '0';
                   localStorage.setItem(defaultNavKey, v);
+                });
+              }
+
+              // Enter key bindings for search and goto inputs
+              const searchInputEl = document.getElementById('search-input');
+              const searchBtnEl = document.getElementById('search-button');
+              if (searchInputEl && searchBtnEl) {
+                searchInputEl.addEventListener('keydown', function (e) {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchBtnEl.click();
+                  }
+                });
+              }
+
+              const gotoInputEl = document.getElementById('goto-question-input');
+              const gotoBtnEl = document.getElementById('goto-question-button');
+              if (gotoInputEl) {
+                // ensure numeric-only via input type=number; also handle Enter
+                if (gotoBtnEl) {
+                  gotoInputEl.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      gotoBtnEl.click();
+                    }
+                  });
+                }
+                // prevent non-numeric paste
+                gotoInputEl.addEventListener('paste', function (e) {
+                  const text = (e.clipboardData || window.clipboardData).getData('text');
+                  if (!/^\d+$/.test(text)) {
+                    e.preventDefault();
+                  }
                 });
               }
             })();
