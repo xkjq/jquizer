@@ -1038,6 +1038,9 @@ async function previousQuestion(e) {
   const currentIndex = hash_n_map[current_question_uid];
   // Ctrl/Cmd + click: jump to previous unanswered
   const ctrl = e && (e.ctrlKey || e.metaKey);
+  // If user enabled default unanswered nav in options, treat as ctrl
+  const defaultNav = localStorage.getItem('jquizer-default-unanswered') === '1' || localStorage.getItem('jquizer-default-unanswered') === 'true';
+  const effectiveCtrl = ctrl || defaultNav;
   if (ctrl) {
     const idx = await findUnansweredIndex(currentIndex, -1);
     if (idx >= 0) {
@@ -1060,7 +1063,10 @@ async function nextQuestion(e) {
   const currentIndex = hash_n_map[current_question_uid];
   // Ctrl/Cmd + click: jump to next unanswered
   const ctrl = e && (e.ctrlKey || e.metaKey);
-  if (ctrl) {
+  // If user enabled default unanswered nav in options, treat as ctrl
+  const defaultNavNext = localStorage.getItem('jquizer-default-unanswered') === '1' || localStorage.getItem('jquizer-default-unanswered') === 'true';
+  const effectiveCtrlNext = ctrl || defaultNavNext;
+  if (effectiveCtrlNext) {
     const idx = await findUnansweredIndex(currentIndex, +1);
     if (idx >= 0) {
       loadQuestion(idx);
@@ -1418,7 +1424,8 @@ function loadQuestion(n) {
       .attr({
         //'type': 'button',
         class: "previous-button",
-        value: "Previous"
+        value: "Previous",
+        title: "Click: previous question • Shift+Click: -10 • Ctrl/Cmd+Click: previous unanswered"
       })
       .text("Previous")
   );
@@ -1437,7 +1444,8 @@ function loadQuestion(n) {
         //'type': 'button',
         class: "next-button",
         id: "header-next-button",
-        value: "Next"
+        value: "Next",
+        title: "Click: next question • Shift+Click: +10 • Ctrl/Cmd+Click: next unanswered"
       })
       .text("Next")
   );
@@ -1981,11 +1989,18 @@ function loadQuestion(n) {
 
   $(".previous-button").off();
   $(".previous-button").each(function (index, e) {
+    // ensure tooltip explains modifier behaviour
+    if (!$(e).attr('title')) {
+      $(e).attr('title', 'Click: previous question • Shift+Click: -10 • Ctrl/Cmd+Click: previous unanswered');
+    }
     $(e).click(previousQuestion);
   });
 
   $(".next-button").off();
   $(".next-button").each(function (index, e) {
+    if (!$(e).attr('title')) {
+      $(e).attr('title', 'Click: next question • Shift+Click: +10 • Ctrl/Cmd+Click: next unanswered');
+    }
     $(e).click(nextQuestion);
   });
 
@@ -2010,6 +2025,25 @@ function loadQuestion(n) {
   }
   //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "MathExample"]);
   createRemoteStoreButtonIfRequired();
+
+  // Keyboard navigation: arrows for previous/next. Respect modifiers.
+  $(document).off('keydown.jquiz-nav');
+  $(document).on('keydown.jquiz-nav', function (e) {
+    // Ignore typing inside inputs/textareas
+    const tgt = e.target || e.srcElement;
+    const tag = tgt && tgt.tagName ? tgt.tagName.toUpperCase() : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tgt.isContentEditable) return;
+
+    if (e.key === 'ArrowLeft') {
+      // left arrow => previous
+      previousQuestion(e);
+      e.preventDefault();
+    } else if (e.key === 'ArrowRight') {
+      // right arrow => next
+      nextQuestion(e);
+      e.preventDefault();
+    }
+  });
 
   // Preload images for the next N questions
   // (N = preload_images value)

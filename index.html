@@ -110,6 +110,13 @@
         <span class="switch" aria-hidden="true"></span>
       </label>
     </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="default-unanswered-nav-button" />
+      <label for="default-unanswered-nav-button">
+        <span class="toggle-label-text">Make Next/Previous default to jump to unanswered</span>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+    </div>
     <hr />
     <button type="button" id="delete-answers-button">Delete Answers</button>
     <button type="button" id="save-answers-button">
@@ -333,6 +340,18 @@
                 gotoHideBtn.addEventListener('click', function () {
                   searchMenu.classList.remove('show');
                   searchMenu.setAttribute('aria-hidden', 'true');
+                });
+              }
+
+              // Default unanswered navigation toggle: initialise from localStorage
+              const defaultNavCheckbox = document.getElementById('default-unanswered-nav-button');
+              const defaultNavKey = 'jquizer-default-unanswered';
+              if (defaultNavCheckbox) {
+                const saved = localStorage.getItem(defaultNavKey);
+                defaultNavCheckbox.checked = saved === '1' || saved === 'true';
+                defaultNavCheckbox.addEventListener('change', function () {
+                  const v = defaultNavCheckbox.checked ? '1' : '0';
+                  localStorage.setItem(defaultNavKey, v);
                 });
               }
             })();
