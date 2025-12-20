@@ -68,22 +68,37 @@
     <div id="specialty-filters">Specialty</div>
     <div id="goto-question">
       <form id="search-form">
-        <input type="text" id="search-input" />
+        <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
         <a href="#"><button type="button" id="search-button" title="Search questions. Note this search uses regexs">
             Search
           </button></a>
       </form>
       <form>
-        <input type="text" id="goto-question-input" />
+        <input type="text" id="goto-question-input" placeholder="Question number" aria-label="Goto question number" />
         <button id="goto-question-button" type="button">Goto question</button>
         <button id="goto-question-hide-button" type="button">+ hide</button>
       </form>
-      <input type="checkbox" id="show-answered-questions-button" /><label for="show-answered-questions-button">Hide
-        previously answered questions</label>
-      <input type="checkbox" id="show-only-flagged-questions-button" /><label
-        for="show-only-flagged-questions-button">Hide questions that have not been flagged</label>
-      <input type="checkbox" id="auto-load-previous-answers-button" checked /><label
-        for="auto-load-previous-answers-button">Automatically load previous answers</label>
+      <div class="checkbox-row">
+        <input type="checkbox" id="show-answered-questions-button" />
+        <label for="show-answered-questions-button">
+          <span class="toggle-label-text">Hide previously answered questions</span>
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="show-only-flagged-questions-button" />
+        <label for="show-only-flagged-questions-button">
+          <span class="toggle-label-text">Hide questions that have not been flagged</span>
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="auto-load-previous-answers-button" checked />
+        <label for="auto-load-previous-answers-button">
+          <span class="toggle-label-text">Automatically load previous answers</span>
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+      </div>
       <hr />
       <button type="button" id="delete-answers-button">Delete Answers</button>
       <button type="button" id="save-answers-button">
@@ -92,7 +107,7 @@
       <br />
       <hr />
       <h4>Load (local) answers:</h4>
-      <input type="file" id="answers-file" name="file" />
+  <input type="file" id="answers-file" name="file" title="Load saved answers (JSON)" aria-label="Load answers file" />
       <button onclick="abortRead();">Cancel read</button>
       <br />
       <b>Note: this will overwrite all your current answers</b>
@@ -101,7 +116,7 @@
     <hr />
     <div id="fileloader">
       <h4>Load (local) questions:</h4>
-      <input type="file" id="questions-file" name="file" />
+  <input type="file" id="questions-file" name="file" title="Load questions (JSON)" aria-label="Load questions file" />
       <button onclick="abortRead();">Cancel read</button>
       <div id="progress_bar">
         <div class="percent">0%</div>

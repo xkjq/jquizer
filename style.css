@@ -611,6 +611,192 @@ input, textarea, select {
   opacity: 100;
 }
 
+/* Options panel controls */
+#options h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+}
+
+#options button {
+  /* make option buttons slightly smaller and full width where appropriate */
+  padding: 8px 10px;
+  font-size: 14px;
+  display: inline-block;
+  margin: 6px 4px;
+}
+
+#options .action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#options input[type="file"] {
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  margin: 6px 0;
+}
+
+#options .file-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#options label {
+  font-size: 14px;
+}
+
+/* Style for the three main option checkboxes */
+/* Style for the three main option checkboxes - rendered as toggle switches */
+#options .checkbox-row {
+  /* each toggle on its own row */
+  display: block;
+  margin: 8px 0;
+}
+
+/* hide the native checkbox but keep it in the DOM for accessibility */
+#options .checkbox-row input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+/* label spans the full width and contains the text and a visual switch */
+#options .checkbox-row label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 2px;
+  transition: background-color .12s ease, color .12s ease;
+}
+
+#options .checkbox-row label .toggle-label-text {
+  flex: 1 1 auto;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* switch track */
+#options .checkbox-row .switch {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 24px;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.12);
+  transition: background-color .12s ease, border-color .12s ease;
+}
+
+/* switch knob */
+#options .checkbox-row .switch::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: var(--console-bg);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  transition: transform .12s ease, background .12s ease;
+}
+
+/* checked state: move knob to right and tint track */
+#options .checkbox-row input[type="checkbox"]:checked + label .switch {
+  background: var(--console-fg);
+  border-color: rgba(0,0,0,0.2);
+}
+
+#options .checkbox-row input[type="checkbox"]:checked + label .switch::after {
+  transform: translateX(20px);
+  background: var(--console-bg);
+}
+
+/* hover/focus affordances */
+#options .checkbox-row label:hover,
+#options .checkbox-row input[type="checkbox"]:focus + label {
+  background: rgba(255,255,255,0.03);
+}
+
+/* keep the previous checked+inverted text look for the label text */
+
+#options .checkbox-row input[type="checkbox"]:checked + label .toggle-label-text {
+  color: inherit;
+}
+
+/* when checked, add a subtle border instead of full background highlight */
+#options .checkbox-row input[type="checkbox"]:checked + label {
+  background: transparent;
+  color: inherit;
+  border: 1px solid var(--console-fg);
+}
+
+/* focus outline for keyboard users */
+#options .checkbox-row input[type="checkbox"]:focus + label {
+  outline: 2px solid rgba(255,255,255,0.06);
+  outline-offset: 2px;
+}
+
+/* make selection subtle and readable if the user highlights the label text */
+#options .checkbox-row .toggle-label-text::selection {
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+}
+
+/* Specific spacing for the three main options can be added here if needed */
+
+#options hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 10px 0;
+}
+
+/* Primary / destructive actions */
+#options #delete-answers-button {
+  background: transparent;
+  color: #ff6666;
+  border-color: rgba(255,0,0,0.3);
+}
+
+#options #save-answers-button,
+#options #unload-questions-button,
+#options #hide-options-button {
+  background: var(--console-bg);
+  color: var(--console-fg);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+#options #search-button,
+#options #goto-question-button {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* Make the small 'Cancel read' links look like minor buttons */
+#options button[onclick] {
+  background: transparent;
+  color: var(--console-fg);
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Extra questions area */
+#extra-questions {
+  padding: 6px;
+  border: 1px dashed rgba(0,0,0,0.07);
+  min-height: 36px;
+}
+
 .search-close {
   float: left;
   display: inline-block;
