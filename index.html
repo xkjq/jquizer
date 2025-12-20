@@ -53,6 +53,7 @@
   </div>
   <!-- Gapps functionality removed -->
   <div id="filter-toggle"><button type="button">+/- (options)</button></div>
+  <div id="search-toggle"><button type="button" id="search-toggle-button">Search / Goto</button></div>
   <div id="options">
     <button id="toggle-css" type="button">
       Toggle light / dark colourscheme
@@ -87,19 +88,7 @@
       <div id="source-filters">Source</div>
       <div id="specialty-filters">Specialty</div>
     </div>
-    <div id="goto-question">
-      <form id="search-form">
-        <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
-        <a href="#"><button type="button" id="search-button" title="Search questions. Note this search uses regexs">
-            Search
-          </button></a>
-      </form>
-      <form>
-        <input type="text" id="goto-question-input" placeholder="Question number" aria-label="Goto question number" />
-        <button id="goto-question-button" type="button">Goto question</button>
-        <button id="goto-question-hide-button" type="button">+ hide</button>
-      </form>
-    </div>
+    <!-- search / goto moved to its own menu -->
     <div class="checkbox-row">
       <input type="checkbox" id="show-answered-questions-button" />
       <label for="show-answered-questions-button">
@@ -157,6 +146,27 @@
   </div>
   <div id="question-details">
     Details about the current question...
+  </div>
+
+  <!-- Separate Search / Goto menu -->
+  <div id="search-menu" aria-hidden="true">
+    <form id="search-form">
+      <label for="search-input" style="display:block;font-weight:600">Search (regex)</label>
+      <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
+      <div class="action-row">
+        <button type="button" id="search-button" title="Search questions. Note this search uses regexs">Search</button>
+        <button type="button" id="hide-search-button">Hide</button>
+      </div>
+    </form>
+    <hr />
+    <form class="goto-form">
+      <label for="goto-question-input" style="display:block;font-weight:600">Goto question</label>
+      <input type="text" id="goto-question-input" placeholder="Question number" aria-label="Goto question number" />
+      <div class="action-row">
+        <button id="goto-question-button" type="button">Goto question</button>
+        <button id="goto-question-hide-button" type="button">+ hide</button>
+      </div>
+    </form>
   </div>
   <div id="score">
     <div id="score-percent"></div>
@@ -298,6 +308,33 @@
                   localStorage.setItem(key, c);
                 });
               });
+
+              // Search menu toggle handlers
+              const searchToggleBtn = document.getElementById('search-toggle-button');
+              const searchMenu = document.getElementById('search-menu');
+              const hideSearchBtn = document.getElementById('hide-search-button');
+              const gotoHideBtn = document.getElementById('goto-question-hide-button');
+
+              if (searchToggleBtn && searchMenu) {
+                searchToggleBtn.addEventListener('click', function () {
+                  const isShown = searchMenu.classList.toggle('show');
+                  searchMenu.setAttribute('aria-hidden', String(!isShown));
+                });
+              }
+
+              if (hideSearchBtn && searchMenu) {
+                hideSearchBtn.addEventListener('click', function () {
+                  searchMenu.classList.remove('show');
+                  searchMenu.setAttribute('aria-hidden', 'true');
+                });
+              }
+
+              if (gotoHideBtn && searchMenu) {
+                gotoHideBtn.addEventListener('click', function () {
+                  searchMenu.classList.remove('show');
+                  searchMenu.setAttribute('aria-hidden', 'true');
+                });
+              }
             })();
           </script>
 

@@ -620,6 +620,37 @@ input, textarea, select {
   font-size: 15px;
 }
 
+/* Search / Goto menu: simple overlay similar to options */
+#search-menu {
+  display: none;
+  position: fixed;
+  top: 40px;
+  left: 18px;
+  width: 420px;
+  max-width: calc(100% - 36px);
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--panel-bg);
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(0,0,0,0.4);
+  z-index: 115;
+}
+
+#search-menu.show {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  #search-menu {
+    left: 8px;
+    right: 8px;
+    top: 52px;
+    width: auto;
+    max-height: 92vh;
+  }
+}
+
 /* Accent colour controls */
 #accent-controls {
   grid-column: 1 / -1;
