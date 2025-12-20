@@ -2,6 +2,15 @@ html  {
     background-color: black;
     color: lightgray;
 }
+/* Theme variables for dark mode (used by style.css) */
+:root {
+    --console-bg: #000000;
+    --console-fg: #33ff33; /* bright green */
+    --control-bg: #222222;
+    --control-fg: #e6e6e6;
+    --accent: #1f6feb;
+    --panel-bg: rgba(0,0,0,0.92);
+}
  
 li.alpha-list a {
     color: lightgray;

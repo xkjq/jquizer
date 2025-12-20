@@ -2,6 +2,16 @@ html  {
     background-color: white;
     color: black;
 }
+/* Theme variables for light mode (used by style.css) */
+:root {
+    /* For a light-mode 'console' look use pale controls with dark green text */
+    --console-bg: #f5f5f4;
+    --console-fg: #006400; /* dark green */
+    --control-bg: #efefef;
+    --control-fg: #111111;
+    --accent: #1f6feb;
+    --panel-bg: rgba(255,255,255,0.98);
+}
  
 li.alpha-list a {
     color: black;

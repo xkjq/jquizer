@@ -222,35 +222,67 @@ li.alpha-list {
 
 #about {
   display: none;
-
-  width: 50%;
-  background-color: gray;
-
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-
-  padding: 10px;
-
-  margin: auto;
-  margin-top: 20px;
-  margin-bottom: 20px;
-
-  border-radius: 5px;
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  position: fixed;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 92%);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 18px;
+  box-sizing: border-box;
+  background: var(--panel-bg);
+  color: inherit;
+  border: 2px solid rgba(0,0,0,0.5);
+  z-index: 120;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
 }
 
 #version-info {
   float: left;
-  color: LightGray;
+  color: var(--control-fg);
+  background: rgba(0,0,0,0.08);
+  padding: 4px 8px;
+  border-radius: 0;
+  font-family: "Courier New", Courier, monospace;
 }
 
 .close-button {
   float: right;
   font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Style the about contents to match console aesthetic */
+#about h2 {
+  margin: 0 0 8px 0;
+  font-family: "Courier New", Courier, monospace;
+  color: var(--console-fg);
+  font-weight: 700;
+}
+
+#about #about-contents,
+#about #about-changelog {
+  background: transparent;
+  padding: 8px 0;
+  color: inherit;
+  font-size: 15px;
+}
+
+/* Make the close link look like a console button */
+.close-button a {
+  display: inline-block;
+  padding: 6px 8px;
+  background: var(--console-bg);
+  color: var(--console-fg);
+  border: 2px solid rgba(0,0,0,0.6);
+  text-decoration: none;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.close-button a:hover {
+  background: var(--console-fg);
+  color: var(--console-bg);
 }
 
 #score-list li.correct,
@@ -310,18 +342,12 @@ button:hover {
 
 button:active,
 button:focus {
-  background: -webkit-gradient(
-    linear,
-    0% 100%,
-    0% 0%,
-    from(rgba(255, 255, 255, 1)),
-    to(rgba(185, 185, 185, 1))
-  );
-  background: -moz-linear-gradient(
-    bottom,
-    rgba(255, 255, 255, 1),
-    rgba(185, 185, 185, 1)
-  );
+  /* pressed / focused appearance for console buttons */
+  background: var(--console-fg);
+  color: var(--console-bg);
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.6);
+  transform: translateY(0);
+  outline: 2px solid rgba(255,255,255,0.06);
 }
 
 input, textarea, select {
