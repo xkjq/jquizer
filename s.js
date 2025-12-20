@@ -778,76 +778,77 @@ function setUpFilters() {
 
   specialty_filter_keys.sort();
 
-  let i = 0;
-  for (let s in specialty_filter_keys) {
-    i = i + 1;
-    $("#specialty-filters")
-      .append(
-        $(document.createElement("li")).attr({
-          id: "filter-specialty-" + i
-        })
-      )
-      .append(
-        $(document.createElement("input")).attr({
-          type: "checkbox",
-          id: "filter-specialty-" + escaper(specialty_filter_keys[s]),
-          name: "filter-specialty-checkbox",
-          label: specialty_filter_keys[s],
-          value: specialty_filter_keys[s]
-        })
-      )
-      .append(specialty_filter_keys[s]);
+  if (specialty_filter_keys.length === 0) {
+    $("#specialty-filters").hide();
+  } else {
+    $("#specialty-filters").show();
+    // add heading
+    $("#specialty-filters").append($(document.createElement("h4")).text("Specialty"));
+    let i = 0;
+    for (let s in specialty_filter_keys) {
+      i = i + 1;
+      const fid = "filter-specialty-" + i + "-" + escaper(specialty_filter_keys[s]);
+      const $input = $(document.createElement("input")).attr({
+        type: "checkbox",
+        id: fid,
+        name: "filter-specialty-checkbox",
+        value: specialty_filter_keys[s]
+      });
+      const $label = $(document.createElement("label")).attr({ for: fid }).text(specialty_filter_keys[s]);
+      $("#specialty-filters").append($(document.createElement("li")).append($input).append($label));
+    }
 
-    //$("#filter-specialty-"+i));
+    if ($("[name='filter-specialty-checkbox']").length > 1) {
+      $("#specialty-filters").append(
+        $(document.createElement("li"))
+          .attr({ class: "select-all" })
+          .text("Select All")
+          .click(function () {
+            let checkBoxes = $("[name='filter-specialty-checkbox']");
+            checkBoxes.prop("checked", !checkBoxes.prop("checked"));
 
-    //$("#filter-specialty-"+i).append(s);
-  }
-
-  if ($("[name='filter-specialty-checkbox']").length > 1) {
-    $("#specialty-filters").append(
-      $(document.createElement("li"))
-        .attr({ class: "select-all" })
-        .text("Select All")
-        .click(function () {
-          let checkBoxes = $("[name='filter-specialty-checkbox']");
-          checkBoxes.prop("checked", !checkBoxes.prop("checked"));
-
-          loadFilters();
-        })
-    );
-  }
-
-  i = 0;
-  for (let s in source_filters) {
-    i = i + 1;
-    $("#source-filters").append(
-      $(document.createElement("li"))
-        .attr({ id: "filter-source-" + i })
-        .append(
-          $(document.createElement("input")).attr({
-            type: "checkbox",
-            id: "filter-source-" + escaper(s),
-            name: "filter-source-checkbox",
-            label: s,
-            value: s
+            loadFilters();
           })
-        )
-        .append(s)
-    );
+      );
+    }
   }
 
-  if ($("[name='filter-source-checkbox']").length > 1) {
-    $("#source-filters").append(
-      $(document.createElement("li"))
-        .attr({ class: "select-all" })
-        .text("Select All")
-        .click(function () {
-          let checkBoxes = $("[name='filter-source-checkbox']");
-          checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+  var source_filter_keys = Object.keys(source_filters);
+  source_filter_keys.sort();
 
-          loadFilters();
-        })
-    );
+  if (source_filter_keys.length === 0) {
+    $("#source-filters").hide();
+  } else {
+    $("#source-filters").show();
+    // add heading
+    $("#source-filters").append($(document.createElement("h4")).text("Source"));
+    let i = 0;
+    for (let s in source_filter_keys) {
+      i = i + 1;
+      const fid = "filter-source-" + i + "-" + escaper(source_filter_keys[s]);
+      const $input = $(document.createElement("input")).attr({
+        type: "checkbox",
+        id: fid,
+        name: "filter-source-checkbox",
+        value: source_filter_keys[s]
+      });
+      const $label = $(document.createElement("label")).attr({ for: fid }).text(source_filter_keys[s]);
+      $("#source-filters").append($(document.createElement("li")).append($input).append($label));
+    }
+
+    if ($("[name='filter-source-checkbox']").length > 1) {
+      $("#source-filters").append(
+        $(document.createElement("li"))
+          .attr({ class: "select-all" })
+          .text("Select All")
+          .click(function () {
+            let checkBoxes = $("[name='filter-source-checkbox']");
+            checkBoxes.prop("checked", !checkBoxes.prop("checked"));
+
+            loadFilters();
+          })
+      );
+    }
   }
 
   // Restore previously selected filters (before we attach the events)

@@ -155,19 +155,107 @@ li.alpha-list {
 
 #options {
   display: none;
-  clear: right;
+  /* Make options an overlay so toggling it doesn't reflow other elements */
+  position: fixed;
+  top: 40px;
+  right: 18px;
+  width: 420px;
+  max-width: calc(100% - 36px);
+  /* allow the options panel to cover more of the page height */
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--panel-bg);
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(0,0,0,0.4);
+  z-index: 110;
+  /* layout filters inside as columns */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  #options {
+    left: 8px;
+    right: 8px;
+    top: 52px;
+    width: auto;
+    /* on smaller screens, allow more vertical space */
+    max-height: 92vh;
+  }
 }
 
 #options li {
   list-style-type: none;
 }
 
-#source-filters {
-  float: right;
+/* Filter group containers */
+#source-filters,
+#specialty-filters {
+  display: block;
+  box-sizing: border-box;
+  padding: 8px;
+  margin: 6px 0;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(0,0,0,0.08);
+  max-height: 40vh;
+  overflow: auto;
 }
 
-#specialty-filters {
-  float: left;
+@media (max-width: 900px) {
+  #options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Filter headings */
+#specialty-filters h4,
+#source-filters h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--console-fg);
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 600;
+}
+
+/* Filter list items */
+#specialty-filters li,
+#source-filters li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  margin: 2px 0;
+}
+
+#specialty-filters label,
+#source-filters label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Use modern accent-color for checkboxes where supported */
+#specialty-filters input[type="checkbox"],
+#source-filters input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--console-fg);
+}
+
+.select-all {
+  cursor: pointer;
+  color: var(--console-fg);
+  background: transparent;
+  padding: 6px 8px;
+  border: 1px solid rgba(0,0,0,0.06);
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.select-all:hover {
+  background: rgba(0,0,0,0.04);
 }
 
 #filter-toggle {
