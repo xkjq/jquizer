@@ -3,19 +3,42 @@
   /*float: right;*/
 }
 
+:root{
+  --gap: 12px;
+  --radius: 6px;
+  --muted: rgba(255,255,255,0.08);
+  --panel-bg: rgba(0,0,0,0.35);
+  --control-bg: #ddd;
+  --control-fg: #111;
+  --accent: #1f6feb;
+  --console-bg: #000;
+  --console-fg: #33ff33;
+}
+
+/* Base page */
+html,body{
+  height:100%;
+}
+body{
+  margin:0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size:16px;
+  line-height:1.45;
+  background:inherit; /* dark/light CSS control */
+  color:inherit;
+}
+
 #main {
   resize: horizontal;
   overflow: auto;
 }
 
 #content {
-  /*min-width: 200px;*/
-  /*max-width: 800px;*/
-  /*width: 500;*/
-  /*resize: horizontal;
-    overflow: auto;
-    float: left;*/
   clear: left;
+  max-width: 1100px;
+  margin: 18px auto;
+  padding: 14px;
+  box-sizing: border-box;
 }
 
 #loading {
@@ -96,7 +119,7 @@ ol.answer-list {
 }
 
 #flagged-button {
-  /*display: block;*/
+  display: inline-block;
 }
 
 .correct {
@@ -261,22 +284,28 @@ button {
 	-webkit-box-shadow:0px 0px 2px rgba(0,0,0,0.4);
         */
 
-  color: rgba(0, 0, 0, 0.9);
-  /* text-shadow:1px 1px 0px rgba(255,255,255,0.8); */
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  background-color: darkgray;
-
+  /* retro console style */
+  font-family: "Courier New", Courier, monospace;
+  color: var(--console-fg);
+  background-color: var(--console-bg);
+  border: 2px solid rgba(0,0,0,0.6);
+  box-shadow: inset 0 -4px 0 rgba(0,0,0,0.25);
   /*
 	background:-webkit-gradient(linear,0% 0%,0% 100%,from(rgba(255,255,255,1)),to(rgba(185,185,185,1)));
 	background:-moz-linear-gradient(top,rgba(255,255,255,1),rgba(185,185,185,1));
         */
 
-  padding: 5px 5px 5px 5px;
+  padding: 8px 10px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background-color .14s ease, transform .06s ease;
 }
 
 button:hover {
-  background: darkblue;
-  color: white;
+  /* invert colors on hover to echo vintage terminal highlight */
+  background: var(--console-fg);
+  color: var(--console-bg);
+  transform: translateY(-1px);
 }
 
 button:active,
@@ -295,12 +324,14 @@ button:focus {
   );
 }
 
-input {
-  font-size: 24;
-  background: darkgray;
-  border: none;
+input, textarea, select {
+  font-size: 15px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 0;
   outline: none;
-  color: darkblue;
+  color: inherit;
 }
 
 .correct input {
@@ -314,9 +345,11 @@ input {
 }
 
 .question-load-button {
-  background-color: darkblue;
-  margin: 1px;
+  background-color: var(--accent);
+  margin: 4px 2px;
   color: white;
+  border-radius: 4px;
+  padding: 6px 8px;
 }
 
 .question-load-button:hover {
@@ -330,6 +363,7 @@ input {
   font-size: 14px;
   clear: both;
   opacity: 0;
+  transition: opacity 1s linear;
   -moz-transition: opacity 1s linear;
   -o-transition: opacity 1s linear;
   -webkit-transition: opacity 1s linear;
@@ -340,9 +374,10 @@ input {
 }
 
 #progress_bar .percent {
-  background-color: #99ccff;
-  height: auto;
+  background-color: var(--accent);
+  height: 18px;
   width: 0;
+  border-radius: 4px;
 }
 
 #sortable-list li {
@@ -448,14 +483,15 @@ input {
 .popup-tag {
   position: absolute;
   display: none;
-  background-color: darkblue;
+  background-color: var(--accent);
   color: white;
-  padding: 10px;
-  font-size: 20px;
-  font-weight: bold;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  opacity: 0.9;
-  -webkit-filter: drop-shadow(0 1px 10px darkblue);
+  opacity: 0.95;
+  filter: drop-shadow(0 1px 8px rgba(0,0,0,0.6));
+  -webkit-filter: drop-shadow(0 1px 8px rgba(0,0,0,0.6));
 }
 
 .popup-tag a {
@@ -515,7 +551,7 @@ input {
   padding: 5px;
   border: 1px solid darkblue;
   border-radius: 5px;
-  background-color: gray;
+  background-color: rgba(0,0,0,0.06);
 }
 
 .answer-list.allow-hover li:hover a {
