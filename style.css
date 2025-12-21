@@ -120,6 +120,21 @@ body{
   border-radius: 4px;
 }
 
+/* Underlined hotkey letter shown inline with button labels */
+.hotkey {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  font-weight: 700;
+  /* Remove extra spacing introduced by a left margin/padding so the
+     hotkey character sits flush with surrounding text. Keep it inline
+     and vertically aligned with the text baseline. */
+  margin: 0;
+  padding: 0;
+  display: inline;
+  vertical-align: baseline;
+  font-variant: normal;
+}
+
 ol.answer-list {
   display: inline-block;
 }

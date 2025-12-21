@@ -409,6 +409,43 @@ $(document).ready(function () {
     console.warn('Unable to initialise question-details-toggle disabled state', e);
   }
 
+  // Hotkeys: allow quick access to main toggles using Alt+<key>
+  // Alt+O: Options, Alt+S: Score, Alt+T: Stats, Alt+Q: Question details
+  // Alt+G: Goto/Search, Alt+A: About
+  document.addEventListener('keydown', function (ev) {
+    try {
+      // Ignore when typing into inputs, textareas, selects or contenteditable regions
+      const tg = ev.target;
+      if (!tg) return;
+      const tag = (tg.tagName || '').toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tg.isContentEditable) return;
+
+      // We use Alt+key to avoid interfering with common letter keys
+      if (!ev.altKey || ev.ctrlKey || ev.metaKey) return;
+
+      const key = (ev.key || '').toLowerCase();
+      const mapping = {
+        'o': '#filter-toggle button',
+        's': '#score-toggle button',
+        't': '#stats-toggle button',
+        'q': '#question-details-toggle a, #question-details-toggle button',
+        'g': '#search-toggle-button',
+        'a': '#about-toggle a, #about-toggle button'
+      };
+
+      const sel = mapping[key];
+      if (!sel) return;
+      const el = document.querySelector(sel);
+      if (!el) return;
+      ev.preventDefault();
+      // For accessibility, attempt to focus then click
+      try { el.focus && el.focus(); } catch (e) {}
+      try { el.click && el.click(); } catch (e) { console.warn('Hotkey click failed', e); }
+    } catch (e) {
+      // swallow errors from hotkey handler
+    }
+  });
+
   fetchJsonLenient("questions/question_list", buildQuestionList, function () {
     toastr.warning(
       "Unable to load questions list<br/><br/>Perhaps you wish to try loading them manually?"
