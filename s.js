@@ -199,12 +199,19 @@ function loadExtraQuestions(q) {
   });
 }
 
-function loadData(data, textStatus) {
+async function loadData(data, textStatus) {
+  console.log('loadData: start');
   $.extend(questions, data);
-  //filtered_questions = data;
-  setUpFilters();
+  // Ensure filters and filtered_questions are fully loaded before building the score list
+  try {
+    await setUpFilters();
+  } catch (e) {
+    // If setUpFilters doesn't return a promise for some reason, fall back to calling it without await
+    try { setUpFilters(); } catch (err) { console.warn('setUpFilters failed', err); }
+  }
 
-  buildActiveScoreList();
+  await buildActiveScoreList();
+  console.log('loadData: buildActiveScoreList completed');
 }
 
 // Expose loadData to non-module scripts (some legacy scripts like fileload.js
@@ -373,6 +380,15 @@ $(document).ready(function () {
   })
     .then(function () {
       toastr.info(Object.size(questions) + " questions loaded");
+      try {
+        // If questions were loaded during initial page load, ensure the options
+        // panel is closed so the user sees the quiz content immediately.
+        if (Object.size(questions) && Object.size(questions) > 0) {
+          $("#options").hide();
+        }
+      } catch (e) {
+        console.warn('Unable to auto-close options on load', e);
+      }
     })
     .catch(function () {
       // ignore
@@ -412,7 +428,15 @@ $(document).ready(function () {
           toastr.info('No questions loaded');
           return;
         }
-        $("#score").slideToggle("slow");
+        // Toggle the score panel and persist the visible state in localStorage
+        $("#score").slideToggle("slow", function () {
+          try {
+            const visible = $(this).is(":visible");
+            localStorage.setItem('score_open', visible ? '1' : '0');
+          } catch (e) {
+            console.warn('Unable to persist score_open', e);
+          }
+        });
       });
 
       $("#about-toggle, #about-close").click(function () {
@@ -549,6 +573,10 @@ $(document).ready(function () {
     }
   });
 });
+
+// Track whether we've restored the score panel state from storage to avoid
+// repeatedly forcing visibility during subsequent rebuilds.
+var _scoreStateRestored = false;
 
 function escaper(expression) {
   return expression
@@ -707,9 +735,51 @@ async function buildActiveScoreList() {
 
   let list = $("#score-list");
 
-  // Don't build the score list if it is not visible
-  if (list.is(":hidden")) {
-    return;
+  // If the score list container doesn't exist there's nothing to build
+  if (!list || list.length === 0) return;
+
+  // After building the score list for the first time, restore the saved
+  // open/closed state if not already restored. We do this here because
+  // buildActiveScoreList runs when questions are loaded and after filters
+  // are applied, making filtered_questions available.
+  try {
+    if (!_scoreStateRestored) {
+      const saved = localStorage.getItem('score_open');
+      try { console.log('Restoring score_open:', saved, 'filtered_questions.length:', Array.isArray(filtered_questions) ? filtered_questions.length : typeof filtered_questions); } catch (e) {}
+      if (saved === '1') {
+        // If questions are already available, show now. Otherwise poll briefly
+        if (Array.isArray(filtered_questions) && filtered_questions.length > 0) {
+          $("#score").show();
+          try { console.log('Score panel restored: SHOW (immediate)'); } catch (e) {}
+        } else {
+          try { console.log('Score panel restore deferred: polling for filtered_questions'); } catch (e) {}
+          // Poll for filtered_questions becoming available for up to 5 seconds
+          let attempts = 0;
+          const maxAttempts = 25; // 25 * 200ms = 5s
+          const poll = setInterval(function () {
+            attempts++;
+            try {
+              if (Array.isArray(window.filtered_questions) && window.filtered_questions.length > 0) {
+                $("#score").show();
+                try { console.log('Score panel restored: SHOW (polled)'); } catch (e) {}
+                clearInterval(poll);
+                return;
+              }
+            } catch (e) {}
+            if (attempts >= maxAttempts) {
+              try { console.log('Score panel restore: giving up after polling'); } catch (e) {}
+              clearInterval(poll);
+            }
+          }, 200);
+        }
+      } else {
+        $("#score").hide();
+        try { console.log('Score panel restored: HIDE'); } catch (e) {}
+      }
+      _scoreStateRestored = true;
+    }
+  } catch (e) {
+    // ignore storage errors
   }
 
   // Empty any previously shown scores
@@ -981,7 +1051,8 @@ function startSearch(str) {
   } else {
     search_string = false;
   }
-  loadFilters();
+  // Return the promise from loadFilters so callers can await completion.
+  return loadFilters();
 }
 
 function setUpFilters() {
@@ -1210,19 +1281,35 @@ async function loadFilters() {
     filtered_questions.push(n);
   }
 
-  // Try and load previous question order
-  store.exists("question_order", function (exists) {
-    if (exists) {
-      store.get("question_order", function (obj) {
-        let loaded_question_order = obj["value"];
+  // Try and load previous question order. Lawnchair/store APIs are callback-based
+  // so wrap them in a Promise and await to ensure filtered_questions is final
+  // before proceeding.
+  await new Promise((resolve) => {
+    try {
+      store.exists("question_order", function (exists) {
+        if (exists) {
+          store.get("question_order", function (obj) {
+            try {
+              let loaded_question_order = obj["value"];
 
-        // Check we have the same question set (apparently javasrcipt sets are useless...)
-        if (areEqualArrays(loaded_question_order, filtered_questions)) {
-          // If so use the loaded one
-          filtered_questions = loaded_question_order
+              // Check we have the same question set (apparently javascript sets are useless...)
+              if (areEqualArrays(loaded_question_order, filtered_questions)) {
+                // If so use the loaded one
+                filtered_questions = loaded_question_order;
+              }
+            } catch (e) {
+              console.warn('Error applying loaded question_order', e);
+            }
+            resolve();
+          });
+        } else {
+          resolve();
         }
       });
-    } else {
+    } catch (e) {
+      // If store isn't available or throws, continue
+      console.warn('Error checking question_order store', e);
+      resolve();
     }
   });
 
@@ -1270,6 +1357,14 @@ async function loadFilters() {
   }
 
   search_string = false;
+
+  // Expose filtered_questions for debugging in the console and report its length
+  try {
+    window.filtered_questions = filtered_questions;
+    console.log('filtered_questions.length ->', Array.isArray(filtered_questions) ? filtered_questions.length : typeof filtered_questions);
+  } catch (e) {
+    // ignore in environments where window is not writable
+  }
 }
 
 function getQuestionDataByNumber(n) {
