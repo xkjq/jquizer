@@ -89,7 +89,17 @@
       <input type="color" id="accent-color-input" aria-label="Choose accent colour"
         style="margin-top:6px;width:100%;height:34px;padding:2px;" />
     </div>
-    <div id="filter-options">
+    <div id="font-size-controls" style="margin-top:12px;">
+      <label for="font-size-range" style="display:block;margin-top:4px;font-weight:600">Font size</label>
+      <input type="range" id="font-size-range" min="12" max="40" step="1" aria-label="Adjust font size" />
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button type="button" class="font-size-preset" data-size="14">Small</button>
+        <button type="button" class="font-size-preset" data-size="16">Normal</button>
+        <button type="button" class="font-size-preset" data-size="18">Large</button>
+        <button type="button" class="font-size-preset" data-size="28">X-Large</button>
+      </div>
+    </div>
+  <div id="filter-options">
       <h4>Filter options:</h4>
       <div id="source-filters">Source</div>
       <div id="specialty-filters">Specialty</div>

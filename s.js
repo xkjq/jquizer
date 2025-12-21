@@ -287,6 +287,53 @@ $(document).ready(function () {
   } catch (e) {
     console.warn('Unable to initialise score-toggle disabled state', e);
   }
+
+    // FONT SIZE: apply persisted or default font size and wire controls
+    (function () {
+      try {
+        const key = 'jquizer-font-size';
+        const root = document.documentElement;
+        const range = document.getElementById('font-size-range');
+        const presets = document.querySelectorAll('.font-size-preset');
+
+        function applySize(px) {
+          if (!px) return;
+          root.style.setProperty('--base-font-size', px + 'px');
+        }
+
+        // Initialize from storage
+        try {
+          const saved = localStorage.getItem(key);
+          const initial = saved ? parseInt(saved, 10) : null;
+          if (initial) applySize(initial);
+          // If range exists set its value from saved or computed
+          if (range) {
+            const computed = parseInt(getComputedStyle(root).getPropertyValue('--base-font-size')) || 16;
+            range.value = initial || computed || 16;
+            range.addEventListener('input', function (e) {
+              const v = parseInt(e.target.value, 10);
+              applySize(v);
+              try { localStorage.setItem(key, String(v)); } catch (err) {}
+            });
+          }
+
+          if (presets && presets.length) {
+            presets.forEach(function (b) {
+              b.addEventListener('click', function () {
+                const s = parseInt(b.getAttribute('data-size'), 10);
+                applySize(s);
+                if (range) range.value = s;
+                try { localStorage.setItem(key, String(s)); } catch (err) {}
+              });
+            });
+          }
+        } catch (e) {
+          console.warn('Font size init failed', e);
+        }
+      } catch (e) {
+        // ignore if DOM not ready or elements missing
+      }
+    })();
   // Ensure the question-details control is disabled by default until a question is open
   try {
     const $qToggleInit = $("#question-details-toggle");
