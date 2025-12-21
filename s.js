@@ -334,6 +334,57 @@ $(document).ready(function () {
         // ignore if DOM not ready or elements missing
       }
     })();
+
+    // PAGE WIDTH: apply persisted or default page width (percent of viewport) and wire controls
+    ;(function () {
+      try {
+        const key = 'jquizer-content-width-percent';
+        const root = document.documentElement;
+        const range = document.getElementById('page-width-range');
+        const presets = document.querySelectorAll('.page-width-preset');
+
+        function applyWidthPercent(pct) {
+          if (!pct) return;
+          // clamp and coerce to integer
+          let n = parseInt(pct, 10);
+          if (isNaN(n)) return;
+          if (n < 20) n = 20;
+          if (n > 200) n = 200;
+          root.style.setProperty('--content-width-percent', String(n));
+        }
+
+        // Initialize from storage
+        try {
+          const saved = localStorage.getItem(key);
+          const initial = saved ? parseInt(saved, 10) : null;
+          if (initial) applyWidthPercent(initial);
+          if (range) {
+            const computed = parseInt(getComputedStyle(root).getPropertyValue('--content-width-percent')) || 80;
+            range.value = initial || computed || 80;
+            range.addEventListener('input', function (e) {
+              const v = parseInt(e.target.value, 10);
+              applyWidthPercent(v);
+              try { localStorage.setItem(key, String(v)); } catch (err) {}
+            });
+          }
+
+          if (presets && presets.length) {
+            presets.forEach(function (b) {
+              b.addEventListener('click', function () {
+                const s = parseInt(b.getAttribute('data-percent'), 10);
+                applyWidthPercent(s);
+                if (range) range.value = s;
+                try { localStorage.setItem(key, String(s)); } catch (err) {}
+              });
+            });
+          }
+        } catch (e) {
+          console.warn('Page width init failed', e);
+        }
+      } catch (e) {
+        // ignore if DOM not ready or elements missing
+      }
+    })();
   // Ensure the question-details control is disabled by default until a question is open
   try {
     const $qToggleInit = $("#question-details-toggle");

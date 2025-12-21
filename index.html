@@ -99,6 +99,16 @@
         <button type="button" class="font-size-preset" data-size="28">X-Large</button>
       </div>
     </div>
+
+    <div id="page-width-controls" style="margin-top:12px;">
+      <label for="page-width-range" style="display:block;margin-top:4px;font-weight:600">Page width</label>
+      <input type="range" id="page-width-range" min="40" max="100" step="1" aria-label="Adjust page width (percent of viewport)" />
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button type="button" class="page-width-preset" data-percent="60">Narrow</button>
+        <button type="button" class="page-width-preset" data-percent="80">Comfort</button>
+        <button type="button" class="page-width-preset" data-percent="100">Full</button>
+      </div>
+    </div>
   <div id="filter-options">
       <h4>Filter options:</h4>
       <div id="source-filters">Source</div>
