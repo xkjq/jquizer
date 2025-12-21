@@ -70,6 +70,53 @@ db.version(1).stores({
   //question_cache: "qid,date,type,score,max_score,other"
 });
 
+// Helper: fetch a resource as text and try to parse JSON leniently.
+// Returns a Promise that resolves with the parsed object, and calls
+// successCallback(parsed, 'success') if provided. If parsing fails the
+// failCallback is called and the promise is rejected.
+function fetchJsonLenient(url, successCallback, failCallback) {
+  return new Promise(function (resolve, reject) {
+    $.ajax({ url: url, dataType: 'text', cache: false })
+      .done(function (raw) {
+        var parsed = null;
+        // 1) Try direct parse
+        try {
+          parsed = JSON.parse(raw);
+        } catch (e1) {
+          // 2) Strip any injected <script>...</script> blocks and try again
+          try {
+            var withoutScripts = raw.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').trim();
+            parsed = JSON.parse(withoutScripts);
+          } catch (e2) {
+            // 3) Fallback: extract the first {...} or [...] chunk and try to parse that
+            try {
+              var objMatch = raw.match(/\{[\s\S]*\}/);
+              var arrMatch = raw.match(/\[[\s\S]*\]/);
+              var candidate = objMatch ? objMatch[0] : (arrMatch ? arrMatch[0] : null);
+              if (candidate) parsed = JSON.parse(candidate);
+            } catch (e3) {
+              parsed = null;
+            }
+          }
+        }
+
+        if (parsed !== null) {
+          if (typeof successCallback === 'function') {
+            try { successCallback(parsed, 'success'); } catch (err) { console.error('successCallback error', err); }
+          }
+          resolve(parsed);
+        } else {
+          if (typeof failCallback === 'function') try { failCallback(); } catch (err) { console.error('failCallback error', err); }
+          reject(new Error('Failed to parse JSON from ' + url));
+        }
+      })
+      .fail(function (jqxhr, status, err) {
+        if (typeof failCallback === 'function') try { failCallback(); } catch (err2) { console.error('failCallback error', err2); }
+        reject(new Error('Request failed for ' + url + ' : ' + status));
+      });
+  });
+}
+
 window.db = db;
 
 window.element_positions = {
@@ -125,6 +172,7 @@ function loadExtraQuestionsCallback(i) {
 }
 
 function buildQuestionList(data, textStatus) {
+  console.log("Building question list", data);
   let list = data["questions"];
   list.sort();
   for (let key in list) {
@@ -140,15 +188,15 @@ function buildQuestionList(data, textStatus) {
 }
 
 function loadExtraQuestions(q) {
-  $.getJSON(q, loadData)
-    .fail(function (jqxhr, textStatus, error) {
-      toastr.warning(
-        "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
-      );
-    })
-    .done(function () {
-      toastr.info(Object.size(questions) + " questions loaded");
-    });
+  fetchJsonLenient(q, loadData, function () {
+    toastr.warning(
+      "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
+    );
+  }).then(function () {
+    toastr.info(Object.size(questions) + " questions loaded");
+  }).catch(function () {
+    // ignore
+  });
 }
 
 function loadData(data, textStatus) {
@@ -242,13 +290,12 @@ $(document).ready(function () {
     console.warn('Unable to initialise question-details-toggle disabled state', e);
   }
 
-  $.getJSON("questions/question_list", buildQuestionList)
-    .fail(function (jqxhr, textStatus, error) {
-      toastr.warning(
-        "Unable to load questions list<br/><br/>Perhaps you wish to try loading them manually?"
-      );
-    })
-    .done(function () { });
+  fetchJsonLenient("questions/question_list", buildQuestionList, function () {
+    toastr.warning(
+      "Unable to load questions list<br/><br/>Perhaps you wish to try loading them manually?"
+    );
+    console.log("Unable to load question list");
+  }).catch(function () { /* ignore */ });
 
   // Load previous question set
   let questions_to_load = default_question_set;
@@ -265,16 +312,18 @@ $(document).ready(function () {
   });
 
   //$.getJSON("../sbas/question/json/all", loadData).fail(function(jqxhr, textStatus, error) {
-  $.getJSON(questions_to_load, loadData)
-    .fail(function (jqxhr, textStatus, error) {
-      toastr.warning(
-        "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
-      );
-    })
-    .done(function () {
+  fetchJsonLenient(questions_to_load, loadData, function () {
+    toastr.warning(
+      "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
+    );
+  })
+    .then(function () {
       toastr.info(Object.size(questions) + " questions loaded");
     })
-    .always(function () {
+    .catch(function () {
+      // ignore
+    })
+    .finally(function () {
       $("#loading").removeClass("show");
 
       $("#filter-toggle, #hide-options-button").click(function () {
