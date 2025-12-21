@@ -311,6 +311,60 @@ $(document).ready(function () {
     }
   });
 
+  // Normalize score list items that may have inline background-color styles
+  // Convert inline background-color into a border color and remove the background
+  function normalizeScoreListInlineColors() {
+    try {
+      const root = document.querySelector('#score-list');
+      if (!root) return;
+      const items = root.querySelectorAll('li');
+      items.forEach(function (li) {
+        // Prefer inline style if present, otherwise computed style
+        let bg = li.style.backgroundColor || getComputedStyle(li).backgroundColor;
+        if (!bg) return;
+        // ignore explicit transparent values
+        if (bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') return;
+
+        // Apply the color to the border and remove the inline background so our CSS shows through
+        try {
+          // Force border color/width/style with important to take precedence over other rules
+          li.style.setProperty('border-color', bg, 'important');
+          li.style.setProperty('border-style', 'dashed', 'important');
+          li.style.setProperty('border-width', '2px', 'important');
+          // Clear any background fill (force transparent)
+          li.style.setProperty('background-color', 'transparent', 'important');
+          li.style.setProperty('background-image', 'none', 'important');
+
+          // Ensure text remains visible on the console background
+          const rootFg = getComputedStyle(document.documentElement).getPropertyValue('--console-fg') || '';
+          if (rootFg) li.style.setProperty('color', rootFg.trim(), 'important');
+        } catch (e) {
+          // Fallback to non-important assignments if setProperty fails
+          li.style.borderColor = bg;
+          li.style.backgroundColor = 'transparent';
+          li.style.backgroundImage = 'none';
+          try {
+            const rootFg = getComputedStyle(document.documentElement).getPropertyValue('--console-fg') || '';
+            if (rootFg) li.style.color = rootFg.trim();
+          } catch (e2) { /* ignore */ }
+        }
+      });
+    } catch (e) {
+      console.warn('normalizeScoreListInlineColors failed', e);
+    }
+  }
+
+  // Run once on DOM ready and watch for score-list updates
+  document.addEventListener('DOMContentLoaded', function () {
+    normalizeScoreListInlineColors();
+    const scoreList = document.querySelector('#score-list');
+    if (!scoreList) return;
+    const mo = new MutationObserver(function () {
+      normalizeScoreListInlineColors();
+    });
+    mo.observe(scoreList, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+  });
+
   //$.getJSON("../sbas/question/json/all", loadData).fail(function(jqxhr, textStatus, error) {
   fetchJsonLenient(questions_to_load, loadData, function () {
     toastr.warning(
@@ -712,6 +766,7 @@ async function buildActiveScoreList() {
     let ratio = answer.score / answer.max_score;
     let hue = ratio * 120;
 
+    // Create the score item with a border color based on performance (green->yellow->red)
     list.append(
       $(document.createElement("li"))
         .attr({
@@ -727,7 +782,15 @@ async function buildActiveScoreList() {
           answer.max_score +
           ")"
         )
-        .css({ "background-color": "hsl(" + hue + ", 100%, 50%)" })
+        .css({
+          // keep background transparent and set border color instead
+          "background-color": "transparent",
+          "background-image": "none",
+          "border-color": "hsl(" + hue + ", 90%, 45%)",
+          "border-style": "dashed",
+          "border-width": "2px",
+          "color": "var(--console-fg)"
+        })
     );
 
     questions_correct = questions_correct + parseInt(answer.score);
