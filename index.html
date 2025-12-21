@@ -182,15 +182,19 @@
     <ul id="score-list"></ul>
   </div>
   <div id="about">
-    <div id="version-info"></div><br />
-    <span id="about-close" class="close-button"><a href="#">close</a></span>
-    <h2>What is it?</h2>
-    <div id="about-contents">
-      A simple javascript/JSON based quiz system.
+    <div class="about-header">
+      <h2>What is it?</h2>
+      <div id="version-info" class="version-box" aria-label="version info"></div>
+      <button id="about-close" class="about-close" aria-label="Close about">✕</button>
     </div>
-    <div id="about-changelog">
+
+    <div id="about-contents" class="about-body">
+      <p>A simple javascript/JSON based quiz system.</p>
+    </div>
+
+    <div id="about-changelog" class="about-changelog">
       <h3>Changelog</h3>
-      v0.1: Initial version
+      <div class="changelog-entry">v0.1: Initial version</div>
     </div>
   </div>
   <div id="content">

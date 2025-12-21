@@ -321,40 +321,76 @@ li.alpha-list {
   box-sizing: border-box;
   background: var(--panel-bg);
   color: inherit;
-  border: 2px solid rgba(0,0,0,0.5);
+  border: 3px solid var(--console-fg);
+  border-radius: 6px;
   z-index: 120;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.6);
 }
 
-#version-info {
-  float: left;
+#about .about-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+#version-info, .version-box {
   color: var(--control-fg);
   background: rgba(0,0,0,0.08);
-  padding: 4px 8px;
-  border-radius: 0;
+  padding: 6px 10px;
+  border-radius: 4px;
   font-family: "Courier New", Courier, monospace;
+  border: 1px solid rgba(255,255,255,0.04);
 }
 
-.close-button {
-  float: right;
-  font-weight: bold;
-  margin-left: 8px;
+.about-close {
+  background: transparent;
+  color: var(--console-fg);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.about-close:hover {
+  background: var(--console-fg);
+  color: var(--console-bg);
 }
 
 /* Style the about contents to match console aesthetic */
+/* title in header now; reduce default margin */
 #about h2 {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-family: "Courier New", Courier, monospace;
   color: var(--console-fg);
   font-weight: 700;
 }
 
-#about #about-contents,
-#about #about-changelog {
+/* content areas */
+#about .about-body {
   background: transparent;
-  padding: 8px 0;
+  padding: 8px 0 14px 0;
   color: inherit;
   font-size: 15px;
+}
+
+#about .about-changelog {
+  background: rgba(0,0,0,0.03);
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.06);
+  margin-top: 8px;
+}
+
+#about .about-changelog h3 {
+  margin: 0 0 8px 0;
+}
+
+.changelog-entry {
+  font-size: 14px;
+  color: var(--control-fg);
+  padding: 4px 0;
 }
 
 /* Make the close link look like a console button */
