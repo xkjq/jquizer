@@ -38,7 +38,7 @@ body{
 #content {
   clear: left;
   /* Use a percentage of viewport width on large screens but cap at 1400px for readability */
-  max-width: min(calc(var(--content-width-percent) * 1vw), 1400px);
+  max-width: min(calc(var(--content-width-percent) * 1vw), 2000px);
   margin: 18px auto;
   padding: 14px;
   box-sizing: border-box;
@@ -105,9 +105,18 @@ body{
      so changes to --content-width-percent also affect feedback panels. */
   display: block;
   width: 100%;
-  max-width: min(calc(var(--content-width-percent) * 1vw), 1400px);
+  max-width: min(calc(var(--content-width-percent) * 1vw), 2000px);
   box-sizing: border-box;
   margin: 0 auto;
+}
+
+/* Small numeric readouts next to range controls */
+.control-readout {
+  font-size: 13px;
+  color: var(--console-fg);
+  background: rgba(0,0,0,0.18);
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 ol.answer-list {

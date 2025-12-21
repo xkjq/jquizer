@@ -299,6 +299,11 @@ $(document).ready(function () {
         function applySize(px) {
           if (!px) return;
           root.style.setProperty('--base-font-size', px + 'px');
+          // update numeric readout if present
+          try {
+            const el = document.getElementById('font-size-value');
+            if (el) el.textContent = String(px) + 'px';
+          } catch (e) {}
         }
 
         // Initialize from storage
@@ -315,6 +320,8 @@ $(document).ready(function () {
               applySize(v);
               try { localStorage.setItem(key, String(v)); } catch (err) {}
             });
+            // Set initial readout
+            try { const rEl = document.getElementById('font-size-value'); if (rEl) rEl.textContent = String(range.value) + 'px'; } catch (e) {}
           }
 
           if (presets && presets.length) {
@@ -351,6 +358,11 @@ $(document).ready(function () {
           if (n < 20) n = 20;
           if (n > 200) n = 200;
           root.style.setProperty('--content-width-percent', String(n));
+          // update numeric readout if present
+          try {
+            const el = document.getElementById('page-width-value');
+            if (el) el.textContent = String(n) + '%';
+          } catch (e) {}
         }
 
         // Initialize from storage
@@ -366,6 +378,8 @@ $(document).ready(function () {
               applyWidthPercent(v);
               try { localStorage.setItem(key, String(v)); } catch (err) {}
             });
+            // Set initial readout
+            try { const pEl = document.getElementById('page-width-value'); if (pEl) pEl.textContent = String(range.value) + '%'; } catch (e) {}
           }
 
           if (presets && presets.length) {

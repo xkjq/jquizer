@@ -91,7 +91,10 @@
     </div>
     <div id="font-size-controls" style="margin-top:12px;">
       <label for="font-size-range" style="display:block;margin-top:4px;font-weight:600">Font size</label>
-      <input type="range" id="font-size-range" min="12" max="40" step="1" aria-label="Adjust font size" />
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" id="font-size-range" min="12" max="40" step="1" aria-label="Adjust font size" />
+        <span id="font-size-value" class="control-readout" aria-live="polite">16px</span>
+      </div>
       <div style="display:flex;gap:8px;margin-top:6px;">
         <button type="button" class="font-size-preset" data-size="14">Small</button>
         <button type="button" class="font-size-preset" data-size="16">Normal</button>
@@ -102,7 +105,10 @@
 
     <div id="page-width-controls" style="margin-top:12px;">
       <label for="page-width-range" style="display:block;margin-top:4px;font-weight:600">Page width</label>
-      <input type="range" id="page-width-range" min="40" max="100" step="1" aria-label="Adjust page width (percent of viewport)" />
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" id="page-width-range" min="40" max="100" step="1" aria-label="Adjust page width (percent of viewport)" />
+        <span id="page-width-value" class="control-readout" aria-live="polite">80%</span>
+      </div>
       <div style="display:flex;gap:8px;margin-top:6px;">
         <button type="button" class="page-width-preset" data-percent="60">Narrow</button>
         <button type="button" class="page-width-preset" data-percent="80">Comfort</button>
