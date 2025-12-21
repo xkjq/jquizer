@@ -265,6 +265,19 @@ li.alpha-list {
   float: right;
 }
 
+/* Visual styling for disabled score toggle */
+#score-toggle.disabled {
+  opacity: 0.5;
+  cursor: default;
+  /* prevent any pointer events on the container and its children */
+  pointer-events: none;
+}
+
+#score-toggle.disabled button {
+  /* extra visual dim for the inner button */
+  opacity: 0.6;
+}
+
 #about-toggle {
   float: right;
 }

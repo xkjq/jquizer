@@ -223,6 +223,15 @@ $(document).ready(function () {
   toastr.options.positionClass = "toast-bottom-right";
 
   $("#loading").addClass("show");
+  // Ensure the score control is disabled by default until questions are loaded
+  try {
+    const $scoreToggleInit = $("#score-toggle");
+    $scoreToggleInit.addClass('disabled');
+    $scoreToggleInit.find('button').prop('disabled', true).attr('aria-disabled', 'true');
+    console.log('score-toggle initialised as disabled');
+  } catch (e) {
+    console.warn('Unable to initialise score-toggle disabled state', e);
+  }
 
   $.getJSON("questions/question_list", buildQuestionList)
     .fail(function (jqxhr, textStatus, error) {
@@ -271,6 +280,11 @@ $(document).ready(function () {
       $("#load-remote-server-button").remove();
 
       $("#score-toggle").click(function () {
+        const container = $("#score-toggle");
+        if (container.hasClass('disabled')) {
+          toastr.info('No questions loaded');
+          return;
+        }
         $("#score").slideToggle("slow");
       });
 
@@ -1009,6 +1023,23 @@ async function loadFilters() {
 
   //loadQuestion(0);
   loadPreviousQuestion();
+
+  // Enable/disable the score toggle button depending on whether there are questions
+  try {
+    const container = $("#score-toggle");
+    const scoreBtn = $("#score-toggle button");
+    if (filtered_questions.length === 0) {
+      container.addClass('disabled');
+      scoreBtn.prop('disabled', true);
+      scoreBtn.attr('aria-disabled', 'true');
+    } else {
+      container.removeClass('disabled');
+      scoreBtn.prop('disabled', false);
+      scoreBtn.attr('aria-disabled', 'false');
+    }
+  } catch (err) {
+    console.warn('Unable to update score button disabled state', err);
+  }
 
   search_string = false;
 }
