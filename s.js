@@ -175,6 +175,20 @@ function buildQuestionList(data, textStatus) {
   console.log("Building question list", data);
   let list = data["questions"];
   list.sort();
+
+  // Ensure the container is empty and add a small live-filter input
+  const $container = $("#extra-questions");
+  $container.empty();
+
+  $container.append(
+    $(document.createElement('input')).attr({
+      type: 'text',
+      id: 'extra-questions-filter',
+      placeholder: 'Filter packets',
+      'aria-label': 'Filter packets'
+    }).css({ width: '100%', margin: '6px 0', padding: '6px', boxSizing: 'border-box' })
+  );
+
   for (let key in list) {
     var f = list[key];
     let $input = $(
@@ -183,8 +197,22 @@ function buildQuestionList(data, textStatus) {
       '" />'
     );
     $input.click(loadExtraQuestionsCallback("questions/" + f));
-    $input.appendTo($("#extra-questions"));
+    $input.appendTo($container);
   }
+
+  // Wire up a live filter for the add-packet / extra-questions buttons
+  $(document).off('input', '#extra-questions-filter');
+  $(document).on('input', '#extra-questions-filter', function () {
+    const q = ($(this).val() || '').toLowerCase().trim();
+    $container.find('.question-load-button').each(function () {
+      const txt = ((this.value || $(this).text()) + '').toLowerCase();
+      if (q === '' || txt.indexOf(q) !== -1) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
+    });
+  });
 }
 
 function loadExtraQuestions(q) {
@@ -1272,6 +1300,16 @@ function setUpFilters() {
     $("#source-filters").show();
     // add heading
     $("#source-filters").append($(document.createElement("h4")).text("Source"));
+    // add a small live-filter input so users can quickly find a source when there
+    // are many sources
+    $("#source-filters").append(
+      $(document.createElement("input")).attr({
+        type: "text",
+        id: "source-filter-search",
+        placeholder: "Filter sources",
+        'aria-label': 'Filter sources'
+      }).css({ width: '100%', margin: '6px 0', padding: '6px', boxSizing: 'border-box' })
+    );
     let i = 0;
     for (let s in source_filter_keys) {
       i = i + 1;
@@ -1300,6 +1338,23 @@ function setUpFilters() {
       );
     }
   }
+
+  // Wire up the live filter input (filter only the source checkbox rows)
+  $(document).off('input', '#source-filter-search');
+  $(document).on('input', '#source-filter-search', function () {
+    const q = ($(this).val() || '').toLowerCase().trim();
+    // only consider list items that contain a source checkbox
+    $("#source-filters li").each(function () {
+      const $cb = $(this).find("input[name='filter-source-checkbox']");
+      if ($cb.length === 0) return; // skip non-source rows (e.g., Select All)
+      const txt = ($(this).find('label').text() || '').toLowerCase();
+      if (q === '' || txt.indexOf(q) !== -1) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
+    });
+  });
 
   // Restore previously selected filters (before we attach the events)
   // ereader
