@@ -977,6 +977,21 @@ input, textarea, select {
   border-color: rgba(255,0,0,0.3);
 }
 
+/* Reset app button: destructive, full width at bottom */
+#options #reset-app-button {
+  background: #a33;
+  color: white;
+  border: 1px solid rgba(255,0,0,0.5);
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 12px;
+  font-weight: 700;
+}
+
+#options #reset-app-button:hover {
+  background: #b44;
+}
+
 #options #save-answers-button,
 #options #unload-questions-button,
 #options #hide-options-button {

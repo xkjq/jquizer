@@ -449,6 +449,9 @@ $(document).ready(function () {
             // Do what should be done next...
           });
       });
+      $("#reset-app-button").click(function () {
+        resetApp();
+      });
 
       $("#randomise-question-order-btn").click(e => {
         shuffle(filtered_questions);
@@ -587,6 +590,60 @@ function resetAnswers() {
       $("#options").slideToggle("slow");
     });
   }
+}
+
+// Delete all local data (IndexedDB tables, localStorage, Lawnchair store)
+async function resetApp() {
+  var msg =
+    "Are you sure you wish to reset the app?\n\nThis will delete all locally stored answers, flags, UI positions and settings. This is non-recoverable!";
+
+  if (!confirm(msg)) return;
+
+  try {
+    // Clear Dexie tables
+    if (db && db.answers) await db.answers.clear();
+    if (db && db.flagged) await db.flagged.clear();
+    if (db && db.element_position) await db.element_position.clear();
+  } catch (err) {
+    console.warn('Error clearing IndexedDB tables', err);
+  }
+
+  try {
+    // Clear Lawnchair store if present
+    if (window.store) {
+      try {
+        if (typeof window.store.nuke === 'function') {
+          window.store.nuke(function () {});
+        } else if (typeof window.store.clear === 'function') {
+          window.store.clear(function () {});
+        } else if (typeof window.store.remove === 'function') {
+          // no-op: remove individual keys isn't practical here
+        }
+      } catch (e) {
+        console.warn('Error clearing Lawnchair store', e);
+      }
+    }
+  } catch (err) {
+    console.warn('Error clearing store', err);
+  }
+
+  try {
+    // Clear localStorage
+    if (window.localStorage) localStorage.clear();
+  } catch (err) {
+    console.warn('Error clearing localStorage', err);
+  }
+
+  // Reset in-memory state
+  questions = {};
+  filtered_questions = [];
+  hash_n_map = {};
+  current_question_uid = 0;
+
+  toastr.info('Local data cleared. Reloading...');
+  setTimeout(function () {
+    location.reload();
+  }, 500);
 }
 
 // Generates the score section
