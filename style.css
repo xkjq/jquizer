@@ -31,7 +31,8 @@ body{
 }
 
 #main {
-  resize: horizontal;
+  /* Make main layout non-resizable — resizing was causing layout shifts on some screens */
+  resize: none;
   overflow: auto;
 }
 
