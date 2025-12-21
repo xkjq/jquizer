@@ -378,6 +378,20 @@
                 searchToggleBtn.addEventListener('click', function () {
                   const isShown = searchMenu.classList.toggle('show');
                   searchMenu.setAttribute('aria-hidden', String(!isShown));
+                  // When the search/goto overlay is shown, focus the goto input
+                  // so users can immediately type a question number.
+                  if (isShown) {
+                    // small timeout to ensure the element is visible/focusable
+                    setTimeout(function () {
+                      try {
+                        if (gotoInputEl) {
+                          gotoInputEl.focus();
+                          // select any existing value for quick overwrite
+                          if (typeof gotoInputEl.select === 'function') gotoInputEl.select();
+                        }
+                      } catch (e) { /* ignore focus errors */ }
+                    }, 10);
+                  }
                 });
               }
 

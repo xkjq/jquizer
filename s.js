@@ -606,6 +606,10 @@ $(document).ready(function () {
         if (val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
           $("#goto-question-input").blur();
+          // Close the search/goto overlay so the user returns to the question view
+          try {
+            $("#search-menu").removeClass('show').attr('aria-hidden', 'true');
+          } catch (e) { /* ignore */ }
         } else {
           toastr.warning("Invalid question.");
         }
@@ -621,7 +625,10 @@ $(document).ready(function () {
           toastr.warning("Invalid question.");
         }
         $("#goto-question-input").blur();
-        $("#options").slideToggle("slow");
+        // Ensure the search/goto overlay is closed after navigating
+        try {
+          $("#search-menu").removeClass('show').attr('aria-hidden', 'true');
+        } catch (e) { /* ignore */ }
       });
 
       $("#search-button").click(function () {
