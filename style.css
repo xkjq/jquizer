@@ -293,6 +293,17 @@ li.alpha-list {
   clear: left;
 }
 
+/* Visual styling for disabled question-details toggle */
+#question-details-toggle.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+#question-details-toggle.disabled button {
+  opacity: 0.6;
+}
+
 #question-details {
   float: right;
   display: none;

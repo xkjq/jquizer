@@ -232,6 +232,15 @@ $(document).ready(function () {
   } catch (e) {
     console.warn('Unable to initialise score-toggle disabled state', e);
   }
+  // Ensure the question-details control is disabled by default until a question is open
+  try {
+    const $qToggleInit = $("#question-details-toggle");
+    $qToggleInit.addClass('disabled');
+    $qToggleInit.find('button').prop('disabled', true).attr('aria-disabled', 'true');
+    console.log('question-details-toggle initialised as disabled');
+  } catch (e) {
+    console.warn('Unable to initialise question-details-toggle disabled state', e);
+  }
 
   $.getJSON("questions/question_list", buildQuestionList)
     .fail(function (jqxhr, textStatus, error) {
@@ -273,7 +282,22 @@ $(document).ready(function () {
       });
 
       $("#question-details-toggle").click(function () {
+        const container = $("#question-details-toggle");
+        if (container.hasClass('disabled')) {
+          toastr.info('No question open');
+          return;
+        }
         $("#question-details").slideToggle("slow");
+      });
+
+      // Prevent any anchor inside the question-details-toggle from doing anything while disabled
+      $(document).on('click', '#question-details-toggle a', function (e) {
+        const container = $(this).closest('#question-details-toggle');
+        if (container.hasClass('disabled')) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
       });
 
       // Gapps removed: hide remote-server button and disable handler
@@ -335,6 +359,13 @@ $(document).ready(function () {
         hash_n_map = {};
         current_question_uid = 0;
         setUpFilters();
+        try {
+          const $qToggle = $("#question-details-toggle");
+          $qToggle.addClass('disabled');
+          $qToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
+        } catch (e) {
+          console.warn('Unable to update question-details-toggle disabled state on unload', e);
+        }
       });
 
       $("#toggle-css").click(function () {
@@ -1040,6 +1071,25 @@ async function loadFilters() {
   } catch (err) {
     console.warn('Unable to update score button disabled state', err);
   }
+  // Enable/disable question-details toggle based on whether we have any questions
+  try {
+    const qContainer = $("#question-details-toggle");
+    const qBtn = $("#question-details-toggle button");
+    if (filtered_questions.length === 0) {
+      qContainer.addClass('disabled');
+      qBtn.prop('disabled', true);
+      qBtn.attr('aria-disabled', 'true');
+    } else {
+      // Only enable if a current question is set; loadQuestion will enable when opening a specific question
+      if (current_question_uid) {
+        qContainer.removeClass('disabled');
+        qBtn.prop('disabled', false);
+        qBtn.attr('aria-disabled', 'false');
+      }
+    }
+  } catch (err) {
+    console.warn('Unable to update question-details-toggle disabled state', err);
+  }
 
   search_string = false;
 }
@@ -1447,6 +1497,15 @@ function loadQuestion(n) {
   let question_type = data["type"];
 
   current_question_uid = qid;
+
+  // Enable the question-details toggle now that a question is loaded
+  try {
+    const $qToggle = $("#question-details-toggle");
+    $qToggle.removeClass('disabled');
+    $qToggle.find('button').prop('disabled', false).attr('aria-disabled', 'false');
+  } catch (e) {
+    console.warn('Unable to enable question-details-toggle', e);
+  }
 
   let m = n + 1;
 
