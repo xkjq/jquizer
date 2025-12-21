@@ -1217,3 +1217,70 @@ input, textarea, select {
 }
 
 }
+
+/* Toastr (toast) retro console theme overrides */
+/* Keep high specificity so these override the bundled toastr styles */
+#toast-container .toast {
+  font-family: "Courier New", Courier, monospace !important;
+  background: var(--console-bg) !important;
+  color: var(--console-fg) !important;
+  border: 2px solid rgba(0,0,0,0.6) !important;
+  box-shadow: inset 0 -6px 0 rgba(0,0,0,0.25), 0 8px 28px rgba(0,0,0,0.6) !important;
+  padding: 10px 14px !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  min-width: 220px !important;
+  max-width: 440px !important;
+  opacity: 0.98 !important;
+}
+
+#toast-container .toast .toast-title {
+  display: block !important;
+  font-size: 13px !important;
+  margin-bottom: 4px !important;
+  color: var(--console-fg) !important;
+}
+
+#toast-container .toast .toast-message {
+  color: var(--console-fg) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+
+/* Variant borders for success/info/warning/error */
+#toast-container .toast.toast-success {
+  border-color: hsl(120, 60%, 35%) !important;
+}
+#toast-container .toast.toast-info {
+  border-color: var(--accent) !important;
+}
+#toast-container .toast.toast-warning {
+  border-color: hsl(40, 95%, 45%) !important;
+}
+#toast-container .toast.toast-error {
+  border-color: hsl(0, 70%, 45%) !important;
+}
+
+/* Close button styling */
+#toast-container .toast .toast-close-button {
+  color: var(--console-fg) !important;
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  padding: 2px 6px !important;
+  border-radius: 2px !important;
+  font-family: "Courier New", Courier, monospace !important;
+}
+
+/* Progress bar: small, accent-colored */
+#toast-container .toast .toast-progress {
+  height: 4px !important;
+  background: linear-gradient(90deg, var(--accent), rgba(255,255,255,0.12)) !important;
+  margin-top: 8px !important;
+  border-radius: 2px !important;
+  overflow: hidden !important;
+}
+
+/* Increase z-index so toasts sit above overlays */
+#toast-container {
+  z-index: 99999 !important;
+}
