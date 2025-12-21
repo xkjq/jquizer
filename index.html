@@ -217,6 +217,70 @@
 
     <div id="about-contents" class="about-body">
       <p>A simple javascript/JSON based quiz system.</p>
+      <h3>Accepted question schema</h3>
+      <p>The app accepts a top-level JSON object whose keys are unique question IDs and whose values are question objects. Below is a compact JSON Schema describing the accepted fields for each question object. Not every field is required for every question type; types include: <code>sba</code>, <code>emq</code>, <code>tf</code>, <code>rank</code>, <code>label</code>, and <code>rapid</code>.</p>
+      <pre style="white-space:pre-wrap; background: rgba(0,0,0,0.03); padding:8px; border-radius:4px; border:1px solid rgba(0,0,0,0.04);"><code>
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JQuizer Question Set",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "question": { "type": "string" },
+      "feedback": { "type": "string" },
+      "specialty": { "type": "array", "items": { "type": "string" } },
+      "source": { "type": "string" },
+      "external": { "type": "string" },
+      "date": { "type": "string" },
+      "type": { "type": "string", "enum": ["sba","emq","tf","rank","label","rapid"] },
+      "meta": { "type": ["string","object"] },
+      "images": { "type": "array", "items": { "type": "string" } },
+
+      /* SBA / generic multiple-choice answers: object mapping option text -> 0|1 */
+      "answers": {
+        "oneOf": [
+          { "type": "object", "additionalProperties": { "type": "integer", "enum": [0,1] } },
+          /* EMQ style: key -> [correctOption, optionalFeedback] */
+          { "type": "object", "additionalProperties": { "type": "array" } }
+        ]
+      },
+
+      /* EMQ-specific options list */
+      "emq_options": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["type","question"],
+    "additionalProperties": true
+  }
+}
+</code></pre>
+
+      <p>Example top-level wrapper (two questions):</p>
+      <pre style="background: rgba(0,0,0,0.03); padding:8px; border-radius:4px; border:1px solid rgba(0,0,0,0.04);"><code>
+{
+  "q_01": {
+    "question": "What is the normal range for X?",
+    "specialty": ["Radiology"],
+    "type": "sba",
+    "answers": {
+      "< 3": 0,
+      "3-5": 1,
+      "> 5": 0
+    },
+    "source": "Example Bank",
+    "meta": "Packet: 01.01"
+  },
+  "q_02": {
+    "question": "Match each stem with the best option",
+    "type": "emq",
+    "emq_options": ["A","B","C","D"],
+    "answers": {
+      "Stem 1": ["A","Feedback for Stem 1"],
+      "Stem 2": ["C"]
+    }
+  }
+}
+</code></pre>
     </div>
 
     <div id="about-changelog" class="about-changelog">
