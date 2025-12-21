@@ -299,6 +299,20 @@ li.alpha-list {
 /* avoid nested floating inside the group */
 #score-group > div { float: none; }
 
+/* Divider slash between header buttons: keep at a fixed size so
+   it doesn't scale with the UI font-size control */
+.divider {
+  display: inline-block;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px; /* fixed px so unaffected by --base-font-size */
+  line-height: 1;
+  margin-right: 6px;
+  color: var(--console-fg);
+  vertical-align: middle;
+  user-select: none;
+}
+
 #goto-question {
   clear: right;
 }
