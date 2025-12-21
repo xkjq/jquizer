@@ -265,12 +265,11 @@ li.alpha-list {
   float: right;
 }
 
+
 /* Visual styling for disabled score toggle */
 #score-toggle.disabled {
   opacity: 0.5;
   cursor: default;
-  /* prevent any pointer events on the container and its children */
-  pointer-events: none;
 }
 
 #score-toggle.disabled button {
@@ -281,6 +280,17 @@ li.alpha-list {
 #about-toggle {
   float: right;
 }
+
+/* Group for score + stats buttons */
+#score-group {
+  float: right;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* avoid nested floating inside the group */
+#score-group > div { float: none; }
 
 #goto-question {
   clear: right;
@@ -297,7 +307,6 @@ li.alpha-list {
 #question-details-toggle.disabled {
   opacity: 0.5;
   cursor: default;
-  pointer-events: none;
 }
 
 #question-details-toggle.disabled button {
@@ -349,6 +358,73 @@ li.alpha-list {
   border-radius: 6px;
   z-index: 120;
   box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+}
+
+/* Stats dialog styling (reuse about dialog styles) */
+#stats {
+  display: none;
+  position: fixed;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, 92%);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 18px;
+  box-sizing: border-box;
+  background: var(--panel-bg);
+  color: inherit;
+  border: 3px solid var(--console-fg);
+  border-radius: 6px;
+  z-index: 120;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+}
+
+#stats .about-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+#stats .about-body {
+  background: transparent;
+  padding: 8px 0 14px 0;
+  color: inherit;
+  font-size: 15px;
+}
+
+#stats-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#stats-table-container th, #stats-table-container td {
+  padding: 6px 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+  text-align: left;
+  font-family: "Courier New", Courier, monospace;
+}
+
+#stats-table-container th {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Visual indicators for stats rows */
+.stat-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+.stat-name { flex: 1 1 220px; font-family: "Courier New", Courier, monospace; }
+.stat-counts { width: 120px; text-align: right; font-family: "Courier New", Courier, monospace; }
+.stat-bar-wrap { flex: 1 1 300px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,0,0,0.06); height: 16px; position: relative; }
+.stat-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, rgba(0,200,0,0.9), rgba(255,200,0,0.9)); transition: width 320ms ease; }
+.stat-percent { width: 80px; text-align: right; font-family: "Courier New", Courier, monospace; }
+
+.stat-row + .stat-row { border-top: 1px dashed rgba(255,255,255,0.02); }
+
+/* Responsive: stack elements on small screens */
+@media (max-width:600px) {
+  .stat-row { flex-direction: column; align-items: stretch; }
+  .stat-counts, .stat-percent { text-align: left; width: auto; }
 }
 
 #about .about-header {

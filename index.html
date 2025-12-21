@@ -45,8 +45,13 @@
   <div id="about-toggle">
     /<a href="#"><button>?</button></a>
   </div>
-  <div id="score-toggle">
-    /<a href="#"><button>(score)</button></a>
+  <div id="score-group">
+    <div id="score-toggle">
+      /<a href="#"><button>(score)</button></a>
+    </div>
+    <div id="stats-toggle">
+      /<a href="#"><button>(stats)</button></a>
+    </div>
   </div>
   <div id="question-details-toggle">
     /<a href="#"><button>(question)</button></a>
@@ -195,6 +200,17 @@
     <div id="about-changelog" class="about-changelog">
       <h3>Changelog</h3>
       <div class="changelog-entry">v0.1: Initial version</div>
+    </div>
+  </div>
+  <div id="stats" style="display:none;">
+    <div class="about-header">
+      <h2>Statistics by specialty</h2>
+      <div id="stats-version" class="version-box" aria-label="stats info"></div>
+      <button id="stats-close" class="about-close" aria-label="Close stats">✕</button>
+    </div>
+    <div id="stats-contents" class="about-body" aria-live="polite">
+      <div id="stats-summary">Loading...</div>
+      <div id="stats-table-container"></div>
     </div>
   </div>
   <div id="content">

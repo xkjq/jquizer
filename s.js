@@ -315,6 +315,15 @@ $(document).ready(function () {
       $("#about-toggle, #about-close").click(function () {
         $("#about").slideToggle("slow");
       });
+      // Stats dialog handlers
+      $("#stats-toggle").click(function () {
+        $("#stats").slideToggle("slow");
+        // build stats each time to reflect current answers
+        buildStatsBySpecialty();
+      });
+      $("#stats-close").click(function () {
+        $("#stats").slideToggle("slow");
+      });
 
       $("#goto-question-button").click(function () {
         let val = $("#goto-question-input").val();
@@ -1097,6 +1106,83 @@ async function loadFilters() {
 function getQuestionDataByNumber(n) {
   let qid = filtered_questions[n];
   return questions[qid];
+}
+
+// Build and display statistics broken down by specialty
+async function buildStatsBySpecialty() {
+  try {
+    // Use the latest answer per qid
+    const allAnswers = await db.answers.toArray();
+    const answersByQid = {};
+    allAnswers.forEach(a => {
+      answersByQid[a.qid] = a;
+    });
+
+    // Aggregate stats per specialty
+    const stats = {};
+
+    for (const qid of Object.keys(questions)) {
+      const q = questions[qid];
+      const ans = answersByQid[qid];
+      // Only consider questions that have at least one recorded answer
+      if (!ans) continue;
+
+      // Normalize specialties to an array
+      let specs = [];
+      if (Array.isArray(q.specialty)) specs = q.specialty;
+      else if (q.specialty) specs = [q.specialty];
+
+      specs.forEach(s => {
+        if (!stats[s]) stats[s] = { questions: 0, score: 0, max: 0 };
+        stats[s].questions += 1;
+        stats[s].score += Number(ans.score || 0);
+        stats[s].max += Number(ans.max_score || 0);
+      });
+    }
+
+    // Build table HTML
+    const container = $("#stats-table-container");
+    container.empty();
+
+    const keys = Object.keys(stats).sort((a,b) => b && a ? ( (stats[b].score/stats[b].max) - (stats[a].score/stats[a].max) ) : 0);
+
+    if (keys.length === 0) {
+      $("#stats-summary").text('No answered questions available to generate stats.');
+      return;
+    }
+
+    $("#stats-summary").text('Statistics calculated from ' + Object.keys(answersByQid).length + ' answered questions.');
+
+    let table = $("<table>");
+    let thead = $("<thead>");
+    thead.append('<tr><th>Specialty</th><th>Questions</th><th>Score</th><th>Max</th><th>Percent</th></tr>');
+    table.append(thead);
+    let tbody = $("<tbody>");
+
+    keys.forEach(k => {
+      const st = stats[k];
+      const percent = st.max > 0 ? (st.score / st.max) * 100 : 0;
+      // build a visual stat row: name | counts | bar | percent
+      const row = $("<div>").addClass('stat-row');
+      const name = $("<div>").addClass('stat-name').text(k);
+      const counts = $("<div>").addClass('stat-counts').text(st.questions + ' q • ' + st.score + '/' + st.max);
+      const barWrap = $("<div>").addClass('stat-bar-wrap');
+      // choose hue from percent (0 -> red, 100 -> green)
+      const hue = Math.max(0, Math.min(120, (percent / 100) * 120));
+      const fill = $("<div>").addClass('stat-bar-fill').css('background', 'linear-gradient(90deg, hsl(' + hue + ',80%,45%), hsl(' + hue + ',60%,35%))');
+      fill.css('width', percent.toFixed(2) + '%');
+      barWrap.append(fill);
+      const pct = $("<div>").addClass('stat-percent').text(percent.toFixed(2) + '%');
+      row.append(name, counts, barWrap, pct);
+      container.append(row);
+    });
+
+    table.append(tbody);
+    container.append(table);
+  } catch (err) {
+    console.error('Error building stats:', err);
+    $("#stats-summary").text('Error building statistics.');
+  }
 }
 
 // Helper to find next/previous unanswered question index.
