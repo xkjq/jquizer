@@ -189,6 +189,10 @@
       <label for="search-input" style="display:block;font-weight:600">Search (regex)</label>
       Search within questions:
       <input type="text" id="search-input" placeholder="Search (regex)" aria-label="Search questions" />
+      <div style="margin: 8px 0;">
+        <input type="checkbox" id="search-metadata-only" name="search-scope" />
+        <label for="search-metadata-only">Search within metadata only</label>
+      </div>
       <div class="action-row">
         <button type="button" id="search-button" title="Search questions. Note this search uses regexs">Search</button>
         <button type="button" id="hide-search-button">Hide</button>

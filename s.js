@@ -48,6 +48,7 @@ var hash_n_map = {};
 let current_question_uid = 0;
 
 var search_string = false;
+var search_metadata_only = false;
 
 var show_answered_questions = true;
 var show_only_flagged_questions = false;
@@ -1225,6 +1226,7 @@ function startSearch(str) {
   $("#clear-search-button").remove();
   if (str.length > 0) {
     search_string = str;
+    search_metadata_only = $("#search-metadata-only").is(":checked");
     $("#search-form").append(
       $(document.createElement("button"))
         .attr({ id: "clear-search-button" })
@@ -1234,6 +1236,8 @@ function startSearch(str) {
     $("#clear-search-button").wrap("<a href='#'></a>");
   } else {
     search_string = false;
+    search_metadata_only = false;
+    $("#search-metadata-only").prop("checked", false);
   }
   // Return the promise from loadFilters so callers can await completion.
   return loadFilters();
@@ -1483,8 +1487,14 @@ async function loadFilters() {
     }
 
     if (search_string) {
-      if (!searchObject(q, search_string)) {
-        continue;
+      if (search_metadata_only) {
+        if (!searchMetadata(q, search_string)) {
+          continue;
+        }
+      } else {
+        if (!searchObject(q, search_string)) {
+          continue;
+        }
       }
     }
 
@@ -1745,6 +1755,29 @@ function searchObject(o, search_str) {
         String(i).search(search_str) > -1
       ) {
         return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Searches within question metadata for a specified regex.
+// Metadata includes: type, source, specialty, meta, date
+function searchMetadata(q, search_str) {
+  const metadataFields = ['type', 'source', 'specialty', 'meta', 'date'];
+  for (let field of metadataFields) {
+    if (q.hasOwnProperty(field)) {
+      if (typeof q[field] === 'object') {
+        // For arrays like specialty
+        for (let item in q[field]) {
+          if (String(q[field][item]).search(search_str) > -1) {
+            return true;
+          }
+        }
+      } else {
+        if (String(q[field]).search(search_str) > -1) {
+          return true;
+        }
       }
     }
   }
