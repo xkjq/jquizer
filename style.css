@@ -169,6 +169,14 @@ ol.answer-list {
   font-weight: bold;
 }
 
+.selected {
+  padding: 4px;
+  border: 2px solid #007acc;
+  border-radius: 5px;
+  background-color: rgba(0, 122, 204, 0.1);
+  font-weight: bold;
+}
+
 .incorrect {
   padding: 4px;
   border: 2px solid red;
@@ -915,12 +923,60 @@ input, textarea, select {
   display: block;
 }
 
+#exam-menu {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  max-height: 88vh;
+  overflow: auto;
+  background: var(--panel-bg);
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.4);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  z-index: 115;
+}
+
+#exam-close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-color);
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+#exam-close-button:hover {
+  background-color: rgba(0,0,0,0.1);
+}
+
+#exam-menu.show {
+  display: block;
+}
+
 @media (max-width: 900px) {
   #search-menu {
     left: 8px;
     right: 8px;
     top: 52px;
     width: auto;
+    max-height: 92vh;
+  }
+  #exam-menu {
+    width: calc(100vw - 40px);
     max-height: 92vh;
   }
 }

@@ -44,6 +44,9 @@ let filtered_questions = [];
 // Allows the lookup of a questions hash by its current number.
 var hash_n_map = {};
 
+// Exam mode hash map
+var exam_hash_n_map = {};
+
 // uid of the currently loaded question
 let current_question_uid = 0;
 
@@ -62,6 +65,16 @@ var min_colour_diff = 0.6;
 
 let store = false;
 
+// Exam mode variables
+let exam_mode = false;
+let exam_questions = [];
+let exam_answers = {};
+let exam_start_time = null;
+let exam_end_time = null;
+let exam_timer_interval = null;
+let current_exam_id = null;
+let exam_review_mode = false;
+
 var db = new Dexie("user_interface");
 db.version(1).stores({
   //mouse_bindings: "button,mode,tool",
@@ -69,6 +82,9 @@ db.version(1).stores({
   answers: "qid,date,type,score,max_score,other",
   flagged: "&qid",
   //question_cache: "qid,date,type,score,max_score,other"
+});
+db.version(2).stores({
+  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
 });
 
 // Helper: fetch a resource as text and try to parse JSON leniently.
@@ -459,6 +475,7 @@ $(document).ready(function () {
         't': '#stats-toggle button',
         'q': '#question-details-toggle a, #question-details-toggle button',
         'g': '#search-toggle-button',
+        'e': '#exam-toggle-button',
         'a': '#about-toggle a, #about-toggle button'
       };
 
@@ -663,6 +680,10 @@ $(document).ready(function () {
       $("#search-button").click(function () {
         startSearch($("#search-input").val());
         $("#search-input").blur();
+      });
+
+      $("#create-exam-button").click(function () {
+        createExam();
       });
 
       $("#delete-answers-button").click(function () {
@@ -1243,6 +1264,374 @@ function startSearch(str) {
   return loadFilters();
 }
 
+function createExam() {
+  const numQuestions = parseInt($("#exam-num-questions").val());
+  const timePerQuestion = parseFloat($("#exam-time-per-question").val());
+  const selectionMethod = $("input[name='exam-selection']:checked").val();
+
+  if (!numQuestions || numQuestions < 1) {
+    toastr.warning("Please enter a valid number of questions.");
+    return;
+  }
+
+  if (!timePerQuestion || timePerQuestion <= 0) {
+    toastr.warning("Please enter a valid time per question.");
+    return;
+  }
+
+  // Generate exam questions
+  if (selectionMethod === 'filtered') {
+    exam_questions = [...filtered_questions];
+    // Shuffle the array
+    for (let i = exam_questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [exam_questions[i], exam_questions[j]] = [exam_questions[j], exam_questions[i]];
+    }
+    // Take only the requested number
+    exam_questions = exam_questions.slice(0, numQuestions);
+  } else if (selectionMethod === 'random') {
+    exam_questions = generateRandomExamQuestions(numQuestions);
+  }
+
+  if (exam_questions.length === 0) {
+    toastr.warning("No questions available for the exam.");
+    return;
+  }
+
+  // Initialize exam state
+  exam_mode = true;
+  exam_answers = {};
+  exam_start_time = new Date();
+  exam_end_time = new Date(exam_start_time.getTime() + exam_questions.length * timePerQuestion * 60 * 1000);
+
+  // Build hash map for exam
+  exam_hash_n_map = {};
+  exam_questions.forEach((qid, index) => {
+    exam_hash_n_map[qid] = index;
+  });
+
+  // Cache full question data for reproducibility
+  const cachedQuestions = exam_questions.map(qid => ({
+    id: qid,
+    data: questions[qid]
+  }));
+
+  // Save exam to database
+  current_exam_id = Date.now().toString();
+  db.exams.put({
+    id: current_exam_id,
+    date: exam_start_time.toISOString(),
+    num_questions: numQuestions,
+    time_per_question: timePerQuestion,
+    selection_method: selectionMethod,
+    questions: exam_questions,
+    cached_questions: cachedQuestions,
+    answers: exam_answers,
+    score: null
+  });
+
+  // Hide the exam menu
+  $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+
+  // Start the timer
+  startExamTimer();
+
+  // Load the first question
+  loadExamQuestion(0);
+
+  toastr.info(`Exam started! ${exam_questions.length} questions, ${Math.round((exam_end_time - exam_start_time) / 1000 / 60)} minutes total.`);
+}
+
+function loadExamList() {
+  db.exams.orderBy('date').reverse().toArray().then(exams => {
+    const $list = $('#exam-list');
+    $list.empty();
+    
+    if (exams.length === 0) {
+      $list.append('<p>No exams found.</p>');
+      return;
+    }
+    
+    exams.forEach(exam => {
+      const date = new Date(exam.date).toLocaleString();
+      const score = exam.score ? `${exam.score.correct}/${exam.score.total}` : 'Not completed';
+      
+      const $examItem = $(document.createElement('div')).addClass('exam-item').css({
+        border: '1px solid #ccc',
+        margin: '8px 0',
+        padding: '8px',
+        borderRadius: '4px'
+      });
+      
+      $examItem.append(
+        $(document.createElement('div')).text(`Date: ${date}`)
+      );
+      $examItem.append(
+        $(document.createElement('div')).text(`Questions: ${exam.num_questions}, Time: ${exam.time_per_question} min each`)
+      );
+      $examItem.append(
+        $(document.createElement('div')).text(`Score: ${score}`)
+      );
+      
+      const $buttons = $(document.createElement('div')).css({ marginTop: '8px' });
+      
+      if (exam.score) {
+        $buttons.append(
+          $(document.createElement('button')).text('Review').click(() => reviewExam(exam.id))
+        );
+      } else {
+        $buttons.append(
+          $(document.createElement('button')).text('Continue').click(() => continueExam(exam.id))
+        );
+      }
+      
+      $buttons.append(
+        $(document.createElement('button')).text('Delete').css({ marginLeft: '8px' }).click(() => deleteExam(exam.id))
+      );
+      
+      $examItem.append($buttons);
+      $list.append($examItem);
+    });
+  });
+}
+
+window.loadExamList = loadExamList;
+
+function reviewExam(examId) {
+  db.exams.get(examId).then(exam => {
+    if (!exam) return;
+    
+    // Load cached questions for reproducibility
+    if (exam.cached_questions) {
+      exam.cached_questions.forEach(cached => {
+        questions[cached.id] = cached.data;
+      });
+    }
+    
+    // Load exam for review
+    exam_mode = true;
+    exam_review_mode = true;
+    exam_questions = exam.questions;
+    exam_answers = exam.answers || {};
+    current_exam_id = examId;
+    
+    // Build hash map
+    exam_hash_n_map = {};
+    exam_questions.forEach((qid, index) => {
+      exam_hash_n_map[qid] = index;
+    });
+    
+    // Hide menu and start review
+    $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+    loadExamQuestion(0);
+    
+    toastr.info('Reviewing completed exam');
+  });
+}
+
+window.reviewExam = reviewExam;
+
+function continueExam(examId) {
+  db.exams.get(examId).then(exam => {
+    if (!exam) return;
+    
+    // Load cached questions for reproducibility
+    if (exam.cached_questions) {
+      exam.cached_questions.forEach(cached => {
+        questions[cached.id] = cached.data;
+      });
+    }
+    
+    // Load exam for continuation
+    exam_mode = true;
+    exam_review_mode = false; // Not review mode
+    exam_questions = exam.questions;
+    exam_answers = exam.answers || {};
+    current_exam_id = examId;
+    
+    // Calculate remaining time
+    const startTime = new Date(exam.date);
+    const totalTimeMs = exam.num_questions * exam.time_per_question * 60 * 1000;
+    const elapsedMs = Date.now() - startTime.getTime();
+    const remainingMs = Math.max(0, totalTimeMs - elapsedMs);
+    
+    exam_start_time = new Date(Date.now() - elapsedMs); // Adjust start time so timer shows correct remaining time
+    exam_end_time = new Date(Date.now() + remainingMs);
+    
+    // Build hash map
+    exam_hash_n_map = {};
+    exam_questions.forEach((qid, index) => {
+      exam_hash_n_map[qid] = index;
+    });
+    
+    // Hide menu and start exam
+    $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+    
+    // Start timer if time remains
+    if (remainingMs > 0) {
+      startExamTimer();
+    } else {
+      // Time already expired, end exam
+      endExam();
+      return;
+    }
+    
+    // Load first unanswered question, or first question if all answered
+    let startIndex = 0;
+    for (let i = 0; i < exam_questions.length; i++) {
+      if (!exam_answers[exam_questions[i]]) {
+        startIndex = i;
+        break;
+      }
+    }
+    
+    loadExamQuestion(startIndex);
+    
+    toastr.info('Continuing exam');
+  });
+}
+
+window.continueExam = continueExam;
+
+function deleteExam(examId) {
+  if (confirm('Are you sure you want to delete this exam?')) {
+    db.exams.delete(examId).then(() => {
+      loadExamList();
+      toastr.info('Exam deleted');
+    });
+  }
+}
+
+window.deleteExam = deleteExam;
+
+function generateRandomExamQuestions(numQuestions) {
+  // Get all available questions
+  const allQuestions = Object.keys(questions);
+  
+  // Group by specialty
+  const specialtyGroups = {};
+  for (const qid of allQuestions) {
+    const q = questions[qid];
+    if (q.specialty) {
+      for (const spec of q.specialty) {
+        if (!specialtyGroups[spec]) specialtyGroups[spec] = [];
+        specialtyGroups[spec].push(qid);
+      }
+    }
+  }
+
+  const selectedQuestions = [];
+  const specialties = Object.keys(specialtyGroups);
+  
+  if (specialties.length === 0) {
+    // No specialties, just random select
+    const shuffled = [...allQuestions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, Math.min(numQuestions, shuffled.length));
+  }
+
+  // Distribute questions across specialties
+  const questionsPerSpecialty = Math.floor(numQuestions / specialties.length);
+  const extraQuestions = numQuestions % specialties.length;
+
+  for (const spec of specialties) {
+    const group = specialtyGroups[spec];
+    const numToTake = questionsPerSpecialty + (extraQuestions > 0 ? 1 : 0);
+    extraQuestions--;
+
+    // Shuffle the group
+    for (let i = group.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [group[i], group[j]] = [group[j], group[i]];
+    }
+
+    selectedQuestions.push(...group.slice(0, Math.min(numToTake, group.length)));
+  }
+
+  // If we still need more questions, add from random specialties
+  while (selectedQuestions.length < numQuestions) {
+    const randomSpec = specialties[Math.floor(Math.random() * specialties.length)];
+    const group = specialtyGroups[randomSpec];
+    const available = group.filter(q => !selectedQuestions.includes(q));
+    if (available.length > 0) {
+      const randomQ = available[Math.floor(Math.random() * available.length)];
+      selectedQuestions.push(randomQ);
+    } else {
+      break; // No more available
+    }
+  }
+
+  return selectedQuestions.slice(0, numQuestions);
+}
+
+function startExamTimer() {
+  updateExamTimerDisplay();
+  exam_timer_interval = setInterval(function() {
+    const now = new Date();
+    if (now >= exam_end_time) {
+      endExam();
+    } else {
+      updateExamTimerDisplay();
+    }
+  }, 1000);
+}
+
+function updateExamTimerDisplay() {
+  if (!exam_mode) return;
+  
+  const now = new Date();
+  const remaining = Math.max(0, exam_end_time - now);
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  
+  // Update header or add a timer display
+  $("#header").find(".exam-timer").remove();
+  $("#header").prepend(
+    $(document.createElement("div"))
+      .addClass("exam-timer")
+      .text(`Exam Time: ${minutes}:${seconds.toString().padStart(2, '0')}`)
+      .css({ color: remaining < 300000 ? 'red' : 'inherit' }) // Red if less than 5 minutes
+  );
+}
+
+function loadExamQuestion(index) {
+  loadQuestion(index, true);
+}
+
+function endExam() {
+  exam_mode = false;
+  clearInterval(exam_timer_interval);
+  
+  if (!exam_review_mode) {
+    // Calculate score
+    let correct = 0;
+    let total = exam_questions.length;
+    for (const qid of exam_questions) {
+      if (exam_answers[qid] && exam_answers[qid].correct) correct++;
+    }
+    
+    // Save final score to database
+    if (current_exam_id) {
+      db.exams.update(current_exam_id, {
+        answers: exam_answers,
+        score: { correct, total }
+      });
+    }
+    
+    toastr.info(`Exam ended! Score: ${correct}/${total}`);
+  } else {
+    exam_review_mode = false;
+    toastr.info('Review ended');
+  }
+  
+  // Switch back to normal mode
+  loadFilters();
+  loadQuestion(0);
+}
+
 function setUpFilters() {
   let specialty_filters = {};
   let source_filters = {};
@@ -1687,13 +2076,14 @@ async function findUnansweredIndex(startIndex, step) {
 }
 
 async function previousQuestion(e) {
-  const currentIndex = hash_n_map[current_question_uid];
+  const currentMap = exam_mode ? exam_hash_n_map : hash_n_map;
+  const currentIndex = currentMap[current_question_uid];
   // Ctrl/Cmd + click: jump to previous unanswered
   const ctrl = e && (e.ctrlKey || e.metaKey);
   // If user enabled default unanswered nav in options, treat as ctrl
   const defaultNav = localStorage.getItem('jquizer-default-unanswered') === '1' || localStorage.getItem('jquizer-default-unanswered') === 'true';
   const effectiveCtrl = ctrl || defaultNav;
-  if (ctrl) {
+  if (ctrl && !exam_mode) {  // Disable unanswered jump in exam mode
     const idx = await findUnansweredIndex(currentIndex, -1);
     if (idx >= 0) {
       loadQuestion(idx);
@@ -1705,20 +2095,21 @@ async function previousQuestion(e) {
   }
 
   if (e && e.shiftKey) {
-    loadQuestion(currentIndex - 10);
+    loadQuestion(currentIndex - 10, exam_mode);
   } else {
-    loadQuestion(currentIndex - 1);
+    loadQuestion(currentIndex - 1, exam_mode);
   }
 }
 
 async function nextQuestion(e) {
-  const currentIndex = hash_n_map[current_question_uid];
+  const currentMap = exam_mode ? exam_hash_n_map : hash_n_map;
+  const currentIndex = currentMap[current_question_uid];
   // Ctrl/Cmd + click: jump to next unanswered
   const ctrl = e && (e.ctrlKey || e.metaKey);
   // If user enabled default unanswered nav in options, treat as ctrl
   const defaultNavNext = localStorage.getItem('jquizer-default-unanswered') === '1' || localStorage.getItem('jquizer-default-unanswered') === 'true';
   const effectiveCtrlNext = ctrl || defaultNavNext;
-  if (effectiveCtrlNext) {
+  if (effectiveCtrlNext && !exam_mode) {  // Disable unanswered jump in exam mode
     const idx = await findUnansweredIndex(currentIndex, +1);
     if (idx >= 0) {
       loadQuestion(idx);
@@ -1730,9 +2121,9 @@ async function nextQuestion(e) {
   }
 
   if (e && e.shiftKey) {
-    loadQuestion(currentIndex + 10);
+    loadQuestion(currentIndex + 10, exam_mode);
   } else {
-    loadQuestion(currentIndex + 1);
+    loadQuestion(currentIndex + 1, exam_mode);
   }
 }
 
@@ -2059,11 +2450,10 @@ const areEqualArrays = (first, second) => {
   return true;
 };
 
-function loadQuestion(n) {
+function loadQuestion(n, isExam = false) {
   saveOpenQuestion(n);
-  //question_number = Object.size(filtered_questions);
-  //console.log(filtered_questions)
-  let question_number = filtered_questions.length;
+  let question_list = isExam ? exam_questions : filtered_questions;
+  let question_number = question_list.length;
 
   $("#header").empty();
   $("#main").empty();
@@ -2085,8 +2475,8 @@ function loadQuestion(n) {
   n = Math.min(question_number - 1, n);
 
   // convert n to the hash
-  let qid = filtered_questions[n];
-  let data = getQuestionDataByNumber(n);
+  let qid = question_list[n];
+  let data = questions[qid];
 
   let question_type = data["type"];
 
@@ -2102,6 +2492,10 @@ function loadQuestion(n) {
   }
 
   let m = n + 1;
+
+  if (isExam) {
+    updateExamTimerDisplay();
+  }
 
   $("#header").append(
     $(document.createElement("button"))
@@ -2119,7 +2513,7 @@ function loadQuestion(n) {
       .attr({
         id: "header-text"
       })
-      .text("Question " + m + " of " + question_number)
+      .text(isExam ? `Exam Question ${m} of ${question_number}` : `Question ${m} of ${question_number}`)
   );
 
   $("#header").append(
@@ -2134,20 +2528,28 @@ function loadQuestion(n) {
       .text("Next")
   );
 
-  $("#header").append(
-    $("<button id='flagged-button'>").click(function (qid) {
-      toggleFlagged();
-    })
-  );
+  if (!isExam) {
+    $("#header").append(
+      $("<button id='flagged-button'>").click(function (qid) {
+        toggleFlagged();
+      })
+    );
 
-  db.flagged.get(current_question_uid).then((d) => {
-    if (d == undefined) {
-      $("#flagged-button").text("NOT FLAGGED");
-    } else {
-      $("#flagged-button").text("FLAGGED");
-    }
-    // We handle the error above
-  }).catch(() => { })
+    db.flagged.get(current_question_uid).then((d) => {
+      if (d == undefined) {
+        $("#flagged-button").text("NOT FLAGGED");
+      } else {
+        $("#flagged-button").text("FLAGGED");
+      }
+      // We handle the error above
+    }).catch(() => { })
+  } else {
+    $("#header").append(
+      $("<button id='end-exam-button'>").text(exam_review_mode ? "Exit Review" : "End Exam").click(function () {
+        endExam();
+      })
+    );
+  }
 
   // Set up the question details block
   $("#question-details").append("Question details...<br />");
@@ -2690,7 +3092,9 @@ function loadQuestion(n) {
 
   if (auto_load_previous_answers) {
     console.log(qid)
-    window.db.answers.where("qid").equals(qid).first((ans) => {
+    // In exam mode, load exam-specific answers
+    const answerQid = exam_mode ? `${current_exam_id}_${qid}` : qid;
+    window.db.answers.where("qid").equals(answerQid).first((ans) => {
       // if(!ans.hasOwnProperty("autoload") || ans["autoload"] == true) {
       //   checkAnswer(ans, true);
       // }
@@ -2904,6 +3308,7 @@ function buildRankList(options, answers) {
     option = options[i];
 
     //c = answers[n];
+    const displayText = (exam_mode && !exam_review_mode) ? option : (option + " - " + answers[option]);
 
     $("#sortable-list").append(
       $(document.createElement("li"))
@@ -2913,7 +3318,7 @@ function buildRankList(options, answers) {
           //'class': c,
           //'data-question-number': question_number
         })
-        .text(option + " - " + answers[option])
+        .text(displayText)
     );
   }
 }
@@ -2933,6 +3338,32 @@ function checkAnswer(ans, load) {
   let question_type = data["type"];
 
   $("#feedback").empty();
+
+  // During active exam, record the answer and show selection
+  if (exam_mode && !exam_review_mode) {
+    // Still save the answer, but don't show correctness feedback
+    switch (question_type) {
+      case "sba":
+        let return_value = checkBestAnswer(ans, load);
+        if (return_value.s) {
+          saveAnswerToHashMap(current_question_uid, "sba", return_value.score, 1, {
+            target_id: return_value.t,
+            question_number: return_value.q,
+            answer: return_value.a
+          });
+        }
+        // Show selected answer instead of auto-advancing
+        let selected_text = $("#" + return_value.t).text();
+        $("#feedback").append("Selected: " + selected_text);
+        break;
+      default:
+        // For other types, record answer and show message
+        $("#feedback").append("Answer recorded.");
+        break;
+    }
+    
+    return;
+  }
 
   let best_sim, best_answer, sim, replaced_lower_case_answer, score, max_score, a, diff, fragment, span, color;
 
@@ -3126,67 +3557,80 @@ function checkAnswer(ans, load) {
             .replace("left", "")
             .replace("right", "");
 
-          $("#answer-block").append(
-            $(document.createElement("span"))
-              .attr({
-                class: "label-correct-answer-text"
-              })
-              .text(best_answer)
-              .append(
-                $(document.createElement("span"))
-                  .attr({
-                    class: "label-similarity"
-                  })
-                  .text("(" + Math.round(best_sim * 100) / 100 + ")")
-              )
-              .append(
-                $(document.createElement("a"))
-                  .attr({
-                    href:
-                      "https://www.google.com/search?q=" +
-                      replaced_lower_case_answer,
-                    target: "newtab",
-                    class: "google-answer",
-                    title: "Search Google for " + replaced_lower_case_answer
-                  })
-                  .text("G")
-              )
-              .append(
-                $(document.createElement("a"))
-                  .attr({
-                    href:
-                      "https://www.imaios.com/en/content/search?SearchText=" +
-                      replaced_lower_case_answer,
-                    target: "newtab",
-                    class: "imaios-answer",
-                    title: "Search Imaios for " + replaced_lower_case_answer
-                  })
-                  .text("I")
-              )
-          );
+          if (!(exam_mode && !exam_review_mode)) {
+            $("#answer-block").append(
+              $(document.createElement("span"))
+                .attr({
+                  class: "label-correct-answer-text"
+                })
+                .text(best_answer)
+                .append(
+                  $(document.createElement("span"))
+                    .attr({
+                      class: "label-similarity"
+                    })
+                    .text("(" + Math.round(best_sim * 100) / 100 + ")")
+                )
+                .append(
+                  $(document.createElement("a"))
+                    .attr({
+                      href:
+                        "https://www.google.com/search?q=" +
+                        replaced_lower_case_answer,
+                      target: "newtab",
+                      class: "google-answer",
+                      title: "Search Google for " + replaced_lower_case_answer
+                    })
+                    .text("G")
+                )
+                .append(
+                  $(document.createElement("a"))
+                    .attr({
+                      href:
+                        "https://www.imaios.com/en/content/search?SearchText=" +
+                        replaced_lower_case_answer,
+                      target: "newtab",
+                      class: "imaios-answer",
+                      title: "Search Imaios for " + replaced_lower_case_answer
+                    })
+                    .text("I")
+                )
+            );
+          }
 
           if (best_sim >= similarity_limit) {
-            $("#answer").addClass("correct");
-            $("#answer").addClass("similarity-correct");
+            if (!(exam_mode && !exam_review_mode)) {
+              $("#answer").addClass("correct");
+              $("#answer").addClass("similarity-correct");
+            }
             // n_correct = n_correct + 1;
             correct = true;
           } else {
-            $("#answer").addClass("incorrect");
+            if (!(exam_mode && !exam_review_mode)) {
+              $("#answer").addClass("incorrect");
+            }
           }
         }
-        $("#answer-block").append(
-          $(document.createElement("p"))
-            .attr({
-              id: "acceptable-answers"
-            })
-            .text("Acceptable answers: ")
-        );
-        correct_answers.forEach(function (option) {
-          $("#acceptable-answers").append(option + ", ");
-        });
+        if (!(exam_mode && !exam_review_mode)) {
+          $("#answer-block").append(
+            $(document.createElement("p"))
+              .attr({
+                id: "acceptable-answers"
+              })
+              .text("Acceptable answers: ")
+          );
+          correct_answers.forEach(function (option) {
+            $("#acceptable-answers").append(option + ", ");
+          });
+        }
       }
 
       $("#feedback").append("<br />");
+
+      // Add explicit feedback in review mode
+      if (exam_mode && exam_review_mode) {
+        $("#feedback").append("<strong>Your answer:</strong> " + a + "<br/>");
+      }
 
       $("#normal-button").remove();
       $(".check-button").remove();
@@ -3293,46 +3737,59 @@ function checkAnswer(ans, load) {
         .toLowerCase()
         .replace("left", "")
         .replace("right", "");
-      $("#answer-block").append(
-        $(document.createElement("span"))
-          .attr({
-            class: "label-correct-answer-text"
-          })
-          .text(best_answer)
-          .append(
-            $(document.createElement("span"))
-              .attr({
-                class: "label-similarity"
-              })
-              .text("(" + Math.round(best_sim * 100) / 100 + ")")
-          )
-      );
-      addAnatomySearchLinks("#answer-block", replaced_lower_case_answer);
+      if (!(exam_mode && !exam_review_mode)) {
+        $("#answer-block").append(
+          $(document.createElement("span"))
+            .attr({
+              class: "label-correct-answer-text"
+            })
+            .text(best_answer)
+            .append(
+              $(document.createElement("span"))
+                .attr({
+                  class: "label-similarity"
+                })
+                .text("(" + Math.round(best_sim * 100) / 100 + ")")
+            )
+        );
+        addAnatomySearchLinks("#answer-block", replaced_lower_case_answer);
+      }
 
-      $("#answer-block").append(
-        $(document.createElement("p"))
-          .attr({
-            id: "acceptable-answers"
-          })
-          .text("Acceptable answers: ")
-      );
-      correct_answers.forEach(function (option) {
-        $("#acceptable-answers").append(option + ", ");
-      });
+      if (!(exam_mode && !exam_review_mode)) {
+        $("#answer-block").append(
+          $(document.createElement("p"))
+            .attr({
+              id: "acceptable-answers"
+            })
+            .text("Acceptable answers: ")
+        );
+        correct_answers.forEach(function (option) {
+          $("#acceptable-answers").append(option + ", ");
+        });
+      }
 
       correct = false;
       score = 0;
       if (best_sim >= similarity_limit) {
-        $("#answer input").addClass("correct");
-        $("#answer input").addClass("similarity-correct");
+        if (!(exam_mode && !exam_review_mode)) {
+          $("#answer input").addClass("correct");
+          $("#answer input").addClass("similarity-correct");
+        }
         // n_correct = n_correct + 1;
         correct = true;
         score = 1;
       } else {
-        $("#answer input").addClass("incorrect");
+        if (!(exam_mode && !exam_review_mode)) {
+          $("#answer input").addClass("incorrect");
+        }
       }
 
       $("#feedback").append("<br />");
+
+      // Add explicit feedback in review mode
+      if (exam_mode && exam_review_mode) {
+        $("#feedback").append("<strong>Your answer:</strong> " + a + "<br/>");
+      }
 
       $(".check-button").remove();
 
@@ -3384,35 +3841,45 @@ function checkAnswer(ans, load) {
         );
 
         if (a.toLowerCase() == correct_answer.toLowerCase()) {
-          $(option).addClass("correct");
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).addClass("correct");
+          }
           n_correct = n_correct + 1;
           correct.push("correct");
         } else {
-          $(option).append(
-            $(document.createElement("span"))
-              .attr({
-                class: "label-correct-answer-text"
-              })
-              .text(correct_answer)
-          );
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).append(
+              $(document.createElement("span"))
+                .attr({
+                  class: "label-correct-answer-text"
+                })
+                .text(correct_answer)
+            );
+          }
 
           let sim = similarity(a, correct_answer);
 
-          $(option).append(
-            $(document.createElement("span"))
-              .attr({
-                class: "label-similarity"
-              })
-              .text("(" + Math.round(sim * 100) / 100 + ")")
-          );
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).append(
+              $(document.createElement("span"))
+                .attr({
+                  class: "label-similarity"
+                })
+                .text("(" + Math.round(sim * 100) / 100 + ")")
+            );
+          }
 
           if (sim >= similarity_limit) {
-            $(option).addClass("correct");
-            $(option).addClass("similarity-correct");
+            if (!(exam_mode && !exam_review_mode)) {
+              $(option).addClass("correct");
+              $(option).addClass("similarity-correct");
+            }
             n_correct = n_correct + 1;
             correct.push("correct");
           } else {
-            $(option).addClass("incorrect");
+            if (!(exam_mode && !exam_review_mode)) {
+              $(option).addClass("incorrect");
+            }
             correct.push("incorrect");
           }
         }
@@ -3478,9 +3945,11 @@ function checkAnswer(ans, load) {
 
         diff = Math.abs(i - map[aid]);
 
-        hue = ((number_options - 1 - diff) / (number_options - 1)) * 120;
-
-        $(option).css({ "background-color": "hsl(" + hue + ", 100%, 50%)" });
+        // Only apply color coding if not in active exam mode
+        if (!(exam_mode && !exam_review_mode)) {
+          hue = ((number_options - 1 - diff) / (number_options - 1)) * 120;
+          $(option).css({ "background-color": "hsl(" + hue + ", 100%, 50%)" });
+        }
 
         neg_marks = neg_marks + diff;
 
@@ -3501,29 +3970,37 @@ function checkAnswer(ans, load) {
         })
       );
       $("#feedback").append("<br />");
-      $("#feedback").append("The correct order is " + correct_order);
+      if (!(exam_mode && !exam_review_mode)) {
+        $("#feedback").append("The correct order is " + correct_order);
 
-      $("#feedback").append(
-        $(document.createElement("ol")).attr({
-          id: "correct-list",
-          //'class': 'answer-list allow-hover',
-          "data-answered": 0
-        })
-      );
-
-      for (item in correct_order) {
-        option = correct_order[item];
-
-        $("#correct-list").append(
-          $(document.createElement("li"))
-            .attr({
-              id: "correct-answer-" + option,
-              "data-option": option
-              //'class': c,
-              //'data-question-number': question_number
-            })
-            .text(option + " - " + data["answers"][option])
+        $("#feedback").append(
+          $(document.createElement("ol")).attr({
+            id: "correct-list",
+            //'class': 'answer-list allow-hover',
+            "data-answered": 0
+          })
         );
+
+        for (item in correct_order) {
+          option = correct_order[item];
+
+          $("#correct-list").append(
+            $(document.createElement("li"))
+              .attr({
+                id: "correct-answer-" + option,
+                "data-option": option
+                //'class': c,
+                //'data-question-number': question_number
+              })
+              .text(option + " - " + data["answers"][option])
+          );
+        }
+      }
+
+      // Add explicit feedback in review mode
+      if (exam_mode && exam_review_mode) {
+        $("#feedback").append("<br/><strong>Your order:</strong> " + order.join(", "));
+        $("#feedback").append("<br/><strong>Correct order:</strong> " + correct_order.join(", "));
       }
 
       // Disable the sortable (it may be good to allow multiple attempts)
@@ -3584,28 +4061,47 @@ function checkAnswer(ans, load) {
         }
 
         if ($(option).hasClass(answer)) {
-          $(option).addClass("correct");
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).addClass("correct");
+          }
           correct.push("correct");
           n_correct = n_correct + 1;
-          $(option).append(
-            "<br/><span class='emq-answer-feedback'>" +
-            answer_option +
-            feedback +
-            "</span>"
-          );
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).append(
+              "<br/><span class='emq-answer-feedback'>" +
+              answer_option +
+              feedback +
+              "</span>"
+            );
+          }
         } else {
-          $(option).addClass("incorrect");
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).addClass("incorrect");
+          }
           correct.push("incorrect");
-          $(option).append(
-            "<br/><span class='emq-answer-feedback'>" +
-            answer_option +
-            feedback +
-            "</span>"
-          );
+          if (!(exam_mode && !exam_review_mode)) {
+            $(option).append(
+              "<br/><span class='emq-answer-feedback'>" +
+              answer_option +
+              feedback +
+              "</span>"
+            );
+          }
         }
       });
 
       max_score = answers.length
+
+      // Add explicit feedback in review mode
+      if (exam_mode && exam_review_mode) {
+        $("#feedback").append("<br/><strong>Review:</strong><br/>");
+        $(".tf-answer-block li").each(function (index, option) {
+          let question_text = $(option).find('.tf-question').text();
+          let user_answer = $(option).hasClass("tf_answer_true") ? "True" : "False";
+          let correct_answer = $(option).hasClass("1") ? "True" : "False";
+          $("#feedback").append("Q: " + question_text + " - Your answer: " + user_answer + ", Correct: " + correct_answer + "<br/>");
+        });
+      }
 
       $(".tf-answer-block")
         .removeClass("allow-hover")
@@ -3639,12 +4135,14 @@ function checkAnswer(ans, load) {
     $("#content").append('<div id="feedback"></div>');
   }
 
-  $("#feedback").prepend(data["feedback"]);
-  $("#feedback").append("<br />");
-
-  if (data["external"] !== undefined) {
+  if (!(exam_mode && !exam_review_mode)) {
+    $("#feedback").prepend(data["feedback"]);
     $("#feedback").append("<br />");
-    $("#feedback").append("<p>" + data["external"] + "</p>");
+
+    if (data["external"] !== undefined) {
+      $("#feedback").append("<br />");
+      $("#feedback").append("<p>" + data["external"] + "</p>");
+    }
   }
 
   // Check if we have a valid dicom displayed
@@ -3653,7 +4151,7 @@ function checkAnswer(ans, load) {
     $("#feedback").appendTo("#answer-block");
   }
 
-  if (rebuild_score_list_on_answer) {
+  if (rebuild_score_list_on_answer && !(exam_mode && !exam_review_mode)) {
     buildActiveScoreList();
   }
 
@@ -3680,18 +4178,44 @@ function checkBestAnswer(e, load) {
     question_number = e.currentTarget.getAttribute("data-question-number");
   }
 
-  // Add the "correct" class to all answers that are correct
-  $("#question-" + question_number + "-answers > .1").addClass("correct");
+  // Only show visual feedback if not in active exam mode
+  if (!(exam_mode && !exam_review_mode)) {
+    // Add the "correct" class to all answers that are correct
+    $("#question-" + question_number + "-answers > .1").addClass("correct");
+  }
+
+  // Show selected answer during active exam mode
+  if (exam_mode && !exam_review_mode) {
+    $("#" + target_id).addClass("selected");
+  }
 
   let score = 0;
   // Check if the selected answer is correct
   if ($("#" + target_id).hasClass("1")) {
     answer = "correct";
     score = 1;
+    // Only add visual feedback if not in active exam mode
+    if (!(exam_mode && !exam_review_mode)) {
+      $("#" + target_id).addClass("correct");
+    }
   } else {
     // If not we mark it as incorrect
-    $("#" + target_id).addClass("incorrect");
     answer = "incorrect";
+    // Only add visual feedback if not in active exam mode
+    if (!(exam_mode && !exam_review_mode)) {
+      $("#" + target_id).addClass("incorrect");
+    }
+  }
+
+  // Add explicit feedback in review mode
+  if (exam_mode && exam_review_mode) {
+    let selected_answer_text = $("#" + target_id).text();
+    let correct_answer_element = $("#question-" + question_number + "-answers > .1");
+    let correct_answer_text = correct_answer_element.length > 0 ? correct_answer_element.text() : "Unknown";
+    
+    $("#feedback").append("<br/><strong>Your answer:</strong> " + selected_answer_text);
+    $("#feedback").append("<br/><strong>Correct answer:</strong> " + correct_answer_text);
+    $("#feedback").append("<br/>");
   }
 
   // Remove the click events from the answered question
@@ -3775,9 +4299,15 @@ function checkBestAnswer(e, load) {
 }
 
 function saveAnswerToHashMap(qid, type, score, max_score, other) {
-
-  window.db.answers.put({ qid: qid, date: Date(), type: type, score: score, max_score: max_score, other: other });
-
+  if (exam_mode) {
+    exam_answers[qid] = { score, max_score, correct: score === max_score };
+    // Save exam-specific answers with compound key
+    const examSpecificQid = `${current_exam_id}_${qid}`;
+    window.db.answers.put({ qid: examSpecificQid, date: Date(), type: type, score: score, max_score: max_score, other: other });
+  } else {
+    // Save regular answers
+    window.db.answers.put({ qid: qid, date: Date(), type: type, score: score, max_score: max_score, other: other });
+  }
   remote_store_synced = false;
 }
 

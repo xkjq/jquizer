@@ -59,6 +59,7 @@
   <!-- Gapps functionality removed -->
   <div id="filter-toggle"><button type="button" aria-keyshortcuts="Alt+O">+/- (<span class="hotkey" aria-hidden="true">o</span>ptions)</button></div>
   <div id="search-toggle"><button type="button" id="search-toggle-button" aria-keyshortcuts="Alt+G">search / <span class="hotkey" aria-hidden="true">g</span>oto</button></div>
+  <div id="exam-toggle"><button type="button" id="exam-toggle-button" aria-keyshortcuts="Alt+E">e<span class="hotkey" aria-hidden="true">x</span>am</button></div>
   <div id="options">
     <details id="ui-settings" class="ui-settings">
       <summary>UI settings</summary>
@@ -207,6 +208,37 @@
         <button id="goto-question-hide-button" type="button">+ hide</button>
       </div>
     </form>
+  </div>
+
+  <!-- Exam Creation menu -->
+  <div id="exam-menu" aria-hidden="true">
+    <button type="button" id="exam-close-button" aria-label="Close exam menu">&times;</button>
+    <form id="exam-form" onsubmit="return false;">
+      <label for="exam-num-questions" style="display:block;font-weight:600">Number of questions</label>
+      <input type="number" id="exam-num-questions" placeholder="e.g. 50" aria-label="Number of questions" min="1" max="1000" />
+      
+      <label for="exam-time-per-question" style="display:block;font-weight:600;margin-top:8px">Time per question (minutes)</label>
+      <input type="number" id="exam-time-per-question" placeholder="1.5" step="0.1" aria-label="Time per question" min="0.1" max="10" value="1.5" />
+      
+      <div style="margin: 8px 0;">
+        <input type="radio" id="exam-selection-filtered" name="exam-selection" value="filtered" checked />
+        <label for="exam-selection-filtered">Use current filters</label>
+      </div>
+      <div style="margin: 8px 0;">
+        <input type="radio" id="exam-selection-random" name="exam-selection" value="random" />
+        <label for="exam-selection-random">Random selection (balanced specialties)</label>
+      </div>
+      
+      <div class="action-row">
+        <button type="button" id="create-exam-button">Create Exam</button>
+        <button type="button" id="hide-exam-button">Hide</button>
+      </div>
+    </form>
+    <hr />
+    <div id="exam-management">
+      <h4>Exam Management</h4>
+      <div id="exam-list"></div>
+    </div>
   </div>
   <div id="score">
     <div id="score-percent"></div>
@@ -466,6 +498,42 @@
                 gotoHideBtn.addEventListener('click', function () {
                   searchMenu.classList.remove('show');
                   searchMenu.setAttribute('aria-hidden', 'true');
+                });
+              }
+
+              // Exam menu toggle handlers
+              const examToggleBtn = document.getElementById('exam-toggle-button');
+              const examMenu = document.getElementById('exam-menu');
+              const hideExamBtn = document.getElementById('hide-exam-button');
+
+              if (examToggleBtn && examMenu) {
+                examToggleBtn.addEventListener('click', function () {
+                  const isShown = examMenu.classList.toggle('show');
+                  examMenu.setAttribute('aria-hidden', String(!isShown));
+                  if (isShown) {
+                    if (typeof loadExamList === 'function') {
+                      loadExamList();
+                    }
+                    setTimeout(function () {
+                      const numInput = document.getElementById('exam-num-questions');
+                      if (numInput) numInput.focus();
+                    }, 10);
+                  }
+                });
+              }
+
+              if (hideExamBtn && examMenu) {
+                hideExamBtn.addEventListener('click', function () {
+                  examMenu.classList.remove('show');
+                  examMenu.setAttribute('aria-hidden', 'true');
+                });
+              }
+
+              const closeExamBtn = document.getElementById('exam-close-button');
+              if (closeExamBtn && examMenu) {
+                closeExamBtn.addEventListener('click', function () {
+                  examMenu.classList.remove('show');
+                  examMenu.setAttribute('aria-hidden', 'true');
                 });
               }
 
