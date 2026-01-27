@@ -65,6 +65,10 @@ var min_colour_diff = 0.6;
 
 let store = false;
 
+// Initialize global exam result variables
+window.viewing_past_results = false;
+window.past_exam_id = null;
+
 // Exam mode variables
 let exam_mode = false;
 let exam_questions = [];
@@ -75,8 +79,6 @@ let exam_timer_interval = null;
 let current_exam_id = null;
 let exam_review_mode = false;
 let exam_time_per_question = 1.5;
-let viewing_past_results = false;
-let past_exam_id = null;
 
 var db = new Dexie("user_interface");
 db.version(1).stores({
@@ -1404,7 +1406,7 @@ function loadExamList() {
 
 window.loadExamList = loadExamList;
 
-function reviewExam(examId) {
+function reviewExam(examId, startQuestionIndex = 0) {
   db.exams.get(examId).then(exam => {
     if (!exam) return;
     
@@ -1431,7 +1433,7 @@ function reviewExam(examId) {
     
     // Hide menu and start review
     $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
-    loadExamQuestion(0);
+    loadExamQuestion(startQuestionIndex);
     
     toastr.info('Reviewing completed exam');
   });
@@ -1680,7 +1682,7 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
   `;
   
   // Generate detailed question list
-  let detailsHtml = '<h3>Question Details</h3><div class="exam-results-questions">';
+  let detailsHtml = '<h3>Question Details</h3><p style="font-size: 14px; color: var(--text-color); margin: 0 0 10px 0;">Click on any question to jump to it for review.</p><div class="exam-results-questions">';
   exam_questions.forEach((qid, index) => {
     const questionData = questions[qid];
     const answerData = exam_answers[qid];
@@ -1714,7 +1716,7 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
     const questionText = questionData ? (questionData.question || 'Question text not available').substring(0, 100) + '...' : 'Question not found';
     
     detailsHtml += `
-      <div class="exam-results-question ${statusClass}">
+      <div class="exam-results-question ${statusClass}" data-question-index="${index}" style="cursor: pointer;" title="Click to jump to this question">
         <div class="question-header">
           <span class="question-number">Q${questionNumber}:</span>
           <span class="question-status">${statusText}</span>
@@ -1738,6 +1740,27 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
   }
   
   $('#exam-results-modal').addClass('show').attr('aria-hidden', 'false');
+  
+  // Add click handlers for jumping to questions
+  $('.exam-results-question').off('click').on('click', function() {
+    const questionIndex = parseInt($(this).data('question-index'));
+    if (!isNaN(questionIndex)) {
+      // Close the results modal
+      $('#exam-results-modal').removeClass('show').attr('aria-hidden', 'true');
+      
+      if (window.viewing_past_results && window.past_exam_id) {
+        // For past results, start review mode at the specific question
+        reviewExam(window.past_exam_id, questionIndex);
+      } else {
+        // For current exam results, just navigate to the question
+        loadQuestion(questionIndex, true);
+      }
+      
+      // Reset past results flags
+      window.viewing_past_results = false;
+      window.past_exam_id = null;
+    }
+  });
 }
 
 function viewExamResults(examId) {
@@ -1756,8 +1779,8 @@ function viewExamResults(examId) {
     exam_answers = exam.answers || {};
     
     // Set a flag to indicate we're viewing past results
-    viewing_past_results = true;
-    past_exam_id = examId;
+    window.viewing_past_results = true;
+    window.past_exam_id = examId;
     
     showExamResults(correct, total, totalTime, totalTime, true); // Show total time as both taken and allowed
     
