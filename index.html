@@ -240,6 +240,20 @@
       <div id="exam-list"></div>
     </div>
   </div>
+  <div id="exam-results-modal" aria-hidden="true">
+    <div class="exam-results-header">
+      <h2>Exam Results</h2>
+      <button type="button" id="exam-results-close-button" aria-label="Close results">&times;</button>
+    </div>
+    <div id="exam-results-content">
+      <div id="exam-results-summary"></div>
+      <div id="exam-results-details"></div>
+      <div class="exam-results-actions">
+        <button type="button" id="exam-results-review-button">Review Exam</button>
+        <button type="button" id="exam-results-return-button">Return to Quiz</button>
+      </div>
+    </div>
+  </div>
   <div id="score">
     <div id="score-percent"></div>
     <ul id="score-list"></ul>
@@ -537,7 +551,49 @@
                 });
               }
 
-              // Default unanswered navigation toggle: initialise from localStorage
+              // Exam results modal handlers
+              const examResultsModal = document.getElementById('exam-results-modal');
+              const examResultsCloseBtn = document.getElementById('exam-results-close-button');
+              const examResultsReviewBtn = document.getElementById('exam-results-review-button');
+              const examResultsReturnBtn = document.getElementById('exam-results-return-button');
+
+              if (examResultsCloseBtn && examResultsModal) {
+                examResultsCloseBtn.addEventListener('click', function () {
+                  examResultsModal.classList.remove('show');
+                  examResultsModal.setAttribute('aria-hidden', 'true');
+                  // Switch back to normal mode
+                  loadFilters();
+                  loadQuestion(0);
+                });
+              }
+
+              if (examResultsReviewBtn && examResultsModal) {
+                examResultsReviewBtn.addEventListener('click', function () {
+                  examResultsModal.classList.remove('show');
+                  examResultsModal.setAttribute('aria-hidden', 'true');
+                  // Start review mode - use past_exam_id if viewing past results, otherwise current_exam_id
+                  const examIdToReview = viewing_past_results ? past_exam_id : current_exam_id;
+                  reviewExam(examIdToReview);
+                  // Reset past results flags
+                  viewing_past_results = false;
+                  past_exam_id = null;
+                });
+              }
+
+              if (examResultsReturnBtn && examResultsModal) {
+                examResultsReturnBtn.addEventListener('click', function () {
+                  examResultsModal.classList.remove('show');
+                  examResultsModal.setAttribute('aria-hidden', 'true');
+                  // If not viewing past results (i.e., we just finished an active exam), switch back to normal mode
+                  if (!viewing_past_results) {
+                    loadFilters();
+                    loadQuestion(0);
+                  }
+                  // Reset past results flags
+                  viewing_past_results = false;
+                  past_exam_id = null;
+                });
+              }
               const defaultNavCheckbox = document.getElementById('default-unanswered-nav-button');
               const defaultNavKey = 'jquizer-default-unanswered';
               if (defaultNavCheckbox) {

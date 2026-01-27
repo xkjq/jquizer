@@ -74,6 +74,9 @@ let exam_end_time = null;
 let exam_timer_interval = null;
 let current_exam_id = null;
 let exam_review_mode = false;
+let exam_time_per_question = 1.5;
+let viewing_past_results = false;
+let past_exam_id = null;
 
 var db = new Dexie("user_interface");
 db.version(1).stores({
@@ -1302,6 +1305,7 @@ function createExam() {
   exam_mode = true;
   exam_answers = {};
   exam_start_time = new Date();
+  exam_time_per_question = timePerQuestion;
   exam_end_time = new Date(exam_start_time.getTime() + exam_questions.length * timePerQuestion * 60 * 1000);
 
   // Build hash map for exam
@@ -1379,6 +1383,9 @@ function loadExamList() {
         $buttons.append(
           $(document.createElement('button')).text('Review').click(() => reviewExam(exam.id))
         );
+        $buttons.append(
+          $(document.createElement('button')).text('View Results').css({ marginLeft: '8px' }).click(() => viewExamResults(exam.id))
+        );
       } else {
         $buttons.append(
           $(document.createElement('button')).text('Continue').click(() => continueExam(exam.id))
@@ -1414,6 +1421,7 @@ function reviewExam(examId) {
     exam_questions = exam.questions;
     exam_answers = exam.answers || {};
     current_exam_id = examId;
+    exam_time_per_question = exam.time_per_question;
     
     // Build hash map
     exam_hash_n_map = {};
@@ -1448,6 +1456,7 @@ function continueExam(examId) {
     exam_questions = exam.questions;
     exam_answers = exam.answers || {};
     current_exam_id = examId;
+    exam_time_per_question = exam.time_per_question;
     
     // Calculate remaining time
     const startTime = new Date(exam.date);
@@ -1613,6 +1622,10 @@ function endExam() {
       if (exam_answers[qid] && exam_answers[qid].correct) correct++;
     }
     
+    // Calculate time taken
+    const timeTaken = exam_start_time ? Math.round((new Date() - exam_start_time) / 1000 / 60) : 0;
+    const totalTime = exam_questions.length * (exam_time_per_question || 1.5);
+    
     // Save final score to database
     if (current_exam_id) {
       db.exams.update(current_exam_id, {
@@ -1621,15 +1634,139 @@ function endExam() {
       });
     }
     
-    toastr.info(`Exam ended! Score: ${correct}/${total}`);
+    // Show results modal
+    showExamResults(correct, total, timeTaken, totalTime, false);
   } else {
     exam_review_mode = false;
     toastr.info('Review ended');
+    // Switch back to normal mode
+    loadFilters();
+    loadQuestion(0);
+  }
+}
+
+function showExamResults(correct, total, timeTaken, totalTime, isPastResults = false) {
+  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+  
+  let timeDisplay;
+  if (isPastResults) {
+    timeDisplay = `
+    <div class="exam-results-stat">
+      <span class="exam-results-stat-label">Total Time Allowed:</span>
+      <span class="exam-results-stat-value">${totalTime} minutes</span>
+    </div>`;
+  } else {
+    timeDisplay = `
+    <div class="exam-results-stat">
+      <span class="exam-results-stat-label">Time Taken:</span>
+      <span class="exam-results-stat-value">${timeTaken} minutes</span>
+    </div>
+    <div class="exam-results-stat">
+      <span class="exam-results-stat-label">Total Time Allowed:</span>
+      <span class="exam-results-stat-value">${totalTime} minutes</span>
+    </div>`;
   }
   
-  // Switch back to normal mode
-  loadFilters();
-  loadQuestion(0);
+  const summaryHtml = `
+    <div class="exam-results-stat">
+      <span class="exam-results-stat-label">Score:</span>
+      <span class="exam-results-stat-value">${correct}/${total} (${percentage}%)</span>
+    </div>
+    ${timeDisplay}
+    <div class="exam-results-stat">
+      <span class="exam-results-stat-label">Questions Answered:</span>
+      <span class="exam-results-stat-value">${Object.keys(exam_answers).length}/${total}</span>
+    </div>
+  `;
+  
+  // Generate detailed question list
+  let detailsHtml = '<h3>Question Details</h3><div class="exam-results-questions">';
+  exam_questions.forEach((qid, index) => {
+    const questionData = questions[qid];
+    const answerData = exam_answers[qid];
+    const questionNumber = index + 1;
+    
+    let statusClass = 'unanswered';
+    let statusText = 'Not Answered';
+    let answerText = '';
+    
+    if (answerData) {
+      if (answerData.correct) {
+        statusClass = 'correct';
+        statusText = 'Correct';
+      } else {
+        statusClass = 'incorrect';
+        statusText = 'Incorrect';
+      }
+      
+      // Try to get the selected answer text from the saved data or questions
+      if (answerData.other && answerData.other.answer) {
+        answerText = ` - Selected: ${answerData.other.answer}`;
+      } else if (answerData.other && answerData.other.target_id) {
+        // Fallback: get answer text from the DOM element if available
+        const answerElement = $(`#${answerData.other.target_id}`);
+        if (answerElement.length > 0) {
+          answerText = ` - Selected: ${answerElement.text()}`;
+        }
+      }
+    }
+    
+    const questionText = questionData ? (questionData.question || 'Question text not available').substring(0, 100) + '...' : 'Question not found';
+    
+    detailsHtml += `
+      <div class="exam-results-question ${statusClass}">
+        <div class="question-header">
+          <span class="question-number">Q${questionNumber}:</span>
+          <span class="question-status">${statusText}</span>
+        </div>
+        <div class="question-text">${questionText}${answerText}</div>
+      </div>
+    `;
+  });
+  detailsHtml += '</div>';
+  
+  $('#exam-results-summary').html(summaryHtml);
+  $('#exam-results-details').html(detailsHtml);
+  
+  // Update button visibility based on context
+  if (isPastResults) {
+    $('#exam-results-review-button').show();
+    $('#exam-results-return-button').text('Close');
+  } else {
+    $('#exam-results-review-button').show();
+    $('#exam-results-return-button').text('Return to Quiz');
+  }
+  
+  $('#exam-results-modal').addClass('show').attr('aria-hidden', 'false');
+}
+
+function viewExamResults(examId) {
+  db.exams.get(examId).then(exam => {
+    if (!exam || !exam.score) {
+      toastr.error('Exam results not found');
+      return;
+    }
+    
+    const { correct, total } = exam.score;
+    // For completed exams, we don't have exact time taken, so we'll show the total allowed time
+    const totalTime = exam.num_questions * exam.time_per_question;
+    
+    // Temporarily set exam_answers for the results display
+    const originalExamAnswers = exam_answers;
+    exam_answers = exam.answers || {};
+    
+    // Set a flag to indicate we're viewing past results
+    viewing_past_results = true;
+    past_exam_id = examId;
+    
+    showExamResults(correct, total, totalTime, totalTime, true); // Show total time as both taken and allowed
+    
+    // Restore original exam_answers
+    exam_answers = originalExamAnswers;
+  }).catch(error => {
+    console.error('Error loading exam results:', error);
+    toastr.error('Failed to load exam results');
+  });
 }
 
 function setUpFilters() {
@@ -2544,11 +2681,31 @@ function loadQuestion(n, isExam = false) {
       // We handle the error above
     }).catch(() => { })
   } else {
-    $("#header").append(
-      $("<button id='end-exam-button'>").text(exam_review_mode ? "Exit Review" : "End Exam").click(function () {
-        endExam();
-      })
-    );
+    if (exam_review_mode) {
+      // In review mode, show both Exit Review and View Results buttons
+      const buttonContainer = $("<div>").css({ display: "inline-block" });
+      
+      buttonContainer.append(
+        $("<button id='end-exam-button'>").text("Exit Review").css({ marginRight: "8px" }).click(function () {
+          endExam();
+        })
+      );
+      
+      buttonContainer.append(
+        $("<button id='view-results-button'>").text("View Results").click(function () {
+          viewExamResults(current_exam_id);
+        })
+      );
+      
+      $("#header").append(buttonContainer);
+    } else {
+      // In active exam mode, show only End Exam button
+      $("#header").append(
+        $("<button id='end-exam-button'>").text("End Exam").click(function () {
+          endExam();
+        })
+      );
+    }
   }
 
   // Set up the question details block
@@ -3100,6 +3257,11 @@ function loadQuestion(n, isExam = false) {
       // }
       if (ans != undefined) {
         checkAnswer(ans, true);
+        // In exam mode, also show the selected feedback
+        if (exam_mode && !exam_review_mode && ans.other && ans.other.target_id) {
+          let selected_text = $("#" + ans.other.target_id).text();
+          $("#feedback").append("Selected: " + selected_text);
+        }
       }
 
     });
@@ -3352,16 +3514,21 @@ function checkAnswer(ans, load) {
             answer: return_value.a
           });
         }
-        // Show selected answer instead of auto-advancing
+        // Remove selected class from all answers first
+        $("#question-" + return_value.q + "-answers li").removeClass("selected");
+        // Add selected class to the newly chosen answer
+        $("#" + return_value.t).addClass("selected");
+        // Show selected answer
         let selected_text = $("#" + return_value.t).text();
-        $("#feedback").append("Selected: " + selected_text);
+        $("#feedback").empty().append("Selected: " + selected_text);
         break;
       default:
         // For other types, record answer and show message
-        $("#feedback").append("Answer recorded.");
+        $("#feedback").empty().append("Answer recorded.");
         break;
     }
     
+    // Don't remove click events in exam mode - allow answer changes
     return;
   }
 
@@ -3375,7 +3542,7 @@ function checkAnswer(ans, load) {
         saveAnswerToHashMap(current_question_uid, "sba", return_value.score, 1, {
           target_id: return_value.t,
           question_number: return_value.q,
-          answer: return_value.a
+          answer: return_value.text
         });
       }
       break;
@@ -4218,13 +4385,15 @@ function checkBestAnswer(e, load) {
     $("#feedback").append("<br/>");
   }
 
-  // Remove the click events from the answered question
-  $("#question-" + question_number + "-answers")
-    .removeClass("allow-hover")
-    .children()
-    .each(function (index, e) {
-      $(e).off();
-    });
+  // Remove the click events from the answered question (but not in exam mode)
+  if (!(exam_mode && !exam_review_mode)) {
+    $("#question-" + question_number + "-answers")
+      .removeClass("allow-hover")
+      .children()
+      .each(function (index, e) {
+        $(e).off();
+      });
+  }
 
   // Add search links to answers
   $(".answer-list li").each(function (ind) {
@@ -4293,6 +4462,7 @@ function checkBestAnswer(e, load) {
     t: target_id,
     q: question_number,
     a: answer,
+    text: $("#" + target_id).text(),
     s: save_answer,
     score: score
   };
