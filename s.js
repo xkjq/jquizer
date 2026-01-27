@@ -1748,6 +1748,11 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
       // Close the results modal
       $('#exam-results-modal').removeClass('show').attr('aria-hidden', 'true');
       
+      // Restore exam state if viewing past results
+      if (typeof window.restoreExamState === 'function') {
+        window.restoreExamState();
+      }
+      
       if (window.viewing_past_results && window.past_exam_id) {
         // For past results, start review mode at the specific question
         reviewExam(window.past_exam_id, questionIndex);
@@ -1755,10 +1760,6 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
         // For current exam results, just navigate to the question
         loadQuestion(questionIndex, true);
       }
-      
-      // Reset past results flags
-      window.viewing_past_results = false;
-      window.past_exam_id = null;
     }
   });
 }
@@ -1774,18 +1775,34 @@ function viewExamResults(examId) {
     // For completed exams, we don't have exact time taken, so we'll show the total allowed time
     const totalTime = exam.num_questions * exam.time_per_question;
     
-    // Temporarily set exam_answers for the results display
+    // Load cached questions for reproducibility if available
+    if (exam.cached_questions) {
+      exam.cached_questions.forEach(cached => {
+        questions[cached.id] = cached.data;
+      });
+    }
+    
+    // Store original state
+    const originalExamQuestions = exam_questions;
     const originalExamAnswers = exam_answers;
+    
+    // Set exam state for results display
+    exam_questions = exam.questions || [];
     exam_answers = exam.answers || {};
     
     // Set a flag to indicate we're viewing past results
     window.viewing_past_results = true;
     window.past_exam_id = examId;
     
-    showExamResults(correct, total, totalTime, totalTime, true); // Show total time as both taken and allowed
+    // Store restoration function to be called when modal closes
+    window.restoreExamState = function() {
+      exam_questions = originalExamQuestions;
+      exam_answers = originalExamAnswers;
+      window.viewing_past_results = false;
+      window.past_exam_id = null;
+    };
     
-    // Restore original exam_answers
-    exam_answers = originalExamAnswers;
+    showExamResults(correct, total, totalTime, totalTime, true); // Show total time as both taken and allowed
   }).catch(error => {
     console.error('Error loading exam results:', error);
     toastr.error('Failed to load exam results');
@@ -2136,6 +2153,8 @@ async function loadFilters() {
     // ignore in environments where window is not writable
   }
 }
+
+window.loadFilters = loadFilters;
 
 function getQuestionDataByNumber(n) {
   let qid = filtered_questions[n];
@@ -4537,3 +4556,5 @@ function addAnatomySearchLinks(target, ans) {
         .text("R")
     );
 }
+
+window.loadQuestion = loadQuestion;

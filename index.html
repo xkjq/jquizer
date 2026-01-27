@@ -561,6 +561,10 @@
                 examResultsCloseBtn.addEventListener('click', function () {
                   examResultsModal.classList.remove('show');
                   examResultsModal.setAttribute('aria-hidden', 'true');
+                  // Restore exam state if viewing past results
+                  if (typeof window.restoreExamState === 'function') {
+                    window.restoreExamState();
+                  }
                   // Switch back to normal mode
                   loadFilters();
                   loadQuestion(0);
@@ -571,14 +575,15 @@
                 examResultsReviewBtn.addEventListener('click', function () {
                   examResultsModal.classList.remove('show');
                   examResultsModal.setAttribute('aria-hidden', 'true');
+                  // Restore exam state if viewing past results
+                  if (typeof window.restoreExamState === 'function') {
+                    window.restoreExamState();
+                  }
                   // Start review mode - use past_exam_id if viewing past results, otherwise current_exam_id
                   const viewingPastResults = typeof window.viewing_past_results !== 'undefined' ? window.viewing_past_results : false;
                   const pastExamId = typeof window.past_exam_id !== 'undefined' ? window.past_exam_id : null;
                   const examIdToReview = viewingPastResults ? pastExamId : current_exam_id;
                   reviewExam(examIdToReview);
-                  // Reset past results flags
-                  if (typeof window.viewing_past_results !== 'undefined') window.viewing_past_results = false;
-                  if (typeof window.past_exam_id !== 'undefined') window.past_exam_id = null;
                 });
               }
 
@@ -586,15 +591,16 @@
                 examResultsReturnBtn.addEventListener('click', function () {
                   examResultsModal.classList.remove('show');
                   examResultsModal.setAttribute('aria-hidden', 'true');
+                  // Restore exam state if viewing past results
+                  if (typeof window.restoreExamState === 'function') {
+                    window.restoreExamState();
+                  }
                   // If not viewing past results (i.e., we just finished an active exam), switch back to normal mode
                   const viewingPastResults = typeof window.viewing_past_results !== 'undefined' ? window.viewing_past_results : false;
                   if (!viewingPastResults) {
                     loadFilters();
                     loadQuestion(0);
                   }
-                  // Reset past results flags
-                  if (typeof window.viewing_past_results !== 'undefined') window.viewing_past_results = false;
-                  if (typeof window.past_exam_id !== 'undefined') window.past_exam_id = null;
                 });
               }
               const defaultNavCheckbox = document.getElementById('default-unanswered-nav-button');
