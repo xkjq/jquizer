@@ -576,14 +576,14 @@
                 examResultsReviewBtn.addEventListener('click', function () {
                   examResultsModal.classList.remove('show');
                   examResultsModal.setAttribute('aria-hidden', 'true');
-                  // Restore exam state if viewing past results
-                  if (typeof window.restoreExamState === 'function') {
-                    window.restoreExamState();
-                  }
                   // Start review mode - use past_exam_id if viewing past results, otherwise current_exam_id
                   const viewingPastResults = typeof window.viewing_past_results !== 'undefined' ? window.viewing_past_results : false;
                   const pastExamId = typeof window.past_exam_id !== 'undefined' ? window.past_exam_id : null;
-                  const examIdToReview = viewingPastResults ? pastExamId : current_exam_id;
+                  const examIdToReview = viewingPastResults ? pastExamId : window.current_exam_id;
+                  // Restore exam state after getting the exam ID
+                  if (typeof window.restoreExamState === 'function') {
+                    window.restoreExamState();
+                  }
                   reviewExam(examIdToReview);
                 });
               }
