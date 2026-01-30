@@ -17,7 +17,7 @@
 *********************************************************************/
 //Versions
 // import * as loadQuestion from "./loadQuestion.js"
-import * as dicomViewer from "./dicomViewer.js"
+// import * as dicomViewer from "./dicomViewer.js"
 
 var quiz_version = "0.1";
 
@@ -81,48 +81,29 @@ let exam_review_mode = false;
 let exam_time_per_question = 1.5;
 
 var db = new Dexie("user_interface");
-var db = new Dexie("user_interface");
 db.version(1).stores({
-  //mouse_bindings: "button,mode,tool",
   element_position: "[type+element],x,y",
   answers: "qid,date,type,score,max_score,other",
   flagged: "&qid",
-  //question_cache: "qid,date,type,score,max_score,other"
-});
-db.version(2).stores({
-  //mouse_bindings: "button,mode,tool",
-  element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other",
-  flagged: "&qid",
-  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
-});
-db.version(3).stores({
-  //mouse_bindings: "button,mode,tool",
-  element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other",
-  flagged: "&qid",
-  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
-});
-db.version(4).stores({
-  //mouse_bindings: "button,mode,tool",
-  element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other",
-  flagged: "&qid",
-  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
-});
-db.version(5).stores({
-  //mouse_bindings: "button,mode,tool",
-  element_position: "[type+element],x,y",
-  answers: "qid,date,type,score,max_score,other",
-  flagged: "&qid",
-  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score,cached_questions"
+  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score,cached_questions",
+  cached_questions: "&qid,source"
 });
 
-db.open().catch(error => {
+db.open().then(() => {
+  // Check if cached_questions table exists
+  if (!db.cached_questions) {
+    console.warn('cached_questions table missing, resetting database');
+    return Dexie.delete('user_interface').then(() => {
+      console.log('Database deleted. Reloading page...');
+      window.location.reload();
+    });
+  }
+}).catch(error => {
   console.error('Database open error:', error);
   // If we get an upgrade error or constraint error, try to delete and recreate the database
   if (error.name === 'UpgradeError' || 
       error.name === 'ConstraintError' ||
+      error.name === 'VersionError' ||
       error.message.includes('Dexie specification of currently installed DB version is missing') ||
       error.message.includes('Index named') && error.message.includes('already exists')) {
     console.warn('Database upgrade failed. Attempting to reset database...');
@@ -279,23 +260,104 @@ function buildQuestionList(data, textStatus) {
       }
     });
   });
+
+  // Build cached questions management
+  buildCachedQuestionsManagement();
 }
 
-function loadExtraQuestions(q) {
-  fetchJsonLenient(q, loadData, function () {
-    toastr.warning(
-      "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
-    );
-  }).then(function () {
-    toastr.info(Object.size(questions) + " questions loaded");
-  }).catch(function () {
-    // ignore
+function buildCachedQuestionsManagement() {
+  const $container = $("#cached-questions-management");
+  $container.empty();
+
+  db.cached_questions.toArray().then(allCached => {
+    if (allCached.length === 0) {
+      $container.append('<p>No cached questions.</p>');
+      return;
+    }
+
+    const sources = {};
+    allCached.forEach(cq => {
+      if (!sources[cq.source]) sources[cq.source] = [];
+      sources[cq.source].push(cq);
+    });
+
+    for (let source in sources) {
+      const count = sources[source].length;
+      const $div = $(document.createElement('div')).css({margin: '4px 0', display: 'flex', alignItems: 'center'});
+      
+      $div.append($(document.createElement('span')).text(source.replace(/_/g, ' ') + ' (' + count + ' questions)'));
+      
+      const $deleteBtn = $(document.createElement('button')).text('Delete').css({marginLeft: '10px', fontSize: 'smaller'});
+      $deleteBtn.click(function() {
+        if (confirm('Delete all cached questions from ' + source + '?')) {
+          db.cached_questions.where('source').equals(source).delete().then(() => {
+            toastr.info('Deleted cached questions from ' + source);
+            buildCachedQuestionsManagement(); // Refresh
+          });
+        }
+      });
+      $div.append($deleteBtn);
+      
+      $container.append($div);
+    }
+  }).catch(err => {
+    console.warn('Error building cached questions management', err);
+    $container.append('<p>Error loading cached questions.</p>');
   });
 }
 
-async function loadData(data, textStatus) {
+function loadExtraQuestions(q) {
+  const source = q.split('/')[1];
+  
+  // First, try to load from cache for immediate display
+  db.cached_questions.where('source').equals(source).toArray().then(cachedQuestions => {
+    if (cachedQuestions.length > 0) {
+      const data = {};
+      cachedQuestions.forEach(cq => data[cq.qid] = cq.data);
+      loadData(data, null); // Don't re-cache
+      toastr.info("Loaded " + cachedQuestions.length + " questions from cache");
+      
+      // Try to update cache in background
+      fetchJsonLenient(q, function(newData) {
+        loadData(newData, source); // This will cache the new data
+      }, function() {
+        // Network failed, but we have cache
+      });
+    } else {
+      // No cache, fetch from network
+      fetchJsonLenient(q, function(data) {
+        loadData(data, source);
+        toastr.info(Object.size(data) + " questions loaded");
+      }, function() {
+        toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
+      });
+    }
+  }).catch(() => {
+    // Cache query failed, try network
+    fetchJsonLenient(q, function(data) {
+      loadData(data, source);
+      toastr.info(Object.size(data) + " questions loaded");
+    }, function() {
+      toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
+    });
+  });
+}
+
+async function loadData(data, source) {
   console.log('loadData: start');
   $.extend(questions, data);
+  // Store individual questions in cache
+  if (source) {
+    for (let qid in data) {
+      try {
+        await db.cached_questions.put({qid: qid, source: source, data: data[qid], last_updated: new Date()});
+      } catch (e) {
+        console.warn('Failed to cache question', qid, e);
+      }
+    }
+    // Refresh cached questions management UI
+    buildCachedQuestionsManagement();
+  }
   // Ensure filters and filtered_questions are fully loaded before building the score list
   try {
     await setUpFilters();
@@ -548,19 +610,155 @@ $(document).ready(function () {
     console.log("Unable to load question list");
   }).catch(function () { /* ignore */ });
 
-  // Load previous question set
-  let questions_to_load = default_question_set;
-  store.exists("current_question_set", function (exists) {
-    console.log("load question set");
-    if (exists) {
-      store.get("current_question_set", function (obj) {
-        let n = obj["value"];
-        questions_to_load = n;
-      });
-    } else {
-      //let questions_to_load = default_question_set;
+  // Load cached questions into the system
+  db.cached_questions.toArray().then(cached => {
+    if (cached.length > 0) {
+      const data = {};
+      cached.forEach(cq => data[cq.qid] = cq.data);
+      loadData(data, null); // Don't cache again
+      toastr.info("Loaded " + cached.length + " cached questions");
+    }
+  }).catch(err => {
+    console.warn('Error loading cached questions', err);
+  });
+
+  $("#loading").removeClass("show");
+
+  $("#filter-toggle, #hide-options-button").click(function () {
+    $("#options").slideToggle("slow");
+  });
+
+  $("#question-details-toggle").click(function () {
+    const container = $("#question-details-toggle");
+    if (container.hasClass('disabled')) {
+      toastr.info('No question open');
+      return;
+    }
+    $("#question-details").slideToggle("slow");
+  });
+
+  // Prevent any anchor inside the question-details-toggle from doing anything while disabled
+  $(document).on('click', '#question-details-toggle a', function (e) {
+    const container = $(this).closest('#question-details-toggle');
+    if (container.hasClass('disabled')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
     }
   });
+
+  // Gapps removed: hide remote-server button and disable handler
+  $("#load-remote-server-button").remove();
+
+  $("#score-toggle").click(function () {
+    const container = $("#score-toggle");
+    if (container.hasClass('disabled')) {
+      toastr.info('No questions loaded');
+      return;
+    }
+    // Toggle the score panel and persist the visible state in localStorage
+    $("#score").slideToggle("slow", function () {
+      try {
+        const visible = $(this).is(":visible");
+        localStorage.setItem('score_open', visible ? '1' : '0');
+      } catch (e) {
+        console.warn('Unable to persist score_open', e);
+      }
+    });
+  });
+
+  $("#about-toggle, #about-close").click(function () {
+    $("#about").slideToggle("slow");
+  });
+  // Stats dialog handlers
+  $("#stats-toggle").click(function () {
+    $("#stats").slideToggle("slow");
+    // build stats each time to reflect current answers
+    buildStatsBySpecialty();
+  });
+  $("#stats-close").click(function () {
+    $("#stats").slideToggle("slow");
+  });
+
+  $("#goto-question-button").click(function () {
+    let val = $("#goto-question-input").val();
+    if (val && !isNaN(val)) {
+      loadQuestion(parseInt($("#goto-question-input").val()) - 1);
+      $("#goto-question-input").blur();
+      // Close the search/goto overlay so the user returns to the question view
+      try {
+        $("#search-menu").removeClass('show').attr('aria-hidden', 'true');
+      } catch (e) { /* ignore */ }
+    } else {
+      toastr.warning("Invalid question.");
+    }
+  });
+
+  $("#goto-question-hide-button").click(function () {
+    //duplicate stuff....
+    let val = $("#goto-question-input").val();
+    if (val && !isNaN(val)) {
+      loadQuestion(parseInt($("#goto-question-input").val()) - 1);
+      $("#goto-question-input").blur();
+    } else {
+      toastr.warning("Invalid question.");
+    }
+    $("#goto-question-input").blur();
+    // Ensure the search/goto overlay is closed after navigating
+    try {
+      $("#search-menu").removeClass('show').attr('aria-hidden', 'true');
+    } catch (e) { /* ignore */ }
+  });
+
+  $("#search-button").click(function () {
+    startSearch($("#search-input").val());
+    $("#search-input").blur();
+  });
+
+  $("#create-exam-button").click(function () {
+    createExam();
+  });
+
+  $("#delete-answers-button").click(function () {
+    resetAnswers();
+  });
+
+  $("#save-answers-button").click(function () {
+    saveAnswersAsFile();
+  });
+
+  $("#unload-questions-button").click(function () {
+    // Reset all variables
+    questions = {};
+    filtered_questions = [];
+    hash_n_map = {};
+    current_question_uid = 0;
+    setUpFilters();
+    try {
+      const $qToggle = $("#question-details-toggle");
+      $qToggle.addClass('disabled');
+      $qToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
+    } catch (e) { /* ignore */ }
+    try {
+      const $scoreToggle = $("#score-toggle");
+      $scoreToggle.addClass('disabled');
+      $scoreToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
+    } catch (e) { /* ignore */ }
+  });
+
+  $("#reset-app-button").click(function () {
+    resetApp();
+  });
+
+  $("#answers-file").on("change", handleAnswersFileSelect);
+
+  $("#questions-file").on("change", handleQuestionsFileSelect);
+
+  progress = document.querySelector(".percent");
+
+  //$(document).keypress(keyPress);
+  $(document).keydown(keyDownHandler);
+  $(document).keyup(keyUpHandler);
 
   // Normalize score list items that may have inline background-color styles
   // Convert inline background-color into a border color and remove the background
@@ -617,27 +815,7 @@ $(document).ready(function () {
   });
 
   //$.getJSON("../sbas/question/json/all", loadData).fail(function(jqxhr, textStatus, error) {
-  fetchJsonLenient(questions_to_load, loadData, function () {
-    toastr.warning(
-      "Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?"
-    );
-  })
-    .then(function () {
-      toastr.info(Object.size(questions) + " questions loaded");
-      try {
-        // If questions were loaded during initial page load, ensure the options
-        // panel is closed so the user sees the quiz content immediately.
-        if (Object.size(questions) && Object.size(questions) > 0) {
-          $("#options").hide();
-        }
-      } catch (e) {
-        console.warn('Unable to auto-close options on load', e);
-      }
-    })
-    .catch(function () {
-      // ignore
-    })
-    .finally(function () {
+  // Autoload removed - questions loaded on demand
       $("#loading").removeClass("show");
 
       $("#filter-toggle, #hide-options-button").click(function () {
@@ -827,7 +1005,6 @@ $(document).ready(function () {
       return confirmationMessage; //Webkit, Safari, Chrome
     }
   });
-});
 
 // Track whether we've restored the score panel state from storage to avoid
 // repeatedly forcing visibility during subsequent rebuilds.
@@ -942,6 +1119,7 @@ async function resetApp() {
     if (db && db.flagged) await db.flagged.clear();
     if (db && db.element_position) await db.element_position.clear();
     if (db && db.exams) await db.exams.clear();
+    if (db && db.cached_questions) await db.cached_questions.clear();
   } catch (err) {
     console.warn('Error clearing IndexedDB tables', err);
   }
