@@ -290,9 +290,38 @@ function buildCachedQuestionsManagement() {
       const $deleteBtn = $(document.createElement('button')).text('Delete').css({marginLeft: '10px', fontSize: 'smaller'});
       $deleteBtn.click(function() {
         if (confirm('Delete all cached questions from ' + source + '?')) {
-          db.cached_questions.where('source').equals(source).delete().then(() => {
-            toastr.info('Deleted cached questions from ' + source);
-            buildCachedQuestionsManagement(); // Refresh
+          // First get the qids for this source, then delete from cache and memory
+          db.cached_questions.where('source').equals(source).toArray().then(cachedQuestions => {
+            const qidsToRemove = cachedQuestions.map(cq => cq.qid);
+            
+            // Remove from IndexedDB cache
+            db.cached_questions.where('source').equals(source).delete().then(() => {
+              // Also remove from memory
+              qidsToRemove.forEach(qid => {
+                delete questions[qid];
+              });
+              
+              // Update filtered_questions to remove deleted questions
+              filtered_questions = filtered_questions.filter(qid => !qidsToRemove.includes(qid));
+              
+              // Reset current question if it was deleted
+              if (qidsToRemove.includes(current_question_uid)) {
+                current_question_uid = filtered_questions.length > 0 ? filtered_questions[0] : 0;
+              }
+              
+              toastr.info('Deleted cached questions from ' + source + ' and removed from memory');
+              buildCachedQuestionsManagement(); // Refresh
+              
+              // Rebuild UI if questions were removed
+              if (qidsToRemove.length > 0) {
+                setUpFilters();
+                buildActiveScoreList();
+                // If current question was deleted, load the first available question
+                if (filtered_questions.length > 0 && !questions[current_question_uid]) {
+                  loadQuestion(filtered_questions[0]);
+                }
+              }
+            });
           });
         }
       });
@@ -817,11 +846,11 @@ $(document).ready(function () {
   // Autoload removed - questions loaded on demand
       $("#loading").removeClass("show");
 
-      $("#filter-toggle, #hide-options-button").click(function () {
+      $("#filter-toggle, #hide-options-button").off('click').on('click', function () {
         $("#options").slideToggle("slow");
       });
 
-      $("#question-details-toggle").click(function () {
+      $("#question-details-toggle").off('click').on('click', function () {
         const container = $("#question-details-toggle");
         if (container.hasClass('disabled')) {
           toastr.info('No question open');
@@ -843,7 +872,7 @@ $(document).ready(function () {
       // Gapps removed: hide remote-server button and disable handler
       $("#load-remote-server-button").remove();
 
-      $("#score-toggle").click(function () {
+      $("#score-toggle").off('click').on('click', function () {
         const container = $("#score-toggle");
         if (container.hasClass('disabled')) {
           toastr.info('No questions loaded');
@@ -860,20 +889,20 @@ $(document).ready(function () {
         });
       });
 
-      $("#about-toggle, #about-close").click(function () {
+      $("#about-toggle, #about-close").off('click').on('click', function () {
         $("#about").slideToggle("slow");
       });
       // Stats dialog handlers
-      $("#stats-toggle").click(function () {
+      $("#stats-toggle").off('click').on('click', function () {
         $("#stats").slideToggle("slow");
         // build stats each time to reflect current answers
         buildStatsBySpecialty();
       });
-      $("#stats-close").click(function () {
+      $("#stats-close").off('click').on('click', function () {
         $("#stats").slideToggle("slow");
       });
 
-      $("#goto-question-button").click(function () {
+      $("#goto-question-button").off('click').on('click', function () {
         let val = $("#goto-question-input").val();
         if (val && !isNaN(val)) {
           loadQuestion(parseInt($("#goto-question-input").val()) - 1);
@@ -887,7 +916,7 @@ $(document).ready(function () {
         }
       });
 
-      $("#goto-question-hide-button").click(function () {
+      $("#goto-question-hide-button").off('click').on('click', function () {
         //duplicate stuff....
         let val = $("#goto-question-input").val();
         if (val && !isNaN(val)) {
@@ -903,37 +932,21 @@ $(document).ready(function () {
         } catch (e) { /* ignore */ }
       });
 
-      $("#search-button").click(function () {
+      $("#search-button").off('click').on('click', function () {
         startSearch($("#search-input").val());
         $("#search-input").blur();
       });
 
-      $("#create-exam-button").click(function () {
+      $("#create-exam-button").off('click').on('click', function () {
         createExam();
       });
 
-      $("#delete-answers-button").click(function () {
+      $("#delete-answers-button").off('click').on('click', function () {
         resetAnswers();
       });
 
-      $("#save-answers-button").click(function () {
+      $("#save-answers-button").off('click').on('click', function () {
         saveAnswersAsFile();
-      });
-
-      $("#unload-questions-button").click(function () {
-        // Reset all variables
-        questions = {};
-        filtered_questions = [];
-        hash_n_map = {};
-        current_question_uid = 0;
-        setUpFilters();
-        try {
-          const $qToggle = $("#question-details-toggle");
-          $qToggle.addClass('disabled');
-          $qToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
-        } catch (e) {
-          console.warn('Unable to update question-details-toggle disabled state on unload', e);
-        }
       });
 
       $("#toggle-css").click(function () {
@@ -959,7 +972,7 @@ $(document).ready(function () {
             // Do what should be done next...
           });
       });
-      $("#reset-app-button").click(function () {
+      $("#reset-app-button").off('click').on('click', function () {
         resetApp();
       });
 
@@ -970,15 +983,15 @@ $(document).ready(function () {
         loadQuestion(0);
       });
 
-      $("#answers-file").on("change", handleAnswersFileSelect);
+      $("#answers-file").off("change").on("change", handleAnswersFileSelect);
 
-      $("#questions-file").on("change", handleQuestionsFileSelect);
+      $("#questions-file").off("change").on("change", handleQuestionsFileSelect);
 
       progress = document.querySelector(".percent");
 
       //$(document).keypress(keyPress);
-      $(document).keydown(keyDownHandler);
-      $(document).keyup(keyUpHandler);
+      $(document).off('keydown').on('keydown', keyDownHandler);
+      $(document).off('keyup').on('keyup', keyUpHandler);
     });
 
   //loadAnswersFromStorage();
