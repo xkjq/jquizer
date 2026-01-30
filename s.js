@@ -757,22 +757,46 @@ $(document).ready(function () {
   });
 
   $("#unload-questions-button").off('click').on('click', function () {
-    // Reset all variables
-    questions = {};
-    filtered_questions = [];
-    hash_n_map = {};
-    current_question_uid = 0;
-    setUpFilters();
-    try {
-      const $qToggle = $("#question-details-toggle");
-      $qToggle.addClass('disabled');
-      $qToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
-    } catch (e) { /* ignore */ }
-    try {
-      const $scoreToggle = $("#score-toggle");
-      $scoreToggle.addClass('disabled');
-      $scoreToggle.find('button').prop('disabled', true).attr('aria-disabled', 'true');
-    } catch (e) { /* ignore */ }
+    if (confirm('Clear all cached questions from all sources? This will remove them from both cache and memory.')) {
+      // Get all cached questions
+      db.cached_questions.toArray().then(allCached => {
+        if (allCached.length === 0) {
+          toastr.info('No cached questions to clear');
+          return;
+        }
+        
+        const qidsToRemove = allCached.map(cq => cq.qid);
+        
+        // Clear all cached questions from IndexedDB
+        db.cached_questions.clear().then(() => {
+          // Also remove from memory
+          qidsToRemove.forEach(qid => {
+            delete questions[qid];
+          });
+          
+          // Update filtered_questions to remove deleted questions
+          filtered_questions = filtered_questions.filter(qid => !qidsToRemove.includes(qid));
+          
+          // Reset current question if it was deleted
+          if (qidsToRemove.includes(current_question_uid)) {
+            current_question_uid = filtered_questions.length > 0 ? filtered_questions[0] : 0;
+          }
+          
+          toastr.info('Cleared all ' + allCached.length + ' cached questions from all sources');
+          buildCachedQuestionsManagement(); // Refresh the empty management UI
+          
+          // Rebuild UI if questions were removed
+          if (qidsToRemove.length > 0) {
+            setUpFilters();
+            buildActiveScoreList();
+            // If current question was deleted, load the first available question
+            if (filtered_questions.length > 0 && !questions[current_question_uid]) {
+              loadQuestion(filtered_questions[0]);
+            }
+          }
+        });
+      });
+    }
   });
 
   $("#reset-app-button").off('click').on('click', function () {
@@ -1576,6 +1600,7 @@ function createExam() {
 
   // Hide the exam menu
   $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+  $("#exam-backdrop").removeClass('show');
 
   // Start the timer
   startExamTimer();
@@ -1688,6 +1713,7 @@ function reviewExam(examId, startQuestionIndex = 0) {
     
     // Hide menu and start review
     $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+    $("#exam-backdrop").removeClass('show');
     loadExamQuestion(startQuestionIndex);
     
     toastr.info('Reviewing completed exam');
@@ -1745,6 +1771,7 @@ function continueExam(examId) {
     
     // Hide menu and start exam
     $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+    $("#exam-backdrop").removeClass('show');
     
     // Start timer if time remains
     if (remainingMs > 0) {

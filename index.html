@@ -167,14 +167,14 @@
       </div>
     </div>
     <hr />
-    <button type="submit" id="unload-questions-button" title="Unload all questions">
-      Unload Questions
-    </button>
     <hr />
     <div id="extra-questions"></div>
     <hr />
     <h4>Cached Questions:</h4>
     <div id="cached-questions-management"></div>
+    <button type="submit" id="unload-questions-button" title="Clear all cached questions">
+      Clear All Cached Questions
+    </button>
     <hr />
     <hr />
     <button id="reset-app-button" type="button" title="Reset app (delete all local data)">
@@ -215,6 +215,7 @@
   </div>
 
   <!-- Exam Creation menu -->
+  <div id="exam-backdrop" class="modal-backdrop"></div>
   <div id="exam-menu" aria-hidden="true">
     <button type="button" id="exam-close-button" aria-label="Close exam menu">&times;</button>
     <form id="exam-form" onsubmit="return false;">
@@ -522,12 +523,20 @@
               // Exam menu toggle handlers
               const examToggleBtn = document.getElementById('exam-toggle-button');
               const examMenu = document.getElementById('exam-menu');
+              const examBackdrop = document.getElementById('exam-backdrop');
               const hideExamBtn = document.getElementById('hide-exam-button');
 
               if (examToggleBtn && examMenu) {
                 examToggleBtn.addEventListener('click', function () {
                   const isShown = examMenu.classList.toggle('show');
                   examMenu.setAttribute('aria-hidden', String(!isShown));
+                  if (examBackdrop) {
+                    if (isShown) {
+                      examBackdrop.classList.add('show');
+                    } else {
+                      examBackdrop.classList.remove('show');
+                    }
+                  }
                   if (isShown) {
                     if (typeof loadExamList === 'function') {
                       loadExamList();
@@ -544,6 +553,9 @@
                 hideExamBtn.addEventListener('click', function () {
                   examMenu.classList.remove('show');
                   examMenu.setAttribute('aria-hidden', 'true');
+                  if (examBackdrop) {
+                    examBackdrop.classList.remove('show');
+                  }
                 });
               }
 
@@ -552,6 +564,9 @@
                 closeExamBtn.addEventListener('click', function () {
                   examMenu.classList.remove('show');
                   examMenu.setAttribute('aria-hidden', 'true');
+                  if (examBackdrop) {
+                    examBackdrop.classList.remove('show');
+                  }
                 });
               }
 
