@@ -72,6 +72,7 @@ window.past_exam_id = null;
 // Exam mode variables
 let exam_mode = false;
 let exam_questions = [];
+let exam_questions_data = {}; // Separate storage for exam question data
 let exam_answers = {};
 let exam_start_time = null;
 let exam_end_time = null;
@@ -79,6 +80,7 @@ let exam_timer_interval = null;
 window.current_exam_id = null;
 let exam_review_mode = false;
 let exam_time_per_question = 1.5;
+let current_exam_question_index = 0;
 
 var db = new Dexie("user_interface");
 db.version(1).stores({
@@ -114,6 +116,88 @@ db.open().then(() => {
   }
   throw error;
 });
+
+// Exam state persistence functions
+function saveExamState() {
+  if (!exam_mode || !window.current_exam_id) return;
+  
+  try {
+    // Update the current exam record with session state
+    db.exams.update(window.current_exam_id, {
+      session_active: true,
+      current_question_index: current_exam_question_index,
+      last_updated: new Date().toISOString()
+    }).catch(err => {
+      console.warn('Failed to save exam session state:', err);
+    });
+  } catch (err) {
+    console.warn('Failed to save exam state:', err);
+  }
+}
+
+function deactivateAllExamSessions() {
+  return db.exams.where('session_active').equals(true).modify({
+    session_active: false,
+    current_question_index: undefined,
+    last_updated: undefined
+  });
+}
+
+function restoreExamState() {
+  return db.exams.where('session_active').equals(true).first().then(exam => {
+    if (!exam) return false;
+    
+    // Load cached questions for reproducibility
+    if (exam.cached_questions) {
+      exam_questions_data = {}; // Clear any previous exam data
+      exam.cached_questions.forEach(cached => {
+        exam_questions_data[cached.id] = cached.data;
+      });
+    }
+    
+    // Restore exam state
+    exam_mode = true;
+    exam_review_mode = false; // Active sessions are never in review mode
+    exam_questions = exam.questions;
+    exam_answers = exam.answers || {};
+    window.current_exam_id = exam.id;
+    exam_time_per_question = exam.time_per_question;
+    current_exam_question_index = exam.current_question_index || 0;
+    
+    // Calculate remaining time
+    const startTime = new Date(exam.date);
+    const totalTimeMs = exam.num_questions * exam.time_per_question * 60 * 1000;
+    const elapsedMs = Date.now() - startTime.getTime();
+    const remainingMs = Math.max(0, totalTimeMs - elapsedMs);
+    
+    exam_start_time = new Date(Date.now() - elapsedMs); // Adjust start time so timer shows correct remaining time
+    exam_end_time = new Date(Date.now() + remainingMs);
+    
+    // Rebuild hash map
+    exam_hash_n_map = {};
+    exam_questions.forEach((qid, index) => {
+      exam_hash_n_map[qid] = index;
+    });
+    
+    return true;
+  }).catch(err => {
+    console.warn('Failed to restore exam state:', err);
+    return false;
+  });
+}
+
+function clearExamState() {
+  if (window.current_exam_id) {
+    // Clear session state from the current exam record
+    db.exams.update(window.current_exam_id, {
+      session_active: false,
+      current_question_index: undefined,
+      last_updated: undefined
+    }).catch(err => {
+      console.warn('Failed to clear exam session state:', err);
+    });
+  }
+}
 
 // Helper: fetch a resource as text and try to parse JSON leniently.
 // Returns a Promise that resolves with the parsed object, and calls
@@ -857,6 +941,19 @@ $(document).ready(function () {
 
   // Run once on DOM ready and watch for score-list updates
   document.addEventListener('DOMContentLoaded', function () {
+    // Restore exam state if there was an active exam
+    restoreExamState().then(examRestored => {
+      if (examRestored) {
+        // If exam was restored, start the timer and load the current question
+        startExamTimer();
+        // Load the current question that was being viewed
+        loadExamQuestion(current_exam_question_index);
+        toastr.info('Exam session restored');
+      }
+    }).catch(err => {
+      console.warn('Failed to restore exam state on page load:', err);
+    });
+    
     normalizeScoreListInlineColors();
     const scoreList = document.querySelector('#score-list');
     if (!scoreList) return;
@@ -1193,6 +1290,22 @@ async function resetApp() {
   filtered_questions = [];
   hash_n_map = {};
   current_question_uid = 0;
+  
+  // Reset exam state
+  exam_mode = false;
+  exam_questions = [];
+  exam_questions_data = {};
+  exam_answers = {};
+  exam_start_time = null;
+  exam_end_time = null;
+  exam_timer_interval = null;
+  window.current_exam_id = null;
+  exam_review_mode = false;
+  exam_time_per_question = 1.5;
+  current_exam_question_index = 0;
+  
+  // Clear persisted exam state
+  clearExamState();
 
   toastr.info('Local data cleared. Reloading...');
   setTimeout(function () {
@@ -1571,6 +1684,14 @@ function createExam() {
   exam_time_per_question = timePerQuestion;
   exam_end_time = new Date(exam_start_time.getTime() + exam_questions.length * timePerQuestion * 60 * 1000);
 
+  // Cache exam questions independently to prevent interference with main cache
+  exam_questions_data = {};
+  exam_questions.forEach(qid => {
+    if (questions[qid]) {
+      exam_questions_data[qid] = questions[qid];
+    }
+  });
+
   // Build hash map for exam
   exam_hash_n_map = {};
   exam_questions.forEach((qid, index) => {
@@ -1586,16 +1707,22 @@ function createExam() {
   // Save exam to database
   current_exam_id = Date.now().toString();
   window.current_exam_id = current_exam_id;
-  db.exams.put({
-    id: current_exam_id,
-    date: exam_start_time.toISOString(),
-    num_questions: numQuestions,
-    time_per_question: timePerQuestion,
-    selection_method: selectionMethod,
-    questions: exam_questions,
-    cached_questions: cachedQuestions,
-    answers: exam_answers,
-    score: null
+  
+  // Deactivate any existing active sessions
+  deactivateAllExamSessions().then(() => {
+    db.exams.put({
+      id: current_exam_id,
+      date: exam_start_time.toISOString(),
+      num_questions: numQuestions,
+      time_per_question: timePerQuestion,
+      selection_method: selectionMethod,
+      questions: exam_questions,
+      cached_questions: cachedQuestions,
+      answers: exam_answers,
+      score: null,
+      session_active: true,
+      current_question_index: 0
+    });
   });
 
   // Hide the exam menu
@@ -1607,6 +1734,9 @@ function createExam() {
 
   // Load the first question
   loadExamQuestion(0);
+
+  // Save exam state for persistence across page reloads
+  saveExamState();
 
   toastr.info(`Exam started! ${exam_questions.length} questions, ${Math.round((exam_end_time - exam_start_time) / 1000 / 60)} minutes total.`);
 }
@@ -1691,8 +1821,9 @@ function reviewExam(examId, startQuestionIndex = 0) {
     
     // Load cached questions for reproducibility
     if (exam.cached_questions) {
+      exam_questions_data = {}; // Clear any previous exam data
       exam.cached_questions.forEach(cached => {
-        questions[cached.id] = cached.data;
+        exam_questions_data[cached.id] = cached.data;
       });
     }
     
@@ -1715,6 +1846,9 @@ function reviewExam(examId, startQuestionIndex = 0) {
     $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
     $("#exam-backdrop").removeClass('show');
     loadExamQuestion(startQuestionIndex);
+    
+    // Save exam state for persistence across page reloads
+    saveExamState();
     
     toastr.info('Reviewing completed exam');
   }).catch(error => {
@@ -1740,8 +1874,9 @@ function continueExam(examId) {
     
     // Load cached questions for reproducibility
     if (exam.cached_questions) {
+      exam_questions_data = {}; // Clear any previous exam data
       exam.cached_questions.forEach(cached => {
-        questions[cached.id] = cached.data;
+        exam_questions_data[cached.id] = cached.data;
       });
     }
     
@@ -1792,6 +1927,17 @@ function continueExam(examId) {
     }
     
     loadExamQuestion(startIndex);
+    
+    // Mark exam as active session (deactivate others first)
+    deactivateAllExamSessions().then(() => {
+      db.exams.update(examId, {
+        session_active: true,
+        current_question_index: startIndex
+      });
+    });
+    
+    // Save exam state for persistence across page reloads
+    saveExamState();
     
     toastr.info('Continuing exam');
   }).catch(error => {
@@ -1915,12 +2061,17 @@ function updateExamTimerDisplay() {
 }
 
 function loadExamQuestion(index) {
+  current_exam_question_index = index;
   loadQuestion(index, true);
 }
 
 function endExam() {
   exam_mode = false;
   clearInterval(exam_timer_interval);
+  exam_questions_data = {}; // Clear exam-specific question data
+  
+  // Clear persisted exam state
+  clearExamState();
   
   if (!exam_review_mode) {
     // Calculate score
@@ -2969,7 +3120,7 @@ function loadQuestion(n, isExam = false) {
 
   // convert n to the hash
   let qid = question_list[n];
-  let data = questions[qid];
+  let data = isExam ? (exam_questions_data[qid] || questions[qid]) : questions[qid];
 
   let question_type = data["type"];
 
@@ -4827,6 +4978,8 @@ function checkBestAnswer(e, load) {
 function saveAnswerToHashMap(qid, type, score, max_score, other) {
   if (exam_mode) {
     exam_answers[qid] = { score, max_score, correct: score === max_score };
+    // Save exam state for persistence across page reloads
+    saveExamState();
     // Save exam-specific answers with compound key
     const examSpecificQid = `${current_exam_id}_${qid}`;
     window.db.answers.put({ qid: examSpecificQid, date: Date(), type: type, score: score, max_score: max_score, other: other });
