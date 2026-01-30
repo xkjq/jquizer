@@ -624,11 +624,11 @@ $(document).ready(function () {
 
   $("#loading").removeClass("show");
 
-  $("#filter-toggle, #hide-options-button").click(function () {
+  $("#filter-toggle, #hide-options-button").off('click').on('click', function () {
     $("#options").slideToggle("slow");
   });
 
-  $("#question-details-toggle").click(function () {
+  $("#question-details-toggle").off('click').on('click', function () {
     const container = $("#question-details-toggle");
     if (container.hasClass('disabled')) {
       toastr.info('No question open');
@@ -650,7 +650,7 @@ $(document).ready(function () {
   // Gapps removed: hide remote-server button and disable handler
   $("#load-remote-server-button").remove();
 
-  $("#score-toggle").click(function () {
+  $("#score-toggle").off('click').on('click', function () {
     const container = $("#score-toggle");
     if (container.hasClass('disabled')) {
       toastr.info('No questions loaded');
@@ -667,20 +667,20 @@ $(document).ready(function () {
     });
   });
 
-  $("#about-toggle, #about-close").click(function () {
+  $("#about-toggle, #about-close").off('click').on('click', function () {
     $("#about").slideToggle("slow");
   });
   // Stats dialog handlers
-  $("#stats-toggle").click(function () {
+  $("#stats-toggle").off('click').on('click', function () {
     $("#stats").slideToggle("slow");
     // build stats each time to reflect current answers
     buildStatsBySpecialty();
   });
-  $("#stats-close").click(function () {
+  $("#stats-close").off('click').on('click', function () {
     $("#stats").slideToggle("slow");
   });
 
-  $("#goto-question-button").click(function () {
+  $("#goto-question-button").off('click').on('click', function () {
     let val = $("#goto-question-input").val();
     if (val && !isNaN(val)) {
       loadQuestion(parseInt($("#goto-question-input").val()) - 1);
@@ -694,7 +694,7 @@ $(document).ready(function () {
     }
   });
 
-  $("#goto-question-hide-button").click(function () {
+  $("#goto-question-hide-button").off('click').on('click', function () {
     //duplicate stuff....
     let val = $("#goto-question-input").val();
     if (val && !isNaN(val)) {
@@ -710,24 +710,24 @@ $(document).ready(function () {
     } catch (e) { /* ignore */ }
   });
 
-  $("#search-button").click(function () {
+  $("#search-button").off('click').on('click', function () {
     startSearch($("#search-input").val());
     $("#search-input").blur();
   });
 
-  $("#create-exam-button").click(function () {
+  $("#create-exam-button").off('click').on('click', function () {
     createExam();
   });
 
-  $("#delete-answers-button").click(function () {
+  $("#delete-answers-button").off('click').on('click', function () {
     resetAnswers();
   });
 
-  $("#save-answers-button").click(function () {
+  $("#save-answers-button").off('click').on('click', function () {
     saveAnswersAsFile();
   });
 
-  $("#unload-questions-button").click(function () {
+  $("#unload-questions-button").off('click').on('click', function () {
     // Reset all variables
     questions = {};
     filtered_questions = [];
@@ -746,13 +746,13 @@ $(document).ready(function () {
     } catch (e) { /* ignore */ }
   });
 
-  $("#reset-app-button").click(function () {
+  $("#reset-app-button").off('click').on('click', function () {
     resetApp();
   });
 
-  $("#answers-file").on("change", handleAnswersFileSelect);
+  $("#answers-file").off('change').on('change', handleAnswersFileSelect);
 
-  $("#questions-file").on("change", handleQuestionsFileSelect);
+  $("#questions-file").off('change').on('change', handleQuestionsFileSelect);
 
   progress = document.querySelector(".percent");
 
