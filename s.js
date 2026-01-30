@@ -415,10 +415,10 @@ async function loadAnswersAndFeedback(obj) {
 window.loadAnswersAndFeedback = loadAnswersAndFeedback;
 
 var detectTap;
-$(document).on('touchstart', function () {
+$(document).off('touchstart').on('touchstart', function () {
   detectTap = true; // Detects all touch events
 });
-$(document).on('touchmove', function () {
+$(document).off('touchmove').on('touchmove', function () {
   detectTap = false; // Excludes the scroll events from touch events
 });
 
@@ -756,9 +756,8 @@ $(document).ready(function () {
 
   progress = document.querySelector(".percent");
 
-  //$(document).keypress(keyPress);
-  $(document).keydown(keyDownHandler);
-  $(document).keyup(keyUpHandler);
+  $(document).off('keydown').on('keydown', keyDownHandler);
+  $(document).off('keyup').on('keyup', keyUpHandler);
 
   // Normalize score list items that may have inline background-color styles
   // Convert inline background-color into a border color and remove the background
@@ -986,7 +985,7 @@ $(document).ready(function () {
 
   //loadFlaggedQuestionsFromStorage();
 
-  $("#content").swipe({
+  $("#content").off('swipe').swipe({
     swipeLeft: function (event, direction, distance, duration, fingerCount) {
       nextQuestion(event);
     },
@@ -996,7 +995,7 @@ $(document).ready(function () {
     fallbackToMouseEvents: false
   });
 
-  window.addEventListener("beforeunload", function (e) {
+  const beforeUnloadHandler = function (e) {
     if (remote_store == true && remote_store_synced == false) {
       var confirmationMessage =
         "Questions have not been saved remotely. Continue?";
@@ -1004,7 +1003,9 @@ $(document).ready(function () {
       (e || window.event).returnValue = confirmationMessage; //Gecko + IE
       return confirmationMessage; //Webkit, Safari, Chrome
     }
-  });
+  };
+  window.removeEventListener("beforeunload", beforeUnloadHandler);
+  window.addEventListener("beforeunload", beforeUnloadHandler);
 
 // Track whether we've restored the score panel state from storage to avoid
 // repeatedly forcing visibility during subsequent rebuilds.
