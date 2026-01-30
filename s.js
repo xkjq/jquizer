@@ -76,10 +76,11 @@ let exam_answers = {};
 let exam_start_time = null;
 let exam_end_time = null;
 let exam_timer_interval = null;
-let current_exam_id = null;
+window.current_exam_id = null;
 let exam_review_mode = false;
 let exam_time_per_question = 1.5;
 
+var db = new Dexie("user_interface");
 var db = new Dexie("user_interface");
 db.version(1).stores({
   //mouse_bindings: "button,mode,tool",
@@ -89,7 +90,48 @@ db.version(1).stores({
   //question_cache: "qid,date,type,score,max_score,other"
 });
 db.version(2).stores({
+  //mouse_bindings: "button,mode,tool",
+  element_position: "[type+element],x,y",
+  answers: "qid,date,type,score,max_score,other",
+  flagged: "&qid",
   exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
+});
+db.version(3).stores({
+  //mouse_bindings: "button,mode,tool",
+  element_position: "[type+element],x,y",
+  answers: "qid,date,type,score,max_score,other",
+  flagged: "&qid",
+  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
+});
+db.version(4).stores({
+  //mouse_bindings: "button,mode,tool",
+  element_position: "[type+element],x,y",
+  answers: "qid,date,type,score,max_score,other",
+  flagged: "&qid",
+  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score"
+});
+db.version(5).stores({
+  //mouse_bindings: "button,mode,tool",
+  element_position: "[type+element],x,y",
+  answers: "qid,date,type,score,max_score,other",
+  flagged: "&qid",
+  exams: "&id,date,num_questions,time_per_question,selection_method,questions,answers,score,cached_questions"
+});
+
+db.open().catch(error => {
+  console.error('Database open error:', error);
+  // If we get an upgrade error or constraint error, try to delete and recreate the database
+  if (error.name === 'UpgradeError' || 
+      error.name === 'ConstraintError' ||
+      error.message.includes('Dexie specification of currently installed DB version is missing') ||
+      error.message.includes('Index named') && error.message.includes('already exists')) {
+    console.warn('Database upgrade failed. Attempting to reset database...');
+    return Dexie.delete('user_interface').then(() => {
+      console.log('Database deleted. Reloading page...');
+      window.location.reload();
+    });
+  }
+  throw error;
 });
 
 // Helper: fetch a resource as text and try to parse JSON leniently.
@@ -160,6 +202,8 @@ db.element_position.each(data => {
   }
 
   window.element_positions[data.type][data.element] = { x: data.x, y: data.y };
+}).catch(error => {
+  console.warn('Error loading element positions from database:', error);
 });
 
 var remote_store = false;
@@ -888,7 +932,7 @@ function resetAnswers() {
 // Delete all local data (IndexedDB tables, localStorage, Lawnchair store)
 async function resetApp() {
   var msg =
-    "Are you sure you wish to reset the app?\n\nThis will delete all locally stored answers, flags, UI positions and settings. This is non-recoverable!";
+    "Are you sure you wish to reset the app?\n\nThis will delete all locally stored answers, flags, exams, UI positions and settings. This is non-recoverable!";
 
   if (!confirm(msg)) return;
 
@@ -897,6 +941,7 @@ async function resetApp() {
     if (db && db.answers) await db.answers.clear();
     if (db && db.flagged) await db.flagged.clear();
     if (db && db.element_position) await db.element_position.clear();
+    if (db && db.exams) await db.exams.clear();
   } catch (err) {
     console.warn('Error clearing IndexedDB tables', err);
   }
@@ -1324,6 +1369,7 @@ function createExam() {
 
   // Save exam to database
   current_exam_id = Date.now().toString();
+  window.current_exam_id = current_exam_id;
   db.exams.put({
     id: current_exam_id,
     date: exam_start_time.toISOString(),
@@ -1401,14 +1447,30 @@ function loadExamList() {
       $examItem.append($buttons);
       $list.append($examItem);
     });
+  }).catch(error => {
+    console.error('Error loading exam list:', error);
+    toastr.error('Failed to load exam list');
   });
 }
 
 window.loadExamList = loadExamList;
 
 function reviewExam(examId, startQuestionIndex = 0) {
+  if (!examId) {
+    console.error('reviewExam called with invalid examId:', examId);
+    toastr.error('Invalid exam ID');
+    return;
+  }
+  
+  // Ensure examId is a string
+  examId = String(examId);
+  
   db.exams.get(examId).then(exam => {
-    if (!exam) return;
+    if (!exam) {
+      console.error('No exam found with ID:', examId);
+      toastr.error('Exam not found');
+      return;
+    }
     
     // Load cached questions for reproducibility
     if (exam.cached_questions) {
@@ -1423,6 +1485,7 @@ function reviewExam(examId, startQuestionIndex = 0) {
     exam_questions = exam.questions;
     exam_answers = exam.answers || {};
     current_exam_id = examId;
+    window.current_exam_id = current_exam_id;
     exam_time_per_question = exam.time_per_question;
     
     // Build hash map
@@ -1436,6 +1499,18 @@ function reviewExam(examId, startQuestionIndex = 0) {
     loadExamQuestion(startQuestionIndex);
     
     toastr.info('Reviewing completed exam');
+  }).catch(error => {
+    console.error('Error loading exam for review:', error);
+    if (error.name === 'DataError' && error.message.includes('No valid key')) {
+      console.error('Database key error detected. Attempting database reset...');
+      // Try to reset the database
+      return db.exams.clear().then(() => {
+        console.log('Database cleared. Reloading page...');
+        toastr.error('Database error detected. Page will reload to fix the issue.');
+        setTimeout(() => window.location.reload(), 2000);
+      });
+    }
+    toastr.error('Failed to load exam for review');
   });
 }
 
@@ -1458,6 +1533,7 @@ function continueExam(examId) {
     exam_questions = exam.questions;
     exam_answers = exam.answers || {};
     current_exam_id = examId;
+    window.current_exam_id = current_exam_id;
     exam_time_per_question = exam.time_per_question;
     
     // Calculate remaining time
@@ -1499,6 +1575,17 @@ function continueExam(examId) {
     loadExamQuestion(startIndex);
     
     toastr.info('Continuing exam');
+  }).catch(error => {
+    console.error('Error loading exam for continuation:', error);
+    if (error.name === 'DataError' && error.message.includes('No valid key')) {
+      console.error('Database key error detected. Attempting database reset...');
+      return db.exams.clear().then(() => {
+        console.log('Database cleared. Reloading page...');
+        toastr.error('Database error detected. Page will reload to fix the issue.');
+        setTimeout(() => window.location.reload(), 2000);
+      });
+    }
+    toastr.error('Failed to load exam for continuation');
   });
 }
 
@@ -1805,6 +1892,14 @@ function viewExamResults(examId) {
     showExamResults(correct, total, totalTime, totalTime, true); // Show total time as both taken and allowed
   }).catch(error => {
     console.error('Error loading exam results:', error);
+    if (error.name === 'DataError' && error.message.includes('No valid key')) {
+      console.error('Database key error detected. Attempting database reset...');
+      return db.exams.clear().then(() => {
+        console.log('Database cleared. Reloading page...');
+        toastr.error('Database error detected. Page will reload to fix the issue.');
+        setTimeout(() => window.location.reload(), 2000);
+      });
+    }
     toastr.error('Failed to load exam results');
   });
 }
