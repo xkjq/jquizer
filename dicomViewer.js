@@ -650,3 +650,11 @@ function urltoFile(url, filename, mimeType) {
             return new File([buf], filename, { type: mimeType });
         });
 }
+
+// Make functions globally available for s.js
+window.dicomViewer = {
+    loadCornerstone,
+    registerPrimaryDicomInterface,
+    registerAltDicomInterface,
+    selectThumb
+};
