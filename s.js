@@ -122,11 +122,16 @@ function saveExamState() {
   if (!exam_mode || !window.current_exam_id) return;
   
   try {
+    localStorage.setItem('active_exam_id', window.current_exam_id);
+    
     // Update the current exam record with session state
     db.exams.update(window.current_exam_id, {
-      session_active: true,
       current_question_index: current_exam_question_index,
       last_updated: new Date().toISOString()
+    }).then(updated => {
+      if (updated === 0) {
+        console.warn('saveExamState: No exam record found to update for ID:', window.current_exam_id);
+      }
     }).catch(err => {
       console.warn('Failed to save exam session state:', err);
     });
@@ -136,61 +141,79 @@ function saveExamState() {
 }
 
 function deactivateAllExamSessions() {
-  return db.exams.where('session_active').equals(true).modify({
-    session_active: false,
-    current_question_index: undefined,
-    last_updated: undefined
-  });
+  try {
+    localStorage.removeItem('active_exam_id');
+  } catch (err) {
+    console.warn('Failed to clear active exam ID:', err);
+  }
 }
 
 function restoreExamState() {
-  return db.exams.where('session_active').equals(true).first().then(exam => {
-    if (!exam) return false;
+  try {
+    const activeExamId = localStorage.getItem('active_exam_id');
+    if (!activeExamId) return Promise.resolve(false);
     
-    // Load cached questions for reproducibility
-    if (exam.cached_questions) {
-      exam_questions_data = {}; // Clear any previous exam data
-      exam.cached_questions.forEach(cached => {
-        exam_questions_data[cached.id] = cached.data;
+    return db.exams.get(activeExamId).then(exam => {
+      if (!exam) {
+        localStorage.removeItem('active_exam_id');
+        return false;
+      }
+      
+      // Load cached questions for reproducibility
+      if (exam.cached_questions) {
+        exam_questions_data = {}; // Clear any previous exam data
+        exam.cached_questions.forEach(cached => {
+          exam_questions_data[cached.id] = cached.data;
+        });
+      }
+      
+      // Restore exam state
+      exam_mode = true;
+      exam_review_mode = false; // Active sessions are never in review mode
+      exam_questions = exam.questions;
+      exam_answers = exam.answers || {};
+      window.current_exam_id = exam.id;
+      exam_time_per_question = exam.time_per_question;
+      current_exam_question_index = exam.current_question_index || 0;
+      
+      // Calculate remaining time
+      const startTime = new Date(exam.date);
+      const totalTimeMs = exam.num_questions * exam.time_per_question * 60 * 1000;
+      const elapsedMs = Date.now() - startTime.getTime();
+      const remainingMs = Math.max(0, totalTimeMs - elapsedMs);
+      
+      exam_start_time = new Date(Date.now() - elapsedMs); // Adjust start time so timer shows correct remaining time
+      exam_end_time = new Date(Date.now() + remainingMs);
+      
+      // Rebuild hash map
+      exam_hash_n_map = {};
+      exam_questions.forEach((qid, index) => {
+        exam_hash_n_map[qid] = index;
       });
-    }
-    
-    // Restore exam state
-    exam_mode = true;
-    exam_review_mode = false; // Active sessions are never in review mode
-    exam_questions = exam.questions;
-    exam_answers = exam.answers || {};
-    window.current_exam_id = exam.id;
-    exam_time_per_question = exam.time_per_question;
-    current_exam_question_index = exam.current_question_index || 0;
-    
-    // Calculate remaining time
-    const startTime = new Date(exam.date);
-    const totalTimeMs = exam.num_questions * exam.time_per_question * 60 * 1000;
-    const elapsedMs = Date.now() - startTime.getTime();
-    const remainingMs = Math.max(0, totalTimeMs - elapsedMs);
-    
-    exam_start_time = new Date(Date.now() - elapsedMs); // Adjust start time so timer shows correct remaining time
-    exam_end_time = new Date(Date.now() + remainingMs);
-    
-    // Rebuild hash map
-    exam_hash_n_map = {};
-    exam_questions.forEach((qid, index) => {
-      exam_hash_n_map[qid] = index;
+      
+      return true;
+    }).catch(err => {
+      console.warn('Failed to restore exam state:', err);
+      localStorage.removeItem('active_exam_id');
+      return false;
     });
-    
-    return true;
-  }).catch(err => {
+  } catch (err) {
     console.warn('Failed to restore exam state:', err);
-    return false;
-  });
+    localStorage.removeItem('active_exam_id');
+    return Promise.resolve(false);
+  }
 }
 
 function clearExamState() {
+  try {
+    localStorage.removeItem('active_exam_id');
+  } catch (err) {
+    console.warn('Failed to clear active exam ID:', err);
+  }
+  
   if (window.current_exam_id) {
     // Clear session state from the current exam record
     db.exams.update(window.current_exam_id, {
-      session_active: false,
       current_question_index: undefined,
       last_updated: undefined
     }).catch(err => {
@@ -1708,37 +1731,40 @@ function createExam() {
   current_exam_id = Date.now().toString();
   window.current_exam_id = current_exam_id;
   
-  // Deactivate any existing active sessions
-  deactivateAllExamSessions().then(() => {
-    db.exams.put({
-      id: current_exam_id,
-      date: exam_start_time.toISOString(),
-      num_questions: numQuestions,
-      time_per_question: timePerQuestion,
-      selection_method: selectionMethod,
-      questions: exam_questions,
-      cached_questions: cachedQuestions,
-      answers: exam_answers,
-      score: null,
-      session_active: true,
-      current_question_index: 0
-    });
+  // Deactivate any existing active sessions and save the new exam
+  deactivateAllExamSessions();
+  
+  db.exams.put({
+    id: current_exam_id,
+    date: exam_start_time.toISOString(),
+    num_questions: numQuestions,
+    time_per_question: timePerQuestion,
+    selection_method: selectionMethod,
+    questions: exam_questions,
+    cached_questions: cachedQuestions,
+    answers: exam_answers,
+    score: null,
+    current_question_index: 0
+  }).then(() => {
+    // Set as active exam
+    localStorage.setItem('active_exam_id', current_exam_id);
+    
+    // Now that the exam is saved, start the UI
+    // Hide the exam menu
+    $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
+    $("#exam-backdrop").removeClass('show');
+
+    // Start the timer
+    startExamTimer();
+
+    // Load the first question
+    loadExamQuestion(0);
+
+    toastr.info(`Exam started! ${exam_questions.length} questions, ${Math.round((exam_end_time - exam_start_time) / 1000 / 60)} minutes total.`);
+  }).catch(err => {
+    console.error('Failed to create exam:', err);
+    toastr.error('Failed to start exam');
   });
-
-  // Hide the exam menu
-  $("#exam-menu").removeClass('show').attr('aria-hidden', 'true');
-  $("#exam-backdrop").removeClass('show');
-
-  // Start the timer
-  startExamTimer();
-
-  // Load the first question
-  loadExamQuestion(0);
-
-  // Save exam state for persistence across page reloads
-  saveExamState();
-
-  toastr.info(`Exam started! ${exam_questions.length} questions, ${Math.round((exam_end_time - exam_start_time) / 1000 / 60)} minutes total.`);
 }
 
 function loadExamList() {
@@ -1928,12 +1954,11 @@ function continueExam(examId) {
     
     loadExamQuestion(startIndex);
     
-    // Mark exam as active session (deactivate others first)
-    deactivateAllExamSessions().then(() => {
-      db.exams.update(examId, {
-        session_active: true,
-        current_question_index: startIndex
-      });
+    // Mark exam as active session
+    deactivateAllExamSessions();
+    localStorage.setItem('active_exam_id', examId);
+    db.exams.update(examId, {
+      current_question_index: startIndex
     });
     
     // Save exam state for persistence across page reloads
@@ -2141,7 +2166,7 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
   // Generate detailed question list
   let detailsHtml = '<h3>Question Details</h3><p style="font-size: 14px; color: var(--text-color); margin: 0 0 10px 0;">Click on any question to jump to it for review.</p><div class="exam-results-questions">';
   exam_questions.forEach((qid, index) => {
-    const questionData = questions[qid];
+    const questionData = exam_questions_data[qid];
     const answerData = exam_answers[qid];
     const questionNumber = index + 1;
     
@@ -2234,8 +2259,9 @@ function viewExamResults(examId) {
     
     // Load cached questions for reproducibility if available
     if (exam.cached_questions) {
+      exam_questions_data = {}; // Clear any previous exam data
       exam.cached_questions.forEach(cached => {
-        questions[cached.id] = cached.data;
+        exam_questions_data[cached.id] = cached.data;
       });
     }
     
