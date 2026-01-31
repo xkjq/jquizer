@@ -1400,6 +1400,9 @@ async function buildActiveScoreList() {
   // Retrieve answers of all currently loaded questions
   answers = await window.db.answers.where("qid").anyOf(Object.keys(hash_n_map)).toArray();
 
+  // Retrieve flagged questions
+  let flagged_questions = await db.flagged.toArray();
+  let flagged_qids = new Set(flagged_questions.map(f => f.qid));
 
   let answers_by_qid = {}
 
@@ -1444,13 +1447,16 @@ async function buildActiveScoreList() {
     let ratio = answer.score / answer.max_score;
     let hue = ratio * 120;
 
+    let isFlagged = flagged_qids.has(filtered_questions[i]);
+    let flagIndicator = isFlagged ? " 🚩" : "";
+
     // Create the score item with a border color based on performance (green->yellow->red)
     list.append(
       $(document.createElement("li"))
         .attr({
           id: "score-" + i,
-          class: "tf",
-          title: n
+          class: "tf" + (isFlagged ? " flagged" : ""),
+          title: n + (isFlagged ? " (Flagged)" : "")
         })
         .text(
           n +
@@ -1458,7 +1464,8 @@ async function buildActiveScoreList() {
           answer.score +
           "/" +
           answer.max_score +
-          ")"
+          ")" +
+          flagIndicator
         )
         .css({
           // keep background transparent and set border color instead

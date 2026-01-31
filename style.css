@@ -457,6 +457,13 @@ li.alpha-list {
   transform: translateY(-1px);
 }
 
+/* Flagged questions in score list */
+#score-list li.flagged {
+  border-style: solid;
+  border-color: #ff6b35;
+  background: linear-gradient(180deg, rgba(255,107,53,0.1), rgba(255,107,53,0.05));
+}
+
 /* Responsive: make score bar full-width at bottom on small screens */
 @media (max-width: 700px) {
   #score {
