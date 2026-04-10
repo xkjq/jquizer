@@ -291,6 +291,12 @@ li.alpha-list {
   margin: 2px 0;
 }
 
+/* Ensure long source names wrap instead of overflowing */
+#source-filters li {
+  /* allow the label to take remaining width and wrap */
+  align-items: flex-start;
+}
+
 #specialty-filters label,
 #source-filters label {
   cursor: pointer;
