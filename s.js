@@ -3260,15 +3260,46 @@ function loadQuestion(n, isExam = false) {
     }
   }
 
-  // Set up the question details block
-  $("#question-details").append("Question details...<br />");
-  $("#question-details").append("-------------------<br />");
-  $("#question-details").append("ID: " + qid + "<br />");
-  $("#question-details").append("Type: " + data["type"] + "<br />");
-  $("#question-details").append("Source: " + data["source"] + "<br />");
-  $("#question-details").append("Specialties: " + data["specialty"] + "<br />");
-  $("#question-details").append("Meta: " + data["meta"] + "<br />");
-  $("#question-details").append("Date: " + data["date"] + "<br />");
+  // Set up the question details block using semantic label/value rows
+  try {
+    const $qd = $("#question-details");
+    $qd.empty();
+    $qd.append($(document.createElement('h3')).text('Question details'));
+
+    function qdRow(label, value) {
+      const $row = $(document.createElement('div')).addClass('qd-row');
+      $row.append($(document.createElement('span')).addClass('qd-label').text(label));
+      $row.append($(document.createElement('span')).addClass('qd-value').text(value));
+      return $row;
+    }
+
+    // Helper to normalise arrays/objects for display
+    function displayValue(v) {
+      if (v === undefined || v === null) return '';
+      if (Array.isArray(v)) return v.join(', ');
+      if (typeof v === 'object') return JSON.stringify(v);
+      return String(v);
+    }
+
+    $qd.append(qdRow('ID:', qid));
+    $qd.append(qdRow('Type:', displayValue(data['type'])));
+    $qd.append(qdRow('Source:', displayValue(data['source'])));
+    $qd.append(qdRow('Specialties:', displayValue(data['specialty'])));
+    $qd.append(qdRow('Meta:', displayValue(data['meta'])));
+    $qd.append(qdRow('Date:', displayValue(data['date'])));
+  } catch (e) {
+    // Fallback to simple text if anything goes wrong
+    try {
+      $("#question-details").empty().append("Question details...<br />");
+      $("#question-details").append("-------------------<br />");
+      $("#question-details").append("ID: " + qid + "<br />");
+      $("#question-details").append("Type: " + data["type"] + "<br />");
+      $("#question-details").append("Source: " + data["source"] + "<br />");
+      $("#question-details").append("Specialties: " + data["specialty"] + "<br />");
+      $("#question-details").append("Meta: " + data["meta"] + "<br />");
+      $("#question-details").append("Date: " + data["date"] + "<br />");
+    } catch (err) { /* swallow */ }
+  }
 
   $("#main").append(
     $(document.createElement("div")).attr({
