@@ -486,15 +486,37 @@ async function loadData(data, source) {
   $.extend(questions, data);
   // Store individual questions in cache
   if (source) {
-    for (let qid in data) {
-      try {
-        await db.cached_questions.put({qid: qid, source: source, data: data[qid], last_updated: new Date()});
-      } catch (e) {
-        console.warn('Failed to cache question', qid, e);
+    // If the DB doesn't have the cached_questions store (older DB schema),
+    // avoid attempting to write and surface a clear warning. Use db.tables
+    // (provided by Dexie) to detect available stores.
+    const hasCachedTable = Array.isArray(db.tables) && db.tables.find(t => t.name === 'cached_questions');
+    if (!hasCachedTable) {
+      console.warn('cached_questions store not present in IndexedDB, skipping caching for source:', source);
+      try { toastr.warning('Local cache store missing; skipping question caching for this session.'); } catch (err) {}
+    } else {
+      for (let qid in data) {
+        try {
+          await db.cached_questions.put({qid: qid, source: source, data: data[qid], last_updated: new Date()});
+        } catch (e) {
+          console.warn('Failed to cache question', qid, e);
+          // If the underlying error indicates the object store is missing, attempt
+          // to recover by deleting the DB and reloading so the correct schema is created.
+          try {
+            const msg = String(e && e.message || '');
+            if (/not a known object store name/i.test(msg) || /object store/i.test(msg)) {
+              console.warn('Detected missing object store in IndexedDB; attempting database reset');
+              try { toastr.warning('Local IndexedDB appears corrupted or out-of-date. Clearing local DB and reloading to recover.'); } catch (err) {}
+              try { await Dexie.delete('user_interface'); } catch (delErr) { console.warn('Failed to delete DB during recovery', delErr); }
+              // Reload the page to recreate DB with proper schema
+              window.location.reload();
+              return;
+            }
+          } catch (inner) { /* ignore recovery errors */ }
+        }
       }
+      // Refresh cached questions management UI
+      buildCachedQuestionsManagement();
     }
-    // Refresh cached questions management UI
-    buildCachedQuestionsManagement();
   }
   // Ensure filters and filtered_questions are fully loaded before building the score list
   try {
