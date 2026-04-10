@@ -434,6 +434,21 @@ body.top-nav-open #top-nav-toggle {
   body.top-nav-open #top-nav .nav-item {
     display: block !important;
   }
+  /* Ensure any floats or flex layouts used for desktop are disabled inside the
+     opened mobile nav so items stack individually. */
+  body.top-nav-open #top-nav .nav-item {
+    float: none !important;
+  }
+  body.top-nav-open #top-nav #score-group {
+    display: block !important;
+    float: none !important;
+    gap: 0 !important;
+  }
+  body.top-nav-open #top-nav #score-group > div {
+    display: block !important;
+    margin: 6px 0 !important;
+    float: none !important;
+  }
   body.top-nav-open #top-nav .nav-item > div,
   body.top-nav-open #top-nav .nav-item > a {
     display: block;
