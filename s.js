@@ -334,6 +334,8 @@ function buildQuestionList(data, textStatus) {
   const $container = $("#extra-questions");
   $container.empty();
 
+  $container.append("<h3>Load extra questions</h3>");
+
   $container.append(
     $(document.createElement('input')).attr({
       type: 'text',
