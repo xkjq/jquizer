@@ -321,7 +321,7 @@ function loadExtraQuestionsCallback(i) {
   return function (e) {
     loadExtraQuestions(i);
     saveLoadedQuestionSet(i);
-    $("#options").slideToggle("slow");
+    $("#options").slideUp("slow");
   };
 }
 
