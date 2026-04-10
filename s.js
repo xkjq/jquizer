@@ -495,10 +495,7 @@ function updateUnloadCount(source) {
   } catch (e) { console.warn('updateUnloadCount error', e); }
 }
 
-function buildCachedQuestionsManagement() {
-  // cached-questions management UI removed; kept as a no-op for compatibility
-  return;
-}
+
 
 function loadExtraQuestions(q) {
   const source = q.split('/')[1];
