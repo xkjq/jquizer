@@ -387,9 +387,8 @@ async function buildQuestionList(data, textStatus) {
       });
     });
 
-    // Put the unload button inside the status container so it remains visible
-    $status.append($delete);
-    $row.append($btn).append($status);
+    // Keep $delete as a sibling of $status so .text()/.empty() on $status can never remove it
+    $row.append($btn).append($status).append($delete);
     $container.append($row);
   }
 
@@ -433,24 +432,33 @@ function updatePacketRowStatuses() {
       const $status = $row.find('.packet-status');
       const $delete = $row.find('.packet-delete');
       if (sources[src]) {
-        $status.addClass('loaded');
-        $btn.addClass('loaded-packet');
-        $btn.prop('disabled', false);
+        $status.addClass('loaded').text('');
+        $btn.addClass('loaded-packet').prop('disabled', false);
         $delete.show();
-        // ensure unload button is inside the status container
-        if ($delete.parent()[0] !== $status[0]) {
-          $status.empty().append($delete);
-        }
       } else {
-        $status.removeClass('loaded');
+        $status.removeClass('loaded').text('');
         $btn.removeClass('loaded-packet');
         $delete.hide();
-        $status.empty();
       }
     });
   }).catch(err => {
     console.warn('updatePacketRowStatuses failed', err);
   });
+}
+
+// Mark a specific packet row as loaded (show unload button and clear loading text)
+function markPacketLoaded(source) {
+  try {
+    const $btn = $(".question-load-button[data-source='" + source + "']");
+    if ($btn.length === 0) return;
+    const $row = $btn.closest('.question-load-row');
+    const $status = $row.find('.packet-status');
+    const $delete = $row.find('.packet-delete');
+    // Clear loading text and show the unload button (which is a sibling, not a child)
+    $status.removeClass('loading').text('');
+    $btn.prop('disabled', false);
+    $delete.show();
+  } catch (e) { console.warn('markPacketLoaded failed', e); }
 }
 
 function buildCachedQuestionsManagement() {
@@ -474,46 +482,8 @@ function buildCachedQuestionsManagement() {
       const $div = $(document.createElement('div')).css({margin: '4px 0', display: 'flex', alignItems: 'center'});
       
       $div.append($(document.createElement('span')).text(source.replace(/_/g, ' ') + ' (' + count + ' questions)'));
-      
-      const $deleteBtn = $(document.createElement('button')).text('Unload').css({marginLeft: '10px', fontSize: 'smaller'});
-      $deleteBtn.click(function() {
-        if (confirm('Delete all cached questions from ' + source + '?')) {
-          // First get the qids for this source, then delete from cache and memory
-          db.cached_questions.where('source').equals(source).toArray().then(cachedQuestions => {
-            const qidsToRemove = cachedQuestions.map(cq => cq.qid);
-            
-            // Remove from IndexedDB cache
-            db.cached_questions.where('source').equals(source).delete().then(() => {
-              // Also remove from memory
-              qidsToRemove.forEach(qid => {
-                delete questions[qid];
-              });
-              
-              // Update filtered_questions to remove deleted questions
-              filtered_questions = filtered_questions.filter(qid => !qidsToRemove.includes(qid));
-              
-              // Reset current question if it was deleted
-              if (qidsToRemove.includes(current_question_uid)) {
-                current_question_uid = filtered_questions.length > 0 ? filtered_questions[0] : 0;
-              }
-              
-              toastr.info('Deleted cached questions from ' + source + ' and removed from memory');
-              buildCachedQuestionsManagement(); // Refresh
-              
-              // Rebuild UI if questions were removed
-              if (qidsToRemove.length > 0) {
-                setUpFilters();
-                buildActiveScoreList();
-                // If current question was deleted, load the first available question
-                if (filtered_questions.length > 0 && !questions[current_question_uid]) {
-                  loadQuestion(filtered_questions[0]);
-                }
-              }
-            });
-          });
-        }
-      });
-      $div.append($deleteBtn);
+      // Note: Unload controls are shown in the Extra Questions list rows.
+      // The cached-questions management pane only shows counts to avoid duplicate unload buttons.
       
       $container.append($div);
     }
@@ -534,19 +504,22 @@ function loadExtraQuestions(q) {
     if (cachedQuestions.length > 0) {
       const data = {};
       cachedQuestions.forEach(cq => data[cq.qid] = cq.data);
-      loadData(data, null); // Don't re-cache
+      loadData(data, null).then(() => {
+        // clear loading indicators and mark this packet loaded in the UI
+        try { markPacketLoaded(source); } catch (e) {}
+      }); // Don't re-cache
       toastr.info("Loaded " + cachedQuestions.length + " questions from cache");
       
       // Try to update cache in background
       fetchJsonLenient(q, function(newData) {
-        loadData(newData, source); // This will cache the new data
+        loadData(newData, source).then(() => { try { markPacketLoaded(source); } catch (e) {} }); // This will cache the new data
       }, function() {
         // Network failed, but we have cache
       });
     } else {
       // No cache, fetch from network
       fetchJsonLenient(q, function(data) {
-        loadData(data, source);
+        loadData(data, source).then(() => { try { markPacketLoaded(source); } catch (e) {} });
         toastr.info(Object.size(data) + " questions loaded");
       }, function() {
         toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
@@ -555,7 +528,7 @@ function loadExtraQuestions(q) {
   }).catch(() => {
     // Cache query failed, try network
     fetchJsonLenient(q, function(data) {
-      loadData(data, source);
+      loadData(data, source).then(() => { try { markPacketLoaded(source); } catch (e) {} });
       toastr.info(Object.size(data) + " questions loaded");
     }, function() {
       toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
