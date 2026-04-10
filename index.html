@@ -43,24 +43,29 @@
 </head>
 
 <body>
-  <div id="about-toggle">
-    <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+A"><span class="hotkey" aria-hidden="true">a</span>bout</button></a>
-  </div>
-  <div id="score-group">
-    <div id="score-toggle">
-      <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+S">(<span class="hotkey" aria-hidden="true">s</span>core)</button></a>
+  <div id="top-nav-wrapper">
+    <button id="top-nav-toggle" aria-expanded="false" aria-controls="top-nav" aria-label="Toggle navigation">☰</button>
+    <div id="top-nav">
+      <div id="about-toggle">
+        <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+A"><span class="hotkey" aria-hidden="true">a</span>bout</button></a>
+      </div>
+      <div id="score-group">
+        <div id="score-toggle">
+          <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+S">(<span class="hotkey" aria-hidden="true">s</span>core)</button></a>
+        </div>
+        <div id="stats-toggle">
+          <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+T">(s<span class="hotkey" aria-hidden="true">t</span>ats)</button></a>
+        </div>
+      </div>
+      <div id="question-details-toggle">
+        <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+Q">(<span class="hotkey" aria-hidden="true">q</span>uestion)</button></a>
+      </div>
+      <!-- Gapps functionality removed -->
+      <div id="filter-toggle"><button type="button" aria-keyshortcuts="Alt+O">+/- (<span class="hotkey" aria-hidden="true">o</span>ptions)</button></div>
+      <div id="search-toggle"><button type="button" id="search-toggle-button" aria-keyshortcuts="Alt+G">search / <span class="hotkey" aria-hidden="true">g</span>oto</button></div>
+      <div id="exam-toggle"><button type="button" id="exam-toggle-button" aria-keyshortcuts="Alt+E Alt+X">e<span class="hotkey" aria-hidden="true">x</span>ams</button></div>
     </div>
-    <div id="stats-toggle">
-      <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+T">(s<span class="hotkey" aria-hidden="true">t</span>ats)</button></a>
-    </div>
   </div>
-  <div id="question-details-toggle">
-    <span class="divider">/</span><a href="#"><button aria-keyshortcuts="Alt+Q">(<span class="hotkey" aria-hidden="true">q</span>uestion)</button></a>
-  </div>
-  <!-- Gapps functionality removed -->
-  <div id="filter-toggle"><button type="button" aria-keyshortcuts="Alt+O">+/- (<span class="hotkey" aria-hidden="true">o</span>ptions)</button></div>
-  <div id="search-toggle"><button type="button" id="search-toggle-button" aria-keyshortcuts="Alt+G">search / <span class="hotkey" aria-hidden="true">g</span>oto</button></div>
-  <div id="exam-toggle"><button type="button" id="exam-toggle-button" aria-keyshortcuts="Alt+E Alt+X">e<span class="hotkey" aria-hidden="true">x</span>ams</button></div>
   <div id="options">
     <button id="randomise-question-order-btn" type="button">Randomise question order</button>
     

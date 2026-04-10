@@ -3206,6 +3206,32 @@ $(document).ready(function () {
   });
 });
 
+// Top-nav toggle behaviour for small screens
+(function () {
+  function closeTopNav() { document.body.classList.remove('top-nav-open'); const btn = document.getElementById('top-nav-toggle'); if (btn) btn.setAttribute('aria-expanded','false'); }
+  function openTopNav() { document.body.classList.add('top-nav-open'); const btn = document.getElementById('top-nav-toggle'); if (btn) btn.setAttribute('aria-expanded','true'); }
+
+  document.addEventListener('click', function (e) {
+    const toggle = document.getElementById('top-nav-toggle');
+    const topNav = document.getElementById('top-nav');
+    if (!toggle || !topNav) return;
+    if (e.target === toggle || e.target.closest && e.target.closest('#top-nav-toggle')) {
+      if (document.body.classList.contains('top-nav-open')) closeTopNav(); else openTopNav();
+      return;
+    }
+    // close when clicking outside
+    if (document.body.classList.contains('top-nav-open')) {
+      if (!e.target.closest || (!e.target.closest('#top-nav') && !e.target.closest('#top-nav-toggle'))) {
+        closeTopNav();
+      }
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeTopNav();
+  });
+})();
+
 // Annotate simple citation-like patterns in a container by adding small search
 // links (PubMed / Google). This looks for a common pattern 'YYYY; vol' which
 // appears in many citations and adds inline buttons next to the matched text.
@@ -3218,7 +3244,9 @@ function annotateCitations($container) {
   // More permissive full-reference regex to allow references split across
   // lines (including a blank line). Match up to ~800 chars before the year
   // pattern so author/title/journal lines separated by newlines are captured.
-  const fullRefRegex = /([A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:\s*\([^\)]*\))?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?)/g;
+  // Allow qualifiers like 'Suppl 1' after the volume (up to ~40 chars),
+  // then a colon and letter-prefixed page ranges (e.g. 'S247–80').
+  const fullRefRegex = /([A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?)/g;
   // fallback simple pattern (year; vol) for anything missed
   const simpleRegex = /\b(\d{4};\s*\d+(?:\([^\)]*\))?)/g;
 

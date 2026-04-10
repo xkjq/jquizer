@@ -346,6 +346,53 @@ li.alpha-list {
   float: right;
 }
 
+/* Top nav wrapper and responsive collapse */
+#top-nav-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#top-nav-toggle {
+  display: none;
+  background: var(--panel-bg);
+  border: 1px solid rgba(0,0,0,0.12);
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 18px;
+}
+
+#top-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Small screens: hide the full top nav and show the hamburger */
+@media (max-width: 700px) {
+  #top-nav-toggle { display: inline-block; }
+  #top-nav { display: none; }
+  body.top-nav-open #top-nav {
+    display: block;
+    position: fixed;
+    top: 44px;
+    left: 8px;
+    right: 8px;
+    background: var(--panel-bg);
+    border: 1px solid rgba(0,0,0,0.12);
+    padding: 8px;
+    border-radius: 6px;
+    z-index: 120;
+  }
+  body.top-nav-open #top-nav > div,
+  body.top-nav-open #top-nav > a {
+    display: block;
+    margin: 6px 0;
+  }
+  /* make the divs stack nicely */
+  #top-nav > div { display: block; }
+}
+
 /* Group for score + stats buttons */
 #score-group {
   float: right;
