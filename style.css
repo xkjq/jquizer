@@ -414,19 +414,41 @@ body.top-nav-open #top-nav-toggle {
     border-radius: 6px;
     margin: 0;
   }
+  /* Stack each nav item on its own line for small screens */
   body.top-nav-open #top-nav > div,
   body.top-nav-open #top-nav > a {
     display: block;
     margin: 6px 0;
   }
-  /* make the divs stack nicely */
-  #top-nav > div { display: block; }
   /* Make buttons fill available width and align left for easier tapping */
   body.top-nav-open #top-nav button,
   body.top-nav-open #top-nav a > button {
     width: 100%;
     text-align: left;
-    padding: 8px 10px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+  }
+  /* Ensure grouped nav items (e.g. #score-group) reveal their inner toggles
+     as separate full-width items on small screens so the existing JS handlers
+     continue to receive clicks. */
+  body.top-nav-open #top-nav .nav-item {
+    display: block !important;
+  }
+  body.top-nav-open #top-nav .nav-item > div,
+  body.top-nav-open #top-nav .nav-item > a {
+    display: block;
+    margin: 4px 0;
+  }
+  body.top-nav-open #top-nav .nav-item button,
+  body.top-nav-open #top-nav .nav-item a > button {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    box-sizing: border-box;
+  }
+  /* Hide divider slashes between nav items on small screens */
+  body.top-nav-open #top-nav .divider {
+    display: none;
   }
 
   /* Reduce page top spacing to give more room on small screens */
