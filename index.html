@@ -60,7 +60,7 @@
   <!-- Gapps functionality removed -->
   <div id="filter-toggle"><button type="button" aria-keyshortcuts="Alt+O">+/- (<span class="hotkey" aria-hidden="true">o</span>ptions)</button></div>
   <div id="search-toggle"><button type="button" id="search-toggle-button" aria-keyshortcuts="Alt+G">search / <span class="hotkey" aria-hidden="true">g</span>oto</button></div>
-  <div id="exam-toggle"><button type="button" id="exam-toggle-button" aria-keyshortcuts="Alt+E">e<span class="hotkey" aria-hidden="true">x</span>am</button></div>
+  <div id="exam-toggle"><button type="button" id="exam-toggle-button" aria-keyshortcuts="Alt+E">e<span class="hotkey" aria-hidden="true">x</span>ams</button></div>
   <div id="options">
     <details id="ui-settings" class="ui-settings">
       <summary>UI settings</summary>
@@ -148,24 +148,6 @@
     <button type="button" id="save-answers-button">
       Save Answers (locally)
     </button>
-    <br />
-    <hr />
-    <h4>Load (local) answers:</h4>
-    <input type="file" id="answers-file" name="file" title="Load saved answers (JSON)" aria-label="Load answers file" />
-    <button onclick="abortRead();">Cancel read</button>
-    <br />
-    <b>Note: this will overwrite all your current answers</b>
-    <br />
-    <hr />
-    <div id="fileloader">
-      <h4>Load (local) questions:</h4>
-      <input type="file" id="questions-file" name="file" title="Load questions (JSON)"
-        aria-label="Load questions file" />
-      <button onclick="abortRead();">Cancel read</button>
-      <div id="progress_bar">
-        <div class="percent">0%</div>
-      </div>
-    </div>
     <hr />
     <hr />
     <div id="extra-questions"></div>
@@ -176,6 +158,27 @@
       Clear All Cached Questions
     </button>
     <hr />
+    <hr />
+    <details id="load-local-section">
+      <summary>Load (local) files</summary>
+      <div class="load-section-body">
+        <h5>Load answers:</h5>
+        <input type="file" id="answers-file" name="file" title="Load saved answers (JSON)" aria-label="Load answers file" />
+        <button onclick="abortRead();">Cancel read</button>
+        <br />
+        <b>Note: this will overwrite all your current answers</b>
+        <hr />
+        <h5>Load questions:</h5>
+        <div id="fileloader">
+          <input type="file" id="questions-file" name="file" title="Load questions (JSON)"
+            aria-label="Load questions file" />
+          <button onclick="abortRead();">Cancel read</button>
+          <div id="progress_bar">
+            <div class="percent">0%</div>
+          </div>
+        </div>
+      </div>
+    </details>
     <hr />
     <button id="reset-app-button" type="button" title="Reset app (delete all local data)">
       Reset app (delete all local data)

@@ -1394,6 +1394,40 @@ input, textarea, select {
   margin: 10px 0;
 }
 
+/* Collapsible sections in options */
+#options details {
+  margin: 8px 0;
+}
+
+#options details summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 6px 0;
+  color: var(--text-color);
+  user-select: none;
+}
+
+#options details summary:hover {
+  color: var(--accent);
+}
+
+#options details summary::marker {
+  color: var(--accent);
+}
+
+#options .load-section-body {
+  margin: 8px 0 12px 12px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(255,255,255,0.1);
+}
+
+#options .load-section-body h5 {
+  margin: 12px 0 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
 /* Primary / destructive actions */
 #options #delete-answers-button {
   background: transparent;
