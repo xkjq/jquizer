@@ -851,8 +851,16 @@ $(document).ready(function () {
 
   $("#loading").removeClass("show");
 
-  $("#filter-toggle, #hide-options-button").off('click').on('click', function () {
+  $("#filter-toggle").off('click').on('click', function () {
     $("#options").slideToggle("slow");
+  });
+
+  // Dedicated close button handler: stop propagation and explicitly close options
+  $("#hide-options-button").off('click').on('click', function (e) {
+    console.log('hide-options-button clicked');
+    e.stopPropagation();
+    $("#options").slideUp("slow");
+    try { $("#filter-toggle button").focus(); } catch (err) { /* ignore */ }
   });
 
   $("#question-details-toggle").off('click').on('click', function () {
@@ -1081,7 +1089,7 @@ $(document).ready(function () {
   // Autoload removed - questions loaded on demand
       $("#loading").removeClass("show");
 
-      $("#filter-toggle, #hide-options-button").off('click').on('click', function () {
+      $("#filter-toggle").off('click').on('click', function () {
         $("#options").slideToggle("slow");
       });
 
