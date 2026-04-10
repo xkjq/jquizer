@@ -790,10 +790,13 @@ $(document).ready(function () {
   document.addEventListener('keydown', function (ev) {
     try {
       // Ignore when typing into inputs, textareas, selects or contenteditable regions
+      // but allow hotkeys if the focused element is inside the exam panel so
+      // Alt+E / Alt+X can open/close the exam panel even when its inputs are focused.
       const tg = ev.target;
       if (!tg) return;
       const tag = (tg.tagName || '').toUpperCase();
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tg.isContentEditable) return;
+      const isInsideExam = (typeof tg.closest === 'function' && tg.closest('#exam-menu')) ? true : false;
+      if ((tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tg.isContentEditable) && !isInsideExam) return;
 
       // We use Alt+key to avoid interfering with common letter keys
       if (!ev.altKey || ev.ctrlKey || ev.metaKey) return;
@@ -806,6 +809,7 @@ $(document).ready(function () {
         'q': '#question-details-toggle a, #question-details-toggle button',
         'g': '#search-toggle-button',
         'e': '#exam-toggle-button',
+        'x': '#exam-toggle-button',
         'a': '#about-toggle a, #about-toggle button'
       };
 
@@ -814,6 +818,7 @@ $(document).ready(function () {
       const el = document.querySelector(sel);
       if (!el) return;
       ev.preventDefault();
+      // Let the toggle button handle open/close for both Alt+E and Alt+X
       // For accessibility, attempt to focus then click
       try { el.focus && el.focus(); } catch (e) {}
       try { el.click && el.click(); } catch (e) { console.warn('Hotkey click failed', e); }
