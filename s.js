@@ -3248,13 +3248,19 @@ function annotateCitations($container) {
 
   // When a literal 'Reference:' prefix is present, anchor the match at that
   // token so we don't accidentally capture the preceding paragraph text.
-  const refPrefixRegex = /Reference:\s*[A-Z][\s\S]{0,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?/gi;
+  // Accept either ':' or ';' after the year, and allow volume(issue):pages
+  // forms (e.g. 2006:29(24):1–6). Be permissive between year and pages but
+  // anchor on 'Reference:' to avoid capturing preceding paragraph text.
+  const refPrefixRegex = /Reference:\s*[A-Z][\s\S]{0,800}?\d{4}[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
 
   // A conservative regex to capture a full reference fragment ending with
   // patterns like "2013; 33(2):535-52" or "2013;33:535-52". It looks back
   // for preceding author/title parts up to a reasonable length but is NOT
   // anchored to 'Reference:' (used only when the explicit prefix is absent).
-  const fullRefRegex = /[A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?/g;
+  // Unanchored full reference matcher; accept ':' or ';' after the year and
+  // common volume/issue/pages formats. Case-insensitive to capture varied
+  // capitalization in journal titles.
+  const fullRefRegex = /[A-Z][\s\S]{5,800}?\d{4}[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
 
   // fallback simple pattern (year; vol) for anything missed
   const simpleRegex = /\b(\d{4};\s*\d+(?:\([^\)]*\))?)/g;
