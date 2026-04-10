@@ -357,7 +357,7 @@ async function buildQuestionList(data, textStatus) {
       .text(displayName);
 
     const $status = $(document.createElement('span')).addClass('packet-status').text('');
-    const $delete = $(document.createElement('button')).addClass('packet-delete').text('Unload').css({marginLeft: '8px', fontSize: '12px', display: 'none'});
+    const $delete = $(document.createElement('button')).attr({'data-source': f}).addClass('packet-delete').text('Unload').css({marginLeft: '8px', fontSize: '12px', display: 'none'});
 
     // Click handler sets loading state then calls the loader
     const handler = loadExtraQuestionsCallback("questions/" + f);
@@ -390,6 +390,8 @@ async function buildQuestionList(data, textStatus) {
     // Keep $delete as a sibling of $status so .text()/.empty() on $status can never remove it
     $row.append($btn).append($status).append($delete);
     $container.append($row);
+    // refresh unload button count for this packet
+    try { updateUnloadCount(f); } catch (e) { /* ignore */ }
   }
 
   // Wire up a live filter for the add-packet / extra-questions rows
@@ -406,8 +408,6 @@ async function buildQuestionList(data, textStatus) {
     });
   });
 
-  // Build cached questions management UI and sync statuses
-  buildCachedQuestionsManagement();
   // Update all packet row statuses from the DB
   updatePacketRowStatuses();
 }
@@ -435,10 +435,12 @@ function updatePacketRowStatuses() {
         $status.addClass('loaded').text('');
         $btn.addClass('loaded-packet').prop('disabled', false);
         $delete.show();
+        try { updateUnloadCount(src); } catch (e) {}
       } else {
         $status.removeClass('loaded').text('');
         $btn.removeClass('loaded-packet');
         $delete.hide();
+        try { updateUnloadCount(src); } catch (e) {}
       }
     });
   }).catch(err => {
@@ -475,39 +477,27 @@ function markPacketFailed(source) {
   } catch (e) { console.warn('markPacketFailed failed', e); }
 }
 
-function buildCachedQuestionsManagement() {
-  const $container = $("#cached-questions-management");
-  $container.empty();
-
-  db.cached_questions.toArray().then(allCached => {
-    if (allCached.length === 0) {
-      $container.append('<p>No cached questions.</p>');
-      return;
-    }
-
-    const sources = {};
-    allCached.forEach(cq => {
-      if (!sources[cq.source]) sources[cq.source] = [];
-      sources[cq.source].push(cq);
+// Update the unload button label with the number of questions cached for a source
+function updateUnloadCount(source) {
+  try {
+    if (!Array.isArray(db.tables) || !db.tables.find(t => t.name === 'cached_questions')) return;
+    db.cached_questions.where('source').equals(source).count().then(cnt => {
+      const $delete = $(".packet-delete[data-source='" + source + "']");
+      if ($delete.length === 0) return;
+      if (cnt > 0) {
+        $delete.text('Unload (' + cnt + ')');
+      } else {
+        $delete.text('Unload');
+      }
+    }).catch(err => {
+      console.warn('updateUnloadCount failed', err);
     });
+  } catch (e) { console.warn('updateUnloadCount error', e); }
+}
 
-    for (let source in sources) {
-      const count = sources[source].length;
-      const $div = $(document.createElement('div')).css({margin: '4px 0', display: 'flex', alignItems: 'center'});
-      
-      $div.append($(document.createElement('span')).text(source.replace(/_/g, ' ') + ' (' + count + ' questions)'));
-      // Note: Unload controls are shown in the Extra Questions list rows.
-      // The cached-questions management pane only shows counts to avoid duplicate unload buttons.
-      
-      $container.append($div);
-    }
-    // Sync the extra-questions packet rows with current cache state
-    try { updatePacketRowStatuses(); } catch (e) { /* ignore */ }
-  }).catch(err => {
-    console.warn('Error building cached questions management', err);
-    $container.append('<p>Error loading cached questions.</p>');
-    try { updatePacketRowStatuses(); } catch (e) { /* ignore */ }
-  });
+function buildCachedQuestionsManagement() {
+  // cached-questions management UI removed; kept as a no-op for compatibility
+  return;
 }
 
 function loadExtraQuestions(q) {
@@ -586,8 +576,8 @@ async function loadData(data, source) {
           } catch (inner) { /* ignore recovery errors */ }
         }
       }
-      // Refresh cached questions management UI
-      buildCachedQuestionsManagement();
+      // Refresh packet row statuses
+      updatePacketRowStatuses();
     }
   }
   // Ensure filters and filtered_questions are fully loaded before building the score list
@@ -986,7 +976,7 @@ $(document).ready(function () {
           }
           
           toastr.info('Cleared all ' + allCached.length + ' cached questions from all sources');
-          buildCachedQuestionsManagement(); // Refresh the empty management UI
+          updatePacketRowStatuses(); // Refresh packet row statuses
           
           // Rebuild UI if questions were removed
           if (qidsToRemove.length > 0) {
