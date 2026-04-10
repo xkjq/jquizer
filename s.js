@@ -461,6 +461,20 @@ function markPacketLoaded(source) {
   } catch (e) { console.warn('markPacketLoaded failed', e); }
 }
 
+function markPacketFailed(source) {
+  try {
+    const $btn = $(".question-load-button[data-source='" + source + "']");
+    if ($btn.length === 0) return;
+    const $row = $btn.closest('.question-load-row');
+    const $status = $row.find('.packet-status');
+    const $delete = $row.find('.packet-delete');
+    $status.removeClass('loading').text('');
+    $btn.prop('disabled', false);
+    // hide unload since load failed
+    if ($delete.length) $delete.hide();
+  } catch (e) { console.warn('markPacketFailed failed', e); }
+}
+
 function buildCachedQuestionsManagement() {
   const $container = $("#cached-questions-management");
   $container.empty();
@@ -515,15 +529,17 @@ function loadExtraQuestions(q) {
         loadData(newData, source).then(() => { try { markPacketLoaded(source); } catch (e) {} }); // This will cache the new data
       }, function() {
         // Network failed, but we have cache
-      });
+        try { markPacketFailed(source); } catch (e) {}
+      }).catch(function() { try { markPacketFailed(source); } catch (e) {} });
     } else {
       // No cache, fetch from network
       fetchJsonLenient(q, function(data) {
         loadData(data, source).then(() => { try { markPacketLoaded(source); } catch (e) {} });
         toastr.info(Object.size(data) + " questions loaded");
       }, function() {
+        try { markPacketFailed(source); } catch (e) {}
         toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
-      });
+      }).catch(function() { try { markPacketFailed(source); } catch (e) {} });
     }
   }).catch(() => {
     // Cache query failed, try network
@@ -531,8 +547,9 @@ function loadExtraQuestions(q) {
       loadData(data, source).then(() => { try { markPacketLoaded(source); } catch (e) {} });
       toastr.info(Object.size(data) + " questions loaded");
     }, function() {
+      try { markPacketFailed(source); } catch (e) {}
       toastr.warning("Unable to load questions<br/><br/>Perhaps you wish to try loading them manually?");
-    });
+    }).catch(function() { try { markPacketFailed(source); } catch (e) {} });
   });
 }
 
