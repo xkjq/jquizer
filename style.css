@@ -985,6 +985,7 @@ input, textarea, select {
   background-color: rgba(0,0,0,0.1);
 }
 
+
 #exam-menu.show {
   display: block;
 }
@@ -1189,6 +1190,7 @@ input, textarea, select {
   #exam-menu {
     width: calc(100vw - 40px);
     max-height: 92vh;
+    max-width: 800px;
   }
   #exam-results-modal {
     width: calc(100vw - 40px);
@@ -1208,6 +1210,7 @@ input, textarea, select {
   #exam-menu {
     width: calc(100vw - 40px);
     max-height: 92vh;
+    max-width: 800px;
   }
 }
 
