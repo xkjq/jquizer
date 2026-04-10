@@ -3170,6 +3170,16 @@ $(document).ready(function () {
         .append(
           $(document.createElement("a"))
             .attr({
+              href: "https://pubmed.ncbi.nlm.nih.gov/?term=" + encodeURIComponent(text),
+              target: "newtab",
+              class: "pubmed-answer answer-link",
+              title: "Search PubMed for selected text"
+            })
+            .text("P")
+        )
+        .append(
+          $(document.createElement("a"))
+            .attr({
               href:
                 "https://radiopaedia.org/search?q=" +
                 text.replace(/[^a-zA-Z0-9-_ ]/g, ""),
@@ -3195,6 +3205,138 @@ $(document).ready(function () {
     }
   });
 });
+
+// Annotate simple citation-like patterns in a container by adding small search
+// links (PubMed / Google). This looks for a common pattern 'YYYY; vol' which
+// appears in many citations and adds inline buttons next to the matched text.
+function annotateCitations($container) {
+  if (!$container || $container.length === 0) return;
+
+  // A conservative regex to capture a full reference fragment ending with
+  // patterns like "2013; 33(2):535-52" or "2013;33:535-52". It looks back
+  // for preceding author/title parts up to a reasonable length.
+  // More permissive full-reference regex to allow references split across
+  // lines (including a blank line). Match up to ~800 chars before the year
+  // pattern so author/title/journal lines separated by newlines are captured.
+  const fullRefRegex = /([A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:\s*\([^\)]*\))?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?)/g;
+  // fallback simple pattern (year; vol) for anything missed
+  const simpleRegex = /\b(\d{4};\s*\d+(?:\([^\)]*\))?)/g;
+
+  function createPopup(refText, anchorEl) {
+    // remove any existing popup
+    $('.citation-popup').remove();
+    const popup = document.createElement('div');
+    popup.className = 'citation-popup';
+    popup.style.position = 'absolute';
+    popup.style.zIndex = 9999;
+    popup.style.background = '#fff';
+    popup.style.border = '1px solid #888';
+    popup.style.padding = '6px';
+    popup.style.borderRadius = '4px';
+    popup.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+
+    const g = document.createElement('a');
+    g.href = 'https://www.google.com/search?q=' + encodeURIComponent(refText);
+    g.target = '_blank';
+    g.textContent = 'Search Google';
+    g.style.marginRight = '8px';
+
+    const p = document.createElement('a');
+    p.href = 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(refText);
+    p.target = '_blank';
+    p.textContent = 'Search PubMed';
+
+    popup.appendChild(g);
+    popup.appendChild(p);
+
+    document.body.appendChild(popup);
+
+    // position near anchor
+    const rect = anchorEl.getBoundingClientRect();
+    popup.style.top = (window.scrollY + rect.bottom + 6) + 'px';
+    popup.style.left = (window.scrollX + rect.left) + 'px';
+
+    // close on outside click
+    function onDocClick(e) {
+      if (!popup.contains(e.target) && e.target !== anchorEl) {
+        popup.remove();
+        document.removeEventListener('mousedown', onDocClick);
+      }
+    }
+    setTimeout(() => document.addEventListener('mousedown', onDocClick), 10);
+  }
+
+  // Walk text nodes and first match full references, then fall back to simple matches
+  $container.each(function () {
+    const walker = document.createTreeWalker(this, NodeFilter.SHOW_TEXT, null, false);
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && (fullRefRegex.test(node.nodeValue) || simpleRegex.test(node.nodeValue))) {
+        textNodes.push(node);
+      }
+    }
+
+    textNodes.forEach(function (txtNode) {
+      const parent = txtNode.parentNode;
+      const frag = document.createDocumentFragment();
+      let lastIndex = 0;
+      const str = txtNode.nodeValue;
+
+      // Try fullRefRegex first
+      fullRefRegex.lastIndex = 0;
+      let m;
+      let matched = false;
+      while ((m = fullRefRegex.exec(str)) !== null) {
+        matched = true;
+        const idx = m.index;
+        if (idx > lastIndex) frag.appendChild(document.createTextNode(str.slice(lastIndex, idx)));
+        const matchText = m[0];
+        const span = document.createElement('span');
+        span.className = 'full-citation';
+        span.textContent = matchText;
+        span.style.textDecoration = 'underline';
+        span.style.cursor = 'pointer';
+        span.addEventListener('click', function (e) { createPopup(matchText, span); });
+        frag.appendChild(span);
+        lastIndex = idx + matchText.length;
+      }
+
+      if (!matched) {
+        // fallback: annotate simple year;vol patterns
+        simpleRegex.lastIndex = 0;
+        let sm;
+        let li = 0;
+        while ((sm = simpleRegex.exec(str)) !== null) {
+          const idx = sm.index;
+          if (idx > lastIndex) frag.appendChild(document.createTextNode(str.slice(lastIndex, idx)));
+          const matchText = sm[0];
+          const span = document.createElement('span');
+          span.className = 'detected-citation';
+          span.textContent = matchText;
+          frag.appendChild(span);
+          const g = document.createElement('a');
+          g.href = 'https://www.google.com/search?q=' + encodeURIComponent(matchText);
+          g.target = '_blank';
+          g.className = 'citation-link google-citation';
+          g.textContent = 'G';
+          frag.appendChild(g);
+          const p = document.createElement('a');
+          p.href = 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(matchText);
+          p.target = '_blank';
+          p.className = 'citation-link pubmed-citation';
+          p.textContent = 'P';
+          frag.appendChild(p);
+          lastIndex = idx + matchText.length;
+          li++;
+        }
+      }
+
+      if (lastIndex < str.length) frag.appendChild(document.createTextNode(str.slice(lastIndex)));
+      parent.replaceChild(frag, txtNode);
+    });
+  });
+}
 
 
 function shuffle(array) {
@@ -4990,6 +5132,10 @@ function checkAnswer(ans, load) {
   if (!(exam_mode && !exam_review_mode)) {
     $("#feedback").prepend(data["feedback"]);
     $("#feedback").append("<br />");
+
+    // Annotate simple citations in the feedback block so users can quickly
+    // search them on PubMed or Google.
+    try { annotateCitations($("#feedback")); } catch (e) { console.warn('annotateCitations failed', e); }
 
     if (data["external"] !== undefined) {
       $("#feedback").append("<br />");
