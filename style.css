@@ -355,11 +355,26 @@ li.alpha-list {
 
 #top-nav-toggle {
   display: none;
-  background: var(--panel-bg);
+  background: var(--control-bg);
+  color: var(--control-fg);
   border: 1px solid rgba(0,0,0,0.12);
   padding: 6px 8px;
   border-radius: 4px;
   font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+/* visible states for the hamburger so it contrasts over the expanded nav */
+#top-nav-toggle:hover,
+#top-nav-toggle:focus {
+  background: color-mix(in srgb, var(--control-bg) 85%, black 15%);
+  outline: none;
+}
+body.top-nav-open #top-nav-toggle {
+  /* make the toggle stand out while nav is open */
+  background: var(--accent);
+  color: #ffffff;
+  border-color: rgba(0,0,0,0.2);
 }
 
 #top-nav {
@@ -371,21 +386,22 @@ li.alpha-list {
 
 /* Small screens: hide the full top nav and show the hamburger */
 @media (max-width: 700px) {
-  #top-nav-toggle { display: inline-block; }
+  #top-nav-toggle { display: inline-block; position: relative; z-index: 130; }
   #top-nav { display: none; }
   body.top-nav-open #top-nav {
     display: block;
     position: fixed;
     top: 44px;
+    left: 8px;
     right: 8px;
-    left: auto;
     width: auto;
-    max-width: 360px;
+    max-width: calc(100% - 16px);
     background: var(--panel-bg);
     border: 1px solid rgba(0,0,0,0.12);
     padding: 8px;
     border-radius: 6px;
     z-index: 120;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
   }
   body.top-nav-open #top-nav > div,
   body.top-nav-open #top-nav > a {
@@ -394,6 +410,20 @@ li.alpha-list {
   }
   /* make the divs stack nicely */
   #top-nav > div { display: block; }
+  /* Make buttons fill available width and align left for easier tapping */
+  body.top-nav-open #top-nav button,
+  body.top-nav-open #top-nav a > button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+  }
+
+  /* Reduce page top spacing to give more room on small screens */
+  #content {
+    margin-top: 0px;
+    padding-top: 1px;
+    max-width: calc(100% - 24px);
+  }
 }
 
 /* Group for score + stats buttons */
