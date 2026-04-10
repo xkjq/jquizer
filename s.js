@@ -3278,14 +3278,18 @@ function annotateCitations($container) {
     popup.style.borderRadius = '4px';
     popup.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
 
+    // Remove a leading "Reference:" prefix from the query so searches
+    // don't include the literal label.
+    const queryText = String(refText).replace(/^\s*Reference:\s*/i, '').trim();
+
     const g = document.createElement('a');
-    g.href = 'https://www.google.com/search?q=' + encodeURIComponent(refText);
+    g.href = 'https://www.google.com/search?q=' + encodeURIComponent(queryText);
     g.target = '_blank';
     g.textContent = 'Search Google';
     g.style.marginRight = '8px';
 
     const p = document.createElement('a');
-    p.href = 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(refText);
+    p.href = 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(queryText);
     p.target = '_blank';
     p.textContent = 'Search PubMed';
 
