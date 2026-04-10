@@ -3246,15 +3246,16 @@ $(document).ready(function () {
 function annotateCitations($container) {
   if (!$container || $container.length === 0) return;
 
+  // When a literal 'Reference:' prefix is present, anchor the match at that
+  // token so we don't accidentally capture the preceding paragraph text.
+  const refPrefixRegex = /Reference:\s*[A-Z][\s\S]{0,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?/gi;
+
   // A conservative regex to capture a full reference fragment ending with
   // patterns like "2013; 33(2):535-52" or "2013;33:535-52". It looks back
-  // for preceding author/title parts up to a reasonable length.
-  // More permissive full-reference regex to allow references split across
-  // lines (including a blank line). Match up to ~800 chars before the year
-  // pattern so author/title/journal lines separated by newlines are captured.
-  // Allow qualifiers like 'Suppl 1' after the volume (up to ~40 chars),
-  // then a colon and letter-prefixed page ranges (e.g. 'S247–80').
-  const fullRefRegex = /([A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?)/g;
+  // for preceding author/title parts up to a reasonable length but is NOT
+  // anchored to 'Reference:' (used only when the explicit prefix is absent).
+  const fullRefRegex = /[A-Z][\s\S]{5,800}?\d{4};\s*[A-Za-z0-9]+(?:[^:\n]{0,40})?:\s*[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?/g;
+
   // fallback simple pattern (year; vol) for anything missed
   const simpleRegex = /\b(\d{4};\s*\d+(?:\([^\)]*\))?)/g;
 
@@ -3319,23 +3320,46 @@ function annotateCitations($container) {
       let lastIndex = 0;
       const str = txtNode.nodeValue;
 
-      // Try fullRefRegex first
-      fullRefRegex.lastIndex = 0;
-      let m;
+      // Prefer anchored 'Reference:' matches first to avoid greedy capture
+      // of preceding paragraph text. If none found, fall back to the
+      // unanchored fullRefRegex.
       let matched = false;
-      while ((m = fullRefRegex.exec(str)) !== null) {
-        matched = true;
-        const idx = m.index;
-        if (idx > lastIndex) frag.appendChild(document.createTextNode(str.slice(lastIndex, idx)));
-        const matchText = m[0];
-        const span = document.createElement('span');
-        span.className = 'full-citation';
-        span.textContent = matchText;
-        span.style.textDecoration = 'underline';
-        span.style.cursor = 'pointer';
-        span.addEventListener('click', function (e) { createPopup(matchText, span); });
-        frag.appendChild(span);
-        lastIndex = idx + matchText.length;
+
+      refPrefixRegex.lastIndex = 0;
+      let pm;
+      if (refPrefixRegex.test(str)) {
+        refPrefixRegex.lastIndex = 0;
+        while ((pm = refPrefixRegex.exec(str)) !== null) {
+          matched = true;
+          const idx = pm.index;
+          if (idx > lastIndex) frag.appendChild(document.createTextNode(str.slice(lastIndex, idx)));
+          const matchText = pm[0];
+          const span = document.createElement('span');
+          span.className = 'full-citation';
+          span.textContent = matchText;
+          span.style.textDecoration = 'underline';
+          span.style.cursor = 'pointer';
+          span.addEventListener('click', function (e) { createPopup(matchText, span); });
+          frag.appendChild(span);
+          lastIndex = idx + matchText.length;
+        }
+      } else {
+        fullRefRegex.lastIndex = 0;
+        let m;
+        while ((m = fullRefRegex.exec(str)) !== null) {
+          matched = true;
+          const idx = m.index;
+          if (idx > lastIndex) frag.appendChild(document.createTextNode(str.slice(lastIndex, idx)));
+          const matchText = m[0];
+          const span = document.createElement('span');
+          span.className = 'full-citation';
+          span.textContent = matchText;
+          span.style.textDecoration = 'underline';
+          span.style.cursor = 'pointer';
+          span.addEventListener('click', function (e) { createPopup(matchText, span); });
+          frag.appendChild(span);
+          lastIndex = idx + matchText.length;
+        }
       }
 
       if (!matched) {
