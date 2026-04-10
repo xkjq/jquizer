@@ -2236,19 +2236,29 @@ function showExamResults(correct, total, timeTaken, totalTime, isPastResults = f
     if (!isNaN(questionIndex)) {
       // Close the results modal
       $('#exam-results-modal').removeClass('show').attr('aria-hidden', 'true');
-      
-      // Restore exam state if viewing past results
-      if (typeof window.restoreExamState === 'function') {
-        window.restoreExamState();
-      }
-      
+
+      // If we're viewing past results, start review for that past exam
       if (window.viewing_past_results && window.past_exam_id) {
-        // For past results, start review mode at the specific question
         reviewExam(window.past_exam_id, questionIndex);
-      } else {
-        // For current exam results, just navigate to the question
-        loadQuestion(questionIndex, true);
+        return;
       }
+
+      // If we have a current exam id (the most common case for just-finished exams),
+      // open the exam in review mode at the requested question so next/previous
+      // navigation remains within the exam context.
+      if (window.current_exam_id) {
+        try {
+          reviewExam(window.current_exam_id, questionIndex);
+          return;
+        } catch (err) {
+          console.warn('Failed to open current exam for review, falling back to loading question:', err);
+        }
+      }
+
+      // Fallback: load question in exam view (best effort)
+      exam_mode = true;
+      exam_review_mode = true;
+      loadQuestion(questionIndex, true);
     }
   });
 }
