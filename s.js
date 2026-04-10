@@ -856,7 +856,7 @@ $(document).ready(function () {
   });
 
   // Dedicated close button handler: stop propagation and explicitly close options
-  $("#hide-options-button").off('click').on('click', function (e) {
+  $(".hide-options-button").on('click', function (e) {
     console.log('hide-options-button clicked');
     e.stopPropagation();
     $("#options").slideUp("slow");
