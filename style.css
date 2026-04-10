@@ -366,6 +366,7 @@ li.alpha-list {
   display: flex;
   gap: 8px;
   align-items: center;
+  margin-left: auto;
 }
 
 /* Small screens: hide the full top nav and show the hamburger */
@@ -376,8 +377,10 @@ li.alpha-list {
     display: block;
     position: fixed;
     top: 44px;
-    left: 8px;
     right: 8px;
+    left: auto;
+    width: auto;
+    max-width: 360px;
     background: var(--panel-bg);
     border: 1px solid rgba(0,0,0,0.12);
     padding: 8px;
