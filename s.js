@@ -795,8 +795,11 @@ $(document).ready(function () {
       const tg = ev.target;
       if (!tg) return;
       const tag = (tg.tagName || '').toUpperCase();
-      const isInsideExam = (typeof tg.closest === 'function' && tg.closest('#exam-menu')) ? true : false;
-      if ((tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tg.isContentEditable) && !isInsideExam) return;
+      // Allow hotkeys when focus is inside common panels so Alt+key still
+      // toggles the panel even if an input there has focus (e.g. search, exam).
+      const allowedPanels = '#exam-menu, #search-menu, #options, #question-details, #exam-results-modal';
+      const isInsideAllowedPanel = (typeof tg.closest === 'function' && tg.closest(allowedPanels)) ? true : false;
+      if ((tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tg.isContentEditable) && !isInsideAllowedPanel) return;
 
       // We use Alt+key to avoid interfering with common letter keys
       if (!ev.altKey || ev.ctrlKey || ev.metaKey) return;
