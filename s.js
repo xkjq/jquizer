@@ -325,7 +325,7 @@ function loadExtraQuestionsCallback(i) {
   };
 }
 
-function buildQuestionList(data, textStatus) {
+async function buildQuestionList(data, textStatus) {
   console.log("Building question list", data);
   let list = data["questions"];
   list.sort();
@@ -345,23 +345,60 @@ function buildQuestionList(data, textStatus) {
     }).css({ width: '100%', margin: '6px 0', padding: '6px', boxSizing: 'border-box' })
   );
 
+  // Each packet gets its own row; show a status badge if already cached
   for (let key in list) {
-    var f = list[key];
-    let $input = $(
-      '<input type="button" class="question-load-button" value="' +
-      f.replace(/_/g, " ") +
-      '" />'
-    );
-    $input.click(loadExtraQuestionsCallback("questions/" + f));
-    $input.appendTo($container);
+    const f = list[key];
+    const displayName = f.replace(/_/g, ' ');
+
+    const $row = $(document.createElement('div')).addClass('question-load-row');
+
+    const $btn = $(document.createElement('button'))
+      .attr({ type: 'button', class: 'question-load-button', title: displayName, 'data-source': f })
+      .text(displayName);
+
+    const $status = $(document.createElement('span')).addClass('packet-status').text('');
+    const $delete = $(document.createElement('button')).addClass('packet-delete').text('Unload').css({marginLeft: '8px', fontSize: '12px', display: 'none'});
+
+    // Click handler sets loading state then calls the loader
+    const handler = loadExtraQuestionsCallback("questions/" + f);
+    $btn.click(function (e) {
+      try { $btn.prop('disabled', true); } catch (err) {}
+      $status.removeClass('loaded').text('Loading...');
+      try { handler(e); } catch (err) { console.warn('load handler failed', err); }
+    });
+
+    // Delete cached packet handler (best-effort)
+    $delete.click(function () {
+      if (!confirm('Delete cached questions for "' + displayName + '"?')) return;
+      db.cached_questions.where('source').equals(f).toArray().then(cachedQuestions => {
+        const qidsToRemove = cachedQuestions.map(cq => cq.qid);
+        return db.cached_questions.where('source').equals(f).delete().then(() => {
+          qidsToRemove.forEach(qid => delete questions[qid]);
+          filtered_questions = filtered_questions.filter(qid => !qidsToRemove.includes(qid));
+          // Refresh UI
+          updatePacketRowStatuses();
+          setUpFilters();
+          buildActiveScoreList();
+          toastr.info('Deleted cached questions from ' + displayName);
+        });
+      }).catch(err => {
+        console.warn('Failed to delete cached questions for', f, err);
+        toastr.error('Failed to delete cached questions for ' + displayName);
+      });
+    });
+
+    // Put the unload button inside the status container so it remains visible
+    $status.append($delete);
+    $row.append($btn).append($status);
+    $container.append($row);
   }
 
-  // Wire up a live filter for the add-packet / extra-questions buttons
+  // Wire up a live filter for the add-packet / extra-questions rows
   $(document).off('input', '#extra-questions-filter');
   $(document).on('input', '#extra-questions-filter', function () {
     const q = ($(this).val() || '').toLowerCase().trim();
-    $container.find('.question-load-button').each(function () {
-      const txt = ((this.value || $(this).text()) + '').toLowerCase();
+    $container.find('.question-load-row').each(function () {
+      const txt = ($(this).find('.question-load-button').text() || '').toLowerCase();
       if (q === '' || txt.indexOf(q) !== -1) {
         $(this).show();
       } else {
@@ -370,8 +407,50 @@ function buildQuestionList(data, textStatus) {
     });
   });
 
-  // Build cached questions management
+  // Build cached questions management UI and sync statuses
   buildCachedQuestionsManagement();
+  // Update all packet row statuses from the DB
+  updatePacketRowStatuses();
+}
+
+// Update the UI status for packet rows based on what is cached in IndexedDB
+function updatePacketRowStatuses() {
+  // Best-effort: if cached_questions store missing, skip
+  if (!Array.isArray(db.tables)) return;
+  const hasCachedTable = db.tables.find(t => t.name === 'cached_questions');
+  if (!hasCachedTable) return;
+
+  db.cached_questions.toArray().then(all => {
+    const sources = {};
+    all.forEach(cq => {
+      sources[cq.source] = (sources[cq.source] || 0) + 1;
+    });
+
+    $('.question-load-button').each(function () {
+      const $btn = $(this);
+      const src = $btn.attr('data-source');
+      const $row = $btn.closest('.question-load-row');
+      const $status = $row.find('.packet-status');
+      const $delete = $row.find('.packet-delete');
+      if (sources[src]) {
+        $status.addClass('loaded');
+        $btn.addClass('loaded-packet');
+        $btn.prop('disabled', false);
+        $delete.show();
+        // ensure unload button is inside the status container
+        if ($delete.parent()[0] !== $status[0]) {
+          $status.empty().append($delete);
+        }
+      } else {
+        $status.removeClass('loaded');
+        $btn.removeClass('loaded-packet');
+        $delete.hide();
+        $status.empty();
+      }
+    });
+  }).catch(err => {
+    console.warn('updatePacketRowStatuses failed', err);
+  });
 }
 
 function buildCachedQuestionsManagement() {
@@ -396,7 +475,7 @@ function buildCachedQuestionsManagement() {
       
       $div.append($(document.createElement('span')).text(source.replace(/_/g, ' ') + ' (' + count + ' questions)'));
       
-      const $deleteBtn = $(document.createElement('button')).text('Delete').css({marginLeft: '10px', fontSize: 'smaller'});
+      const $deleteBtn = $(document.createElement('button')).text('Unload').css({marginLeft: '10px', fontSize: 'smaller'});
       $deleteBtn.click(function() {
         if (confirm('Delete all cached questions from ' + source + '?')) {
           // First get the qids for this source, then delete from cache and memory
@@ -438,9 +517,12 @@ function buildCachedQuestionsManagement() {
       
       $container.append($div);
     }
+    // Sync the extra-questions packet rows with current cache state
+    try { updatePacketRowStatuses(); } catch (e) { /* ignore */ }
   }).catch(err => {
     console.warn('Error building cached questions management', err);
     $container.append('<p>Error loading cached questions.</p>');
+    try { updatePacketRowStatuses(); } catch (e) { /* ignore */ }
   });
 }
 
@@ -4046,7 +4128,17 @@ function appendAnswers(answers, question_number) {
   for (let n in options) {
     let a = options[n];
 
-    let c = answers[a];
+    // Determine actual answer text and optional feedback
+    let actual_answer, feedback;
+    if (answers[a] instanceof Array) {
+      actual_answer = answers[a][0];
+      feedback = answers[a][1];
+    } else {
+      feedback = "";
+      actual_answer = answers[a];
+    }
+
+    let c = "no-select " + actual_answer;
     if (ordered) {
       c = c + " alpha-list";
       a = options[n].substring(2);
@@ -4057,19 +4149,22 @@ function appendAnswers(answers, question_number) {
         .attr({
           id: "q" + question_number + "a" + i,
           class: c,
-          "data-question-number": question_number
+          "data-question-number": question_number,
+          "data-feedback": feedback
         })
-        .append("<a href='#/' class='answer-option-link'>" + a + "</a>")
-        .on("click", checkAnswer)
+        .append("<span class='answer-option-link'>" + a + "</span>")
+        .on("click touchend contextmenu", function (e) {
+          if (e.type == "contextmenu") {
+            e.preventDefault();
+          }
+          // For normal SBA/MBA interactions, forward the event to checkAnswer
+          checkAnswer(e);
+        })
     );
     i = i + 1;
   }
-
-  $("#main").append("<br />");
-
-  //MathJax.Hub.Queue(["Typeset", MathJax.Hub, "body"]);
-}
-
+  }
+  
 function buildRankList(options, answers) {
   for (var i = 0; i < options.length; i++) {
     option = options[i];

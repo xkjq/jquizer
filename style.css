@@ -1535,7 +1535,77 @@ input, textarea, select {
   padding: 6px;
   border: 1px dashed rgba(0,0,0,0.07);
   min-height: 36px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
+
+/* Styles for extra question packet list */
+#extra-questions h3 {
+  margin: 6px 0 8px 0;
+  font-size: 16px;
+}
+
+.question-load-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.question-load-button {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.02);
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.question-load-button:hover {
+  cursor: pointer;
+  background: rgba(255,255,255,0.04);
+}
+
+.question-load-button.loaded-packet {
+  border-color: rgba(40,167,69,0.9);
+}
+
+.packet-status {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.packet-status.loaded {
+  background: #28a745;
+  color: white;
+}
+
+.packet-delete {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: inherit;
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.packet-delete:hover { background: rgba(255,255,255,0.03); cursor: pointer; }
 
 .search-close {
   float: left;
