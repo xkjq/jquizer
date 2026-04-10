@@ -1241,14 +1241,23 @@ $(document).ready(function () {
 
   //loadFlaggedQuestionsFromStorage();
 
-  $("#content").off('swipe').swipe({
-    swipeLeft: function (event, direction, distance, duration, fingerCount) {
-      nextQuestion(event);
-    },
-    swipeRight: function (event, direction, distance, duration, fingerCount) {
-      previousQuestion(event);
-    },
-    fallbackToMouseEvents: false
+  // Ensure the swipe handler is attached after the DOM is ready so
+  // `#content` exists (this used to attach too early and therefore
+  // never bound on some page loads).
+  $(document).ready(function () {
+    $("#content").off('swipe').swipe({
+      swipeLeft: function (event, direction, distance, duration, fingerCount) {
+        nextQuestion(event);
+      },
+      swipeRight: function (event, direction, distance, duration, fingerCount) {
+        previousQuestion(event);
+      },
+      // Prevent the page from scrolling during horizontal swipes and ensure
+      // swipes that start on links/buttons are still detected.
+      allowPageScroll: 'none',
+      excludedElements: "",
+      fallbackToMouseEvents: false
+    });
   });
 
   const beforeUnloadHandler = function (e) {
