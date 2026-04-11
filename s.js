@@ -117,6 +117,14 @@ db.open().then(() => {
   throw error;
 });
 
+// Return a safe form name derived from arbitrary text by replacing
+// non-alphanumeric characters with underscores. This avoids selector
+// and attribute parsing issues when text contains quotes or other
+// special characters.
+function safeFormName(text) {
+  return 'form' + String(text).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
 // Exam state persistence functions
 function saveExamState() {
   if (!exam_mode || !window.current_exam_id) return;
@@ -3213,11 +3221,19 @@ $(document).ready(function () {
             .attr({
               href: "STATDX",
               target: "newtab",
-              class: "statdx-answer answer-link",
-              onClick:
-                "document.forms['form" + text + "'].submit(); return false;"
+              class: "statdx-answer answer-link"
             })
             .text("S")
+            .on('click', function (e) {
+              e.preventDefault();
+              try {
+                const fname = safeFormName(text);
+                const frm = document.getElementsByName(fname)[0];
+                if (frm) frm.submit();
+              } catch (err) {
+                console.warn('Failed to submit statdx form', err);
+              }
+            })
         );
     } else {
       // Handle in body mouseup
@@ -5322,21 +5338,18 @@ function checkBestAnswer(e, load) {
     if ($(this).find('.answer-link').length > 0) return;
 
     // Build forms for statdx searches as it uses POST requests (only once per text)
-    if ($("form[name='form" + text + "']").length === 0) {
+    const formName = safeFormName(text);
+    if (document.getElementsByName(formName).length === 0) {
       $("#main").append(
         $(
           `
             <form method="post" action="https://app.statdx.com/search"
-            target="_blank" name="form` +
-          text +
-          `" style="display:none">
+            target="_blank" name="${formName}" style="display:none">
             <input type="hidden" name="startIndex" value="0">
             <input type="hidden" name="category" value="All">
             <input type="hidden" name="searchType" value="documents">
             <input type="hidden" name="documentTypeFilters" value='["all"]'>
-            <input type="hidden" name="searchTerm" value="` +
-          text +
-          `">
+            <input type="hidden" name="searchTerm" value="${text}">
             <input type="submit" value="Open results in a new window"> 
             </form>
         `
@@ -5369,15 +5382,23 @@ function checkBestAnswer(e, load) {
       )
       .append(
         $(document.createElement("a"))
-          .attr({
+            .attr({
             href: "https://statdx.com/search?q=" + text, // not actually used
             target: "newtab",
             class: "statdx-answer answer-link",
-            title: "Search StatDx for " + text,
-            onClick:
-              "document.forms['form" + text + "'].submit(); return false;"
+            title: "Search StatDx for " + text
           })
           .text("S")
+          .on('click', function (e) {
+            e.preventDefault();
+            try {
+              const fname = formName;
+              const frm = document.getElementsByName(fname)[0];
+              if (frm) frm.submit();
+            } catch (err) {
+              console.warn('Failed to submit statdx form', err);
+            }
+          })
       );
   });
 
