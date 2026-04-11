@@ -1252,10 +1252,10 @@ $(document).ready(function () {
       swipeRight: function (event, direction, distance, duration, fingerCount) {
         previousQuestion(event);
       },
-      // Prevent the page from scrolling during horizontal swipes but
-      // exclude interactive controls/links from swipe capture so their
-      // native click/tap still works on mobile.
-      allowPageScroll: 'none',
+      // Allow vertical page scrolling while still handling horizontal
+      // swipes for navigation. Exclude interactive controls/links so
+      // taps still work on mobile.
+      allowPageScroll: 'vertical',
       excludedElements: "label, button, input, select, textarea, a, .noSwipe",
       fallbackToMouseEvents: false
     });
