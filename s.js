@@ -850,6 +850,8 @@ $(document).ready(function () {
   });
 
   $("#loading").removeClass("show");
+  // Ensure the options panel is closed by default on page load
+  $("#options").hide();
 
   $("#filter-toggle").off('click').on('click', function () {
     $("#options").slideToggle("slow");
