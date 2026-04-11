@@ -3260,7 +3260,9 @@ function annotateCitations($container) {
   // Accept either ':' or ';' after the year, and allow volume(issue):pages
   // forms (e.g. 2006:29(24):1–6). Be permissive between year and pages but
   // anchor on 'Reference:' to avoid capturing preceding paragraph text.
-  const refPrefixRegex = /Reference:\s*[A-Z][\s\S]{0,800}?\d{4}[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
+  // Allow an optional month token (e.g. "Oct") between the year and the
+  // separator so patterns like "2011 Oct;197(4)" are matched.
+  const refPrefixRegex = /Reference:\s*[A-Z][\s\S]{0,800}?\d{4}(?:\s+[A-Za-z]{3,10})?\s*[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
 
   // A conservative regex to capture a full reference fragment ending with
   // patterns like "2013; 33(2):535-52" or "2013;33:535-52". It looks back
@@ -3269,7 +3271,9 @@ function annotateCitations($container) {
   // Unanchored full reference matcher; accept ':' or ';' after the year and
   // common volume/issue/pages formats. Case-insensitive to capture varied
   // capitalization in journal titles.
-  const fullRefRegex = /[A-Z][\s\S]{5,800}?\d{4}[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
+  // Unanchored full reference matcher — also allow an optional month token
+  // between the year and the separator (e.g. "2011 Oct;").
+  const fullRefRegex = /[A-Z][\s\S]{5,800}?\d{4}(?:\s+[A-Za-z]{3,10})?\s*[:;]\s*[\s\S]{0,200}?\b[A-Za-z]*\d+(?:[-–][A-Za-z]*\d+)?\.?/gi;
 
   // fallback simple pattern (year; vol) for anything missed
   const simpleRegex = /\b(\d{4};\s*\d+(?:\([^\)]*\))?)/g;
