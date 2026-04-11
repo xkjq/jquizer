@@ -5308,27 +5308,34 @@ function checkBestAnswer(e, load) {
   // Add search links to answers
   $(".answer-list li").each(function (ind) {
     text = $(this).text();
+    // Don't add links while the exam is in progress (only in exam review mode)
+    if (exam_mode && !exam_review_mode) return;
 
-    // Build forms for statdx searches as it uses POST requests
-    $("#main").append(
-      $(
-        `
+    // Avoid appending duplicate link sets when answers are re-rendered.
+    if ($(this).find('.answer-link').length > 0) return;
+
+    // Build forms for statdx searches as it uses POST requests (only once per text)
+    if ($("form[name='form" + text + "']").length === 0) {
+      $("#main").append(
+        $(
+          `
             <form method="post" action="https://app.statdx.com/search"
             target="_blank" name="form` +
-        text +
-        `" style="display:none">
+          text +
+          `" style="display:none">
             <input type="hidden" name="startIndex" value="0">
             <input type="hidden" name="category" value="All">
             <input type="hidden" name="searchType" value="documents">
             <input type="hidden" name="documentTypeFilters" value='["all"]'>
             <input type="hidden" name="searchTerm" value="` +
-        text +
-        `">
+          text +
+          `">
             <input type="submit" value="Open results in a new window"> 
             </form>
         `
-      )
-    );
+        )
+      );
+    }
 
     $(this)
       .append(
